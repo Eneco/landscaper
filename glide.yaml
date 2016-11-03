@@ -1,0 +1,5 @@
+package: github.com/eneco/landscaper
+import:
+- package: github.com/spf13/cobra
+  subpackages:
+  - cobra/cmd
