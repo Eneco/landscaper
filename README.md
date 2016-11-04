@@ -1,30 +1,31 @@
-h2. Rough outline of the flow
+# Rough outline of the flow
 
-# Prepare release configurations
-## Read secrets from environment
-## Create Release structs
-# Diff
-## Get current releases and their secrets from k8s namespace
-## Compare Releases with current desired state
-# Apply
-## Create secrets in k8s namespace for all releases
-## Run each ReleaseTask
+- Prepare release configurations
+  - Read secrets from environment
+  - Create Release structs
+- Diff
+  - Get current releases and their secrets from k8s namespace
+  - Compare Releases with current desired state
+- Apply
+  - Create secrets in k8s namespace for all releases
+  - Run each ReleaseTask
 
-h2. Rough brain dump of required entities
+# Rough brain dump of required entities
 
-*Action* (CREATE/UPDATE/DELETE)
+### Action 
+* CREATE
+* UPDATE
+* DELETE
 
-*Configuration*
+### Configuration
 * Read()
 * Compare(Configuration) (Action) 
 
-
-*Secrets*
+### Secrets
 * Read()
 * Compare(Secrets) (Action)
 
-
-*Release*
+### Release
 * Name
 * Chart
 * Version
@@ -32,26 +33,21 @@ h2. Rough brain dump of required entities
 * Secrets
 * Compare(Release) (Diff)
 
-
-*Diff*
+### Diff
 * Release
 * Action
 
-
-*Executor*
+### Executor
 * Apply([]Diff)
 
-
-*ReleaseProvider*
+### ReleaseProvider
 * Current()
 * Create(Release)
 * Update(Release)
 * Delete(Release)
 
-
-*ConfigurationProvider*
+### ConfigurationProvider
 * Read()
 
-	
-*SecretProvider*
+### SecretProvider
 * Read()
