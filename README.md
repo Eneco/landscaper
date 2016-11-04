@@ -1,53 +1,51 @@
 # Rough outline of the flow
-
 - Prepare release configurations
-  - Read secrets from environment
-  - Create Release structs
+    - Read secrets from environment
+    - Create Release structs
 - Diff
-  - Get current releases and their secrets from k8s namespace
-  - Compare Releases with current desired state
+    - Get current releases and their configurations/secrets from k8s namespace
+    - Compare Releases with current desired state
 - Apply
-  - Create secrets in k8s namespace for all releases
-  - Run each ReleaseTask
+    - Create secrets in k8s namespace for all releases
+    - Run each ReleaseTask
+
+# Secrets design principles
+- Charts should use k8s secrets to get values into the environment of containers
+- Secrets should be a separate array in the component file
 
 # Rough brain dump of required entities
+## Configuration
+- Read()
+- Compare(Configuration) (Diff) 
 
-### Action 
-* CREATE
-* UPDATE
-* DELETE
+## Secrets
+- Read()
+- Compare(Secrets) (Diff)
 
-### Configuration
-* Read()
-* Compare(Configuration) (Action) 
+## Release
+- Chart
+- Version
+- Compare(Release) (Diff)
 
-### Secrets
-* Read()
-* Compare(Secrets) (Action)
+## Component
+- Name
+- Release
+- Configuration
+- Secrets
+- Compare(Component) (Diff)
 
-### Release
-* Name
-* Chart
-* Version
-* Configuration
-* Secrets
-* Compare(Release) (Diff)
+## Executor
+- Apply(desired []Component, current []Component)
 
-### Diff
-* Release
-* Action
+## ComponentProvider
+- Current() []Component
+- Desired() []Component
+- Create(Component)
+- Update(Component)
+- Delete(Component)
 
-### Executor
-* Apply([]Diff)
-
-### ReleaseProvider
-* Current()
-* Create(Release)
-* Update(Release)
-* Delete(Release)
-
-### ConfigurationProvider
-* Read()
-
-### SecretProvider
-* Read()
+## ConfigurationProvider
+- Read() []Configuration
+	
+## SecretProvider
+- Read() []Secret
