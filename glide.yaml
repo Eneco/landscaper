@@ -1,5 +1,27 @@
 package: github.com/eneco/landscaper
 import:
+- package: github.com/Sirupsen/logrus
+  version: ^0.11.0
+- package: github.com/ghodss/yaml
 - package: github.com/spf13/cobra
+- package: gopkg.in/validator.v2
+- package: k8s.io/client-go
+  version: v1.4.0
+- package: k8s.io/helm
+  version: ^2.0.0-rc.2
   subpackages:
-  - cobra/cmd
+  - pkg/chartutil
+  - pkg/helm
+  - pkg/kube
+- package: k8s.io/kubernetes
+  version: ~1.4.1
+  subpackages:
+  - pkg/api
+  - pkg/client/unversioned
+  - pkg/labels
+testImport:
+- package: github.com/stretchr/testify
+  version: ^1.1.4
+  subpackages:
+  - assert
+  - require
