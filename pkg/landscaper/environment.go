@@ -17,9 +17,11 @@ var tillerTunnel *kube.Tunnel
 var tillerNamespace = "kube-system"
 
 type Environment struct {
-	Name       string
-	Namespace  string
-	HelmClient *helm.Client
+	Name           string
+	Namespace      string
+	RepositoryName string
+	StateFolder    string
+	HelmClient     *helm.Client
 }
 
 func (e *Environment) EnsureHelmClient() error {

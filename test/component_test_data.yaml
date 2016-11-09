@@ -1,25 +1,13 @@
-name: test-component
+name: hdfs-test
 release:
-  chart: connectors/hdfs:0.0.7
+  chart: connector-hdfs:0.1.0
   version: 1.0.0
 configuration:
-  # Generic values
-  name: hdfs-rtwind
   # Connector values
-  groupID: hdfs-rtwind
-  schemaRegistryURL: http://schema-registry:8181
-  hdfsUrl: hdfs://hadoop:8020
-  partitionerClass: io.confluent.connect.hdfs.partitioner.FieldPartitioner
-  partitionField: "partition1"
-  tasksMax: 1
-  topics: "topic1,topic2"
-  flushSize: 3
-  rotateIntervalMs: 10000
-  retryBackoffMs: 30000
-  shutdownTimeoutMs: 60000
-  filenameOffsetZeroPadWidth: 1
-  topicsDir: /tmp/topics
-  logsDir: /tmp/logs
-secrets:
-  - twitterAPIKey
-  - cloudstackKey
+  GroupID: hdfs-rtwind
+  HdfsUrl: hdfs://hadoop:8020
+  PartitionField: "partition1"
+  TasksMax: 1
+  Topics: "topic1,topic2"
+  FlushSize: 3
+  FilenameOffsetZeroPadWidth: 1
