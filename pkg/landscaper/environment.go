@@ -16,14 +16,17 @@ import (
 var tillerTunnel *kube.Tunnel
 var tillerNamespace = "kube-system"
 
+// Environment contains all the information about the k8s cluster and local configuration
 type Environment struct {
-	Name           string
-	Namespace      string
-	RepositoryName string
-	StateFolder    string
-	HelmClient     *helm.Client
+	DryRun             bool
+	HelmClient         *helm.Client
+	HelmRepositoryName string
+	LandscapeName      string
+	LandscapeDir       string
+	Namespace          string
 }
 
+// EnsureHelmClient makes sure the environment has a HelmClient initialized
 func (e *Environment) EnsureHelmClient() error {
 	if e.HelmClient == nil {
 		tillerHost, err := setupConnection()
@@ -37,9 +40,14 @@ func (e *Environment) EnsureHelmClient() error {
 	return nil
 }
 
+// Teardown closes the tunnel etc
+func (e *Environment) Teardown() {
+	teardown()
+}
+
 // ReleaseName taks a component name, and uses info in the environment to return a release name
 func (e *Environment) ReleaseName(componentName string) string {
-	return fmt.Sprintf("%s-%s", strings.ToLower(string(e.Name[0])), strings.ToLower(componentName))
+	return fmt.Sprintf("%s-%s", strings.ToLower(string(e.LandscapeName[0])), strings.ToLower(componentName))
 }
 
 func setupConnection() (string, error) {
@@ -48,7 +56,16 @@ func setupConnection() (string, error) {
 		return "", err
 	}
 
+	tillerTunnel = tunnel
+
 	return fmt.Sprintf(":%d", tunnel.Local), nil
+}
+
+func teardown() {
+	if tillerTunnel != nil {
+		tillerTunnel.Close()
+		tillerTunnel = nil
+	}
 }
 
 // getKubeClient is a convenience method for creating kubernetes config and client

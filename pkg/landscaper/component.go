@@ -1,6 +1,10 @@
 package landscaper
 
-import validator "gopkg.in/validator.v2"
+import (
+	"reflect"
+
+	"gopkg.in/validator.v2"
+)
 
 // Component contains information about the release, configuration and secrets of a component
 type Component struct {
@@ -10,6 +14,25 @@ type Component struct {
 	Secrets       *Secrets      `json:"secrets"`
 }
 
+// NewComponent creates a Component and adds Name to the configuration
+func NewComponent(name string, release *Release, cfg Configuration, secrets *Secrets) *Component {
+	cmp := &Component{
+		Name:          name,
+		Release:       release,
+		Configuration: cfg,
+		Secrets:       secrets,
+	}
+
+	cmp.Configuration["Name"] = cmp.Name
+
+	cmp.Configuration[metadataKey] = map[string]interface{}{
+		releaseVersionKey: cmp.Release.Version,
+		landscaperTagKey:  true,
+	}
+
+	return cmp
+}
+
 // Validate the component on required fields and correct values
 func (c *Component) Validate() error {
 	if err := validator.Validate(c); err != nil {
@@ -17,4 +40,9 @@ func (c *Component) Validate() error {
 	}
 
 	return nil
+}
+
+// Equals checks if this component's values are equal to another
+func (c *Component) Equals(other *Component) bool {
+	return reflect.DeepEqual(c, other)
 }

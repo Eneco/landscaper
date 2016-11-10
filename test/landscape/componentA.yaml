@@ -1,10 +1,10 @@
-name: hdfs-test
+name: component-a
 release:
   chart: connector-hdfs:0.1.0
   version: 1.0.0
 configuration:
   # Connector values
-  GroupID: hdfs-rtwind
+  GroupID: componentA
   HdfsUrl: hdfs://hadoop:8020
   PartitionField: "partition1"
   TasksMax: 1

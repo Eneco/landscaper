@@ -1,4 +1,4 @@
-package provider
+package landscaper
 
 import (
 	"errors"
@@ -12,33 +12,27 @@ import (
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
 
+// ErrChartNotFound is thrown when an unknown chart is trying to be loaded
 var ErrChartNotFound = errors.New("chart not found")
 
-func LoadChart(chartRef string) (*chart.Chart, error) {
+// LoadChart locates, and potentially downloads, a chart to the local repository
+func LoadChart(chartRef string) (*chart.Chart, string, error) {
 	chartPath, err := locateChartPath(chartRef)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	chart, err := chartutil.Load(chartPath)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return chart, nil
+	return chart, chartPath, nil
 }
 
 func locateChartPath(chartRef string) (string, error) {
 	name, version := parseChartRef(chartRef)
 	homePath := os.ExpandEnv("$HOME/.helm")
-
-	if _, err := os.Stat(name); err == nil {
-		abs, err := filepath.Abs(name)
-		if err != nil {
-			return abs, err
-		}
-		return abs, nil
-	}
 
 	chartFile := filepath.Join(helmpath.Home(homePath).Repository(), name)
 	if _, err := os.Stat(chartFile); err == nil {
@@ -56,6 +50,16 @@ func locateChartPath(chartRef string) (string, error) {
 		if err != nil {
 			return "", err
 		}
+
+		repoName := ""
+		info := strings.Split(name, "/")
+		if len(info) == 2 {
+			repoName = info[0]
+		}
+
+		// Extract the chart for easier reference the next time
+		chartutil.ExpandFile(filepath.Join(helmpath.Home(homePath).Repository(), repoName), chartFile)
+
 		return chartFile, nil
 	}
 
