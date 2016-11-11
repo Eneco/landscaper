@@ -124,7 +124,7 @@ func (cp *componentProvider) readComponentFromCluster(name string, env *Environm
 
 // coalesceComponent takes a component, loads the chart and coalesces the configuration with the default values
 func (cp *componentProvider) coalesceComponent(cmp *Component) error {
-	ch, _, err := LoadChart(fmt.Sprintf("%s/%s", cp.env.HelmRepositoryName, cmp.Release.Chart))
+	ch, _, err := cp.env.ChartLoader.Load(fmt.Sprintf("%s/%s", cp.env.HelmRepositoryName, cmp.Release.Chart))
 	if err != nil {
 		return err
 	}

@@ -74,7 +74,7 @@ func (e *executor) CreateComponent(cmp *Component) error {
 
 	// We need to ensure the chart is available on the local system. LoadChart will ensure
 	// this is the case by downloading the chart if it is not there yet
-	_, chartPath, err := LoadChart(chartRef)
+	_, chartPath, err := e.env.ChartLoader.Load(chartRef)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 
 	// We need to ensure the chart is available on the local system. LoadChart will ensure
 	// this is the case by downloading the chart if it is not there yet
-	_, chartPath, err := LoadChart(chartRef)
+	_, chartPath, err := e.env.ChartLoader.Load(chartRef)
 	if err != nil {
 		return err
 	}

@@ -63,6 +63,8 @@ func init() {
 		landscapeNamespace = "acceptance"
 	}
 
+	env.ChartLoader = landscaper.NewLocalCharts(os.ExpandEnv("$HOME/.helm"))
+
 	f.BoolVar(&env.DryRun, "dry-run", false, "simulate the applying of the landscape. useful in merge requests")
 	f.StringVar(&env.HelmRepositoryName, "helm-repo-name", helmRepositoryName, "the name of the helm repository that contains all the charts")
 	f.StringVar(&env.LandscapeName, "landscape-name", landscapeName, "name of the landscape. the first letter of this is used as a prefix, e.g. acceptance creates releases like a-release-name")

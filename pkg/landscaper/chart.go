@@ -12,12 +12,24 @@ import (
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
 
+type ChartLoader interface {
+	Load(chartRef string) (*chart.Chart, string, error)
+}
+
+type LocalCharts struct {
+	HomePath string
+}
+
+func NewLocalCharts(homePath string) *LocalCharts {
+	return &LocalCharts{HomePath: homePath}
+}
+
 // ErrChartNotFound is thrown when an unknown chart is trying to be loaded
 var ErrChartNotFound = errors.New("chart not found")
 
-// LoadChart locates, and potentially downloads, a chart to the local repository
-func LoadChart(chartRef string) (*chart.Chart, string, error) {
-	chartPath, err := locateChartPath(chartRef)
+// Load locates, and potentially downloads, a chart to the local repository
+func (c *LocalCharts) Load(chartRef string) (*chart.Chart, string, error) {
+	chartPath, err := locateChartPath(c.HomePath, chartRef)
 	if err != nil {
 		return nil, "", err
 	}
@@ -30,9 +42,8 @@ func LoadChart(chartRef string) (*chart.Chart, string, error) {
 	return chart, chartPath, nil
 }
 
-func locateChartPath(chartRef string) (string, error) {
+func locateChartPath(homePath, chartRef string) (string, error) {
 	name, version := parseChartRef(chartRef)
-	homePath := os.ExpandEnv("$HOME/.helm")
 
 	chartFile := filepath.Join(helmpath.Home(homePath).Repository(), name)
 	if _, err := os.Stat(chartFile); err == nil {
