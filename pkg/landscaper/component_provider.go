@@ -46,6 +46,7 @@ func NewComponentProvider(env *Environment) (ComponentProvider, error) {
 	return &componentProvider{env: env}, nil
 }
 
+// Current returns all Components in the cluster
 func (cp *componentProvider) Current() ([]*Component, error) {
 	components := []*Component{}
 
@@ -72,6 +73,7 @@ func (cp *componentProvider) Current() ([]*Component, error) {
 	return components, nil
 }
 
+// Desired returns all desired components according to their descriptions
 func (cp *componentProvider) Desired() ([]*Component, error) {
 	components := []*Component{}
 
@@ -144,6 +146,7 @@ func (cp *componentProvider) coalesceComponent(cmp *Component) error {
 	return nil
 }
 
+// listHelmReleases lists all releases that are prefixed with env.LandscapeName
 func (cp *componentProvider) listHelmReleases() ([]*release.Release, error) {
 	filter := helm.ReleaseListFilter(fmt.Sprintf("^%s-.+", strings.ToLower(string(cp.env.LandscapeName[0]))))
 	res, err := cp.env.HelmClient.ListReleases(filter)
@@ -154,6 +157,7 @@ func (cp *componentProvider) listHelmReleases() ([]*release.Release, error) {
 	return res.Releases, nil
 }
 
+// getHelmRelease gets a Release
 func (cp *componentProvider) getHelmRelease(releaseName string) (*release.Release, error) {
 	res, err := cp.env.HelmClient.ReleaseContent(releaseName)
 	if err != nil {
@@ -163,6 +167,7 @@ func (cp *componentProvider) getHelmRelease(releaseName string) (*release.Releas
 	return res.Release, nil
 }
 
+// newComponentFromHelmRelease creates a Component from a Release
 func newComponentFromHelmRelease(name string, release *release.Release) (*Component, error) {
 	cfg, err := getReleaseConfiguration(release)
 	if err != nil {
@@ -183,11 +188,11 @@ func newComponentFromHelmRelease(name string, release *release.Release) (*Compon
 			Version: metadata[releaseVersionKey].(string),
 		},
 		cfg,
-		nil,
+		nil, // TODO: secrets
 	), nil
 }
 
-// readComponentFromYAMLFilePath reads a yaml file from disk and returns a initialized Component
+// readComponentFromYAMLFilePath reads a yaml file from disk and returns an initialized Component
 func readComponentFromYAMLFilePath(filePath string) (*Component, error) {
 	cfg, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -197,6 +202,7 @@ func readComponentFromYAMLFilePath(filePath string) (*Component, error) {
 	return newComponentFromYAML(cfg)
 }
 
+// getReleaseConfiguration returns a release's coalesced Cnfiguration (= helm values)
 func getReleaseConfiguration(helmRelease *release.Release) (Configuration, error) {
 	helmValues, err := chartutil.CoalesceValues(helmRelease.Chart, helmRelease.Config)
 	if err != nil {
@@ -206,6 +212,7 @@ func getReleaseConfiguration(helmRelease *release.Release) (Configuration, error
 	return Configuration(helmValues), nil
 }
 
+// getReleaseMetadata extracts landscaper's metadata from a Configuration
 func getReleaseMetadata(cfg Configuration) (map[string]interface{}, error) {
 	val, ok := cfg[metadataKey]
 	if !ok {

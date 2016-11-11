@@ -12,14 +12,17 @@ import (
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
 
+// ChartLoader allows one to load Charts by name
 type ChartLoader interface {
 	Load(chartRef string) (*chart.Chart, string, error)
 }
 
+// LocalCharts allows one to load Charts from a local path
 type LocalCharts struct {
 	HomePath string
 }
 
+// NewLocalCharts creates a LocalCharts ChartLoader
 func NewLocalCharts(homePath string) *LocalCharts {
 	return &LocalCharts{HomePath: homePath}
 }
@@ -42,6 +45,7 @@ func (c *LocalCharts) Load(chartRef string) (*chart.Chart, string, error) {
 	return chart, chartPath, nil
 }
 
+// locateChartPath searches for a chart in homePath, downloads it otherwise and if that fails and possibly returns an ErrChartNotFound
 func locateChartPath(homePath, chartRef string) (string, error) {
 	name, version := parseChartRef(chartRef)
 
@@ -77,6 +81,7 @@ func locateChartPath(homePath, chartRef string) (string, error) {
 	return "", ErrChartNotFound
 }
 
+// parseChartRef splits a name:version into a name and an (optional) version
 func parseChartRef(ref string) (string, string) {
 	chartInfo := strings.Split(ref, ":")
 	chartName, chartVersion := chartInfo[0], ""

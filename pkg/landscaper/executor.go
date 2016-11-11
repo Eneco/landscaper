@@ -31,6 +31,7 @@ func NewExecutor(env *Environment) (Executor, error) {
 	return &executor{env: env}, nil
 }
 
+// Apply transforms the current state into the desired state
 func (e *executor) Apply(desired, current []*Component) error {
 	create, update, delete := diff(desired, current)
 
@@ -64,6 +65,7 @@ func (e *executor) Apply(desired, current []*Component) error {
 	return nil
 }
 
+// CreateComponent creates the given Component
 func (e *executor) CreateComponent(cmp *Component) error {
 	chartRef := fmt.Sprintf("%s/%s", e.env.HelmRepositoryName, cmp.Release.Chart)
 	releaseName := e.env.ReleaseName(cmp.Name)
@@ -103,6 +105,7 @@ func (e *executor) CreateComponent(cmp *Component) error {
 	return nil
 }
 
+// UpdateComponent updates the given Component
 func (e *executor) UpdateComponent(cmp *Component) error {
 	releaseName := e.env.ReleaseName(cmp.Name)
 	chartRef := fmt.Sprintf("%s/%s", e.env.HelmRepositoryName, cmp.Release.Chart)
@@ -140,6 +143,7 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 	return nil
 }
 
+// DeleteComponent removes the given Component
 func (e *executor) DeleteComponent(cmp *Component) error {
 	releaseName := e.env.ReleaseName(cmp.Name)
 
@@ -161,6 +165,7 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 	return nil
 }
 
+// diff takes desired and current components, and returns the components to create, update and delete to get from current to desired
 func diff(desired, current []*Component) (create, update, delete []*Component) {
 	desiredMap := make(map[string]*Component)
 	currentMap := make(map[string]*Component)

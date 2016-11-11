@@ -41,16 +41,17 @@ func (e *Environment) EnsureHelmClient() error {
 	return nil
 }
 
-// Teardown closes the tunnel etc
+// Teardown closes the tunnel
 func (e *Environment) Teardown() {
 	teardown()
 }
 
-// ReleaseName taks a component name, and uses info in the environment to return a release name
+// ReleaseName takes a component name, and uses info in the environment to return a release name
 func (e *Environment) ReleaseName(componentName string) string {
 	return fmt.Sprintf("%s-%s", strings.ToLower(string(e.LandscapeName[0])), strings.ToLower(componentName))
 }
 
+// setupConnection creates and returns tiller port forwarding tunnel
 func setupConnection() (string, error) {
 	tunnel, err := newTillerPortForwarder(tillerNamespace, "")
 	if err != nil {
@@ -62,6 +63,7 @@ func setupConnection() (string, error) {
 	return fmt.Sprintf(":%d", tunnel.Local), nil
 }
 
+// teardown closes the tunnel
 func teardown() {
 	if tillerTunnel != nil {
 		tillerTunnel.Close()
