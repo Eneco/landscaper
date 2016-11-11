@@ -20,7 +20,7 @@ var tillerNamespace = "kube-system"
 type Environment struct {
 	DryRun             bool
 	ChartLoader        ChartLoader
-	HelmClient         *helm.Client
+	HelmClient         helm.Interface
 	HelmRepositoryName string
 	LandscapeName      string
 	LandscapeDir       string
