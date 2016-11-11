@@ -9,8 +9,8 @@ import (
 )
 
 var testEnvironment = &Environment{
-	Name:               "test",
 	Namespace:          "landscaper-testing",
+	LandscapeName:      "testing",
 	LandscapeDir:       "../../test",
 	HelmRepositoryName: "eet",
 }
