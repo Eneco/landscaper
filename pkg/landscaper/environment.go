@@ -48,7 +48,12 @@ func (e *Environment) Teardown() {
 
 // ReleaseName takes a component name, and uses info in the environment to return a release name
 func (e *Environment) ReleaseName(componentName string) string {
-	return fmt.Sprintf("%s-%s", strings.ToLower(string(e.LandscapeName[0])), strings.ToLower(componentName))
+	return e.ReleaseNamePrefix() + strings.ToLower(componentName)
+}
+
+// ReleaseNamePrefix returns the release name prefix derived from env.LandscapeName
+func (e *Environment) ReleaseNamePrefix() string {
+	return fmt.Sprintf("%s-", strings.ToLower(string(e.LandscapeName[0])))
 }
 
 // setupConnection creates and returns tiller port forwarding tunnel

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"strings"
 
 	"gopkg.in/yaml.v2"
 	"k8s.io/helm/pkg/chartutil"
@@ -57,13 +56,13 @@ func (cp *componentProvider) Current() ([]*Component, error) {
 	}
 
 	for _, release := range helmReleases {
-		name := strings.TrimPrefix(release.Name, fmt.Sprintf("%s-", strings.ToLower(string(cp.env.LandscapeName[0]))))
+		name := cp.env.ReleaseName(release.Name)
 
 		cmp, err := newComponentFromHelmRelease(name, release)
+		if err == ErrNonLandscapeComponent {
+			continue
+		}
 		if err != nil {
-			if err == ErrNonLandscapeComponent {
-				continue
-			}
 			return components, err
 		}
 
@@ -148,7 +147,7 @@ func (cp *componentProvider) coalesceComponent(cmp *Component) error {
 
 // listHelmReleases lists all releases that are prefixed with env.LandscapeName
 func (cp *componentProvider) listHelmReleases() ([]*release.Release, error) {
-	filter := helm.ReleaseListFilter(fmt.Sprintf("^%s-.+", strings.ToLower(string(cp.env.LandscapeName[0]))))
+	filter := helm.ReleaseListFilter(fmt.Sprintf("^%s.+", cp.env.ReleaseNamePrefix()))
 	res, err := cp.env.HelmClient.ListReleases(filter)
 	if err != nil {
 		return nil, err
