@@ -24,8 +24,7 @@ type executor struct {
 
 // NewExecutor is a factory method to create a new Executor
 func NewExecutor(env *Environment) (Executor, error) {
-	err := env.EnsureHelmClient()
-	if err != nil {
+	if err := env.EnsureHelmClient(); err != nil {
 		return nil, err
 	}
 
@@ -45,22 +44,19 @@ func (e *executor) Apply(desired, current []*Component) error {
 	}).Info("apply desired state")
 
 	for _, cmp := range delete {
-		err := e.DeleteComponent(cmp)
-		if err != nil {
+		if err := e.DeleteComponent(cmp); err != nil {
 			return err
 		}
 	}
 
 	for _, cmp := range create {
-		err := e.CreateComponent(cmp)
-		if err != nil {
+		if err := e.CreateComponent(cmp); err != nil {
 			return err
 		}
 	}
 
 	for _, cmp := range update {
-		err := e.UpdateComponent(cmp)
-		if err != nil {
+		if err := e.UpdateComponent(cmp); err != nil {
 			return err
 		}
 	}
@@ -165,9 +161,7 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 	return nil
 }
 
-func diff(desired, current []*Component) ([]*Component, []*Component, []*Component) {
-	create, update, delete := []*Component{}, []*Component{}, []*Component{}
-
+func diff(desired, current []*Component) (create, update, delete []*Component) {
 	desiredMap := make(map[string]*Component)
 	currentMap := make(map[string]*Component)
 
@@ -176,7 +170,6 @@ func diff(desired, current []*Component) ([]*Component, []*Component, []*Compone
 	}
 	for _, c := range current {
 		currentMap[c.Name] = c
-
 	}
 
 	for name, desiredCmp := range desiredMap {

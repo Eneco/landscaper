@@ -35,11 +35,7 @@ func NewComponent(name string, release *Release, cfg Configuration, secrets *Sec
 
 // Validate the component on required fields and correct values
 func (c *Component) Validate() error {
-	if err := validator.Validate(c); err != nil {
-		return err
-	}
-
-	return nil
+	return validator.Validate(c)
 }
 
 // Equals checks if this component's values are equal to another
