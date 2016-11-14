@@ -153,6 +153,11 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 		"dryrun":  e.env.DryRun,
 	}).Info("delete component")
 
+    // TODO: work around https://github.com/kubernetes/helm/pull/1527 as long as needed	
+	if (e.env.DryRun) {
+	    return nil
+	}
+
 	_, err := e.env.HelmClient.DeleteRelease(
 		releaseName,
 		helm.DeletePurge(true),
