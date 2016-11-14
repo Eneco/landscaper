@@ -68,7 +68,6 @@ func (e *executor) Apply(desired, current []*Component) error {
 // CreateComponent creates the given Component
 func (e *executor) CreateComponent(cmp *Component) error {
 	chartRef := fmt.Sprintf("%s/%s", e.env.HelmRepositoryName, cmp.Release.Chart)
-	releaseName := e.env.ReleaseName(cmp.Name)
 
 	// We need to ensure the chart is available on the local system. LoadChart will ensure
 	// this is the case by downloading the chart if it is not there yet
@@ -83,7 +82,7 @@ func (e *executor) CreateComponent(cmp *Component) error {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"release":   releaseName,
+		"release":   cmp.Name,
 		"chartRef":  chartRef,
 		"chartPath": chartPath,
 		"values":    cmp.Configuration,
@@ -94,7 +93,7 @@ func (e *executor) CreateComponent(cmp *Component) error {
 		chartPath,
 		e.env.Namespace,
 		helm.ValueOverrides([]byte(rawValues)),
-		helm.ReleaseName(releaseName),
+		helm.ReleaseName(cmp.Name),
 		helm.InstallDryRun(e.env.DryRun),
 		helm.InstallReuseName(true),
 	)
@@ -107,7 +106,6 @@ func (e *executor) CreateComponent(cmp *Component) error {
 
 // UpdateComponent updates the given Component
 func (e *executor) UpdateComponent(cmp *Component) error {
-	releaseName := e.env.ReleaseName(cmp.Name)
 	chartRef := fmt.Sprintf("%s/%s", e.env.HelmRepositoryName, cmp.Release.Chart)
 
 	// We need to ensure the chart is available on the local system. LoadChart will ensure
@@ -123,7 +121,7 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"release":   releaseName,
+		"release":   cmp.Name,
 		"chartRef":  chartRef,
 		"chartPath": chartPath,
 		"values":    cmp.Configuration,
@@ -131,7 +129,7 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 	}).Info("update component")
 
 	_, err = e.env.HelmClient.UpdateRelease(
-		releaseName,
+		cmp.Name,
 		chartPath,
 		helm.UpdateValueOverrides([]byte(rawValues)),
 		helm.UpgradeDryRun(e.env.DryRun),
@@ -145,21 +143,19 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 
 // DeleteComponent removes the given Component
 func (e *executor) DeleteComponent(cmp *Component) error {
-	releaseName := e.env.ReleaseName(cmp.Name)
-
 	logrus.WithFields(logrus.Fields{
-		"release": releaseName,
+		"release": cmp.Name,
 		"values":  cmp.Configuration,
 		"dryrun":  e.env.DryRun,
 	}).Info("delete component")
 
-    // TODO: work around https://github.com/kubernetes/helm/pull/1527 as long as needed	
-	if (e.env.DryRun) {
-	    return nil
+	// TODO: work around https://github.com/kubernetes/helm/pull/1527 as long as needed
+	if e.env.DryRun {
+		return nil
 	}
 
 	_, err := e.env.HelmClient.DeleteRelease(
-		releaseName,
+		cmp.Name,
 		helm.DeletePurge(true),
 		helm.DeleteDryRun(e.env.DryRun),
 	)

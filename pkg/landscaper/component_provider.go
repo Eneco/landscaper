@@ -56,9 +56,7 @@ func (cp *componentProvider) Current() ([]*Component, error) {
 	}
 
 	for _, release := range helmReleases {
-		name := cp.env.ReleaseName(release.Name)
-
-		cmp, err := newComponentFromHelmRelease(name, release)
+		cmp, err := newComponentFromHelmRelease(release)
 		if err == ErrNonLandscapeComponent {
 			continue
 		}
@@ -96,6 +94,8 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 			return components, err
 		}
 
+		cmp.Name = cp.env.ReleaseName(cmp.Name)
+
 		components = append(components, cmp)
 	}
 
@@ -110,17 +110,6 @@ func newComponentFromYAML(content []byte) (*Component, error) {
 	}
 
 	return NewComponent(cmp.Name, cmp.Release, cmp.Configuration, cmp.Secrets), nil
-}
-
-// readComponentFromCluster reads the release, configuration and secrets from a k8s cluster for a specific component name
-func (cp *componentProvider) readComponentFromCluster(name string, env *Environment) (*Component, error) {
-	// Retrieve the raw Helm release from the tiller
-	release, err := cp.getHelmRelease(env.ReleaseName(name))
-	if err != nil {
-		return nil, err
-	}
-
-	return newComponentFromHelmRelease(name, release)
 }
 
 // coalesceComponent takes a component, loads the chart and coalesces the configuration with the default values
@@ -167,7 +156,7 @@ func (cp *componentProvider) getHelmRelease(releaseName string) (*release.Releas
 }
 
 // newComponentFromHelmRelease creates a Component from a Release
-func newComponentFromHelmRelease(name string, release *release.Release) (*Component, error) {
+func newComponentFromHelmRelease(release *release.Release) (*Component, error) {
 	cfg, err := getReleaseConfiguration(release)
 	if err != nil {
 		return nil, err
@@ -181,7 +170,7 @@ func newComponentFromHelmRelease(name string, release *release.Release) (*Compon
 	delete(cfg, metadataKey)
 
 	return NewComponent(
-		name,
+		release.Name,
 		&Release{
 			Chart:   fmt.Sprintf("%s:%s", release.Chart.Metadata.Name, release.Chart.Metadata.Version),
 			Version: metadata[releaseVersionKey].(string),
