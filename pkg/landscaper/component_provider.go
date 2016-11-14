@@ -94,6 +94,7 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 			return components, err
 		}
 
+		cmp.Configuration["Name"] = cmp.Name
 		cmp.Name = cp.env.ReleaseName(cmp.Name)
 
 		components = append(components, cmp)

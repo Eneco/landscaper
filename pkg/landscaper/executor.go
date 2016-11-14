@@ -36,13 +36,11 @@ func (e *executor) Apply(desired, current []*Component) error {
 	create, update, delete := diff(desired, current)
 
 	logrus.WithFields(logrus.Fields{
-		"desired": desired,
-		"current": current,
-		"create":  create,
-		"update":  update,
-		"delete":  delete,
-		"dryrun":  e.env.DryRun,
-	}).Info("apply desired state")
+		"create": create,
+		"update": update,
+		"delete": delete,
+		"dryrun": e.env.DryRun,
+	}).Info("proposed changes")
 
 	for _, cmp := range delete {
 		if err := e.DeleteComponent(cmp); err != nil {
