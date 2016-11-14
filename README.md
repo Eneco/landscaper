@@ -16,36 +16,30 @@
 # Rough brain dump of required entities
 ## Configuration
 - Read()
-- Compare(Configuration) (Diff) 
 
 ## Secrets
 - Read()
-- Compare(Secrets) (Diff)
 
 ## Release
 - Chart
 - Version
-- Compare(Release) (Diff)
 
 ## Component
 - Name
 - Release
 - Configuration
 - Secrets
-- Compare(Component) (Diff)
+- Equals(Component) bool
 
 ## Executor
 - Apply(desired []Component, current []Component)
+- CreateComponent(Component)
+- UpdateComponent(Component)
+- DeleteComponent(Component)
 
 ## ComponentProvider
 - Current() []Component
 - Desired() []Component
-- Create(Component)
-- Update(Component)
-- Delete(Component)
 
-## ConfigurationProvider
-- Read() []Configuration
-	
 ## SecretProvider
 - Read() []Secret

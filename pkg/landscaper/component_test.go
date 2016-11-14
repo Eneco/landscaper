@@ -1,0 +1,55 @@
+package landscaper
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func makeTestComp() *Component {
+	return NewComponent("name", &Release{"cha", "1.1.1"}, map[string]interface{}{"config": "awesome"}, &Secrets{"09F911029D74E35BD84156C5635688C0"})
+}
+
+func TestComponentNew(t *testing.T) {
+	cAct := NewComponent("name", &Release{"cha", "1.1.1"}, map[string]interface{}{"config": "awesome"}, &Secrets{"09F911029D74E35BD84156C5635688C0"})
+
+	cExp := &Component{Name: "name", Release: &Release{"cha", "1.1.1"}, Configuration: map[string]interface{}{"config": "awesome"}, Secrets: &Secrets{"09F911029D74E35BD84156C5635688C0"}}
+	cExp.Configuration["Name"] = "name"
+	cExp.Configuration[metadataKey] = map[string]interface{}{
+		releaseVersionKey: "1.1.1",
+		landscaperTagKey:  true,
+	}
+
+	assert.Equal(t, cExp, cAct)
+
+}
+
+func TestComponentValidate(t *testing.T) {
+	c := makeTestComp()
+	assert.NoError(t, c.Validate())
+
+	// release can't be zero
+	c = makeTestComp()
+	c.Release = nil
+	assert.Error(t, c.Validate())
+
+	// name can't be longer than 12
+	c = makeTestComp()
+	c.Name = "way too long way too long way too long way too long way too long way too long"
+	assert.Error(t, c.Validate())
+
+	// c.Release.Chart cannot be empty
+	c = makeTestComp()
+	c.Release.Chart = ""
+	assert.Error(t, c.Validate())
+
+}
+
+func TestComponentEquals(t *testing.T) {
+	c0 := NewComponent("name", &Release{"cha", "1.1.1"}, map[string]interface{}{"config": "awesome"}, &Secrets{"09F911029D74E35BD84156C5635688C0"})
+	c1 := NewComponent("name", &Release{"cha", "1.1.1"}, map[string]interface{}{"config": "awesome"}, &Secrets{"09F911029D74E35BD84156C5635688C0"})
+	require.True(t, c0.Equals(c1))
+	c1.Name = "other"
+	require.False(t, c0.Equals(c1))
+}
