@@ -16,8 +16,8 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "landscaper",
 	Short: "A landscape desired state applicator",
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		_ = env.EnsureHelmClient()
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		return env.EnsureHelmClient()
 	},
 	// @TODO: figure out if the following is needed?!
 	// PersistentPostRun: func(cmd *cobra.Command, args []string) {
