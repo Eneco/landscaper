@@ -4,7 +4,9 @@ import (
 	"os"
 
 	"github.com/eneco/landscaper/pkg/landscaper"
+	"github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
+	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
 var env = &landscaper.Environment{}
@@ -27,6 +29,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	_ = rootCmd.PersistentFlags()
+	logrus.SetFormatter(&prefixed.TextFormatter{})
 }
 
 func main() {

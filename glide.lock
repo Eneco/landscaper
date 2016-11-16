@@ -198,6 +198,8 @@ imports:
   subpackages:
   - codec
   - codec/codecgen
+- name: github.com/x-cray/logrus-prefixed-formatter
+  version: 1d837bc239d1686e1ae281c4629495bd0e7da8d5
 - name: golang.org/x/crypto
   version: 1f22c0103821b9390939b6776727195525381532
   subpackages:
