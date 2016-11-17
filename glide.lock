@@ -1,11 +1,15 @@
-hash: 4e983f65dcdeeb090e2a80cf21bb4d343de6046257b0a4d5b027bf0c4c77ca10
-updated: 2016-11-09T14:09:48.12722842+01:00
+hash: 6fbb0c9a01789547ce70f42332b5afab299eb59ea86f54c9f7041a718484f7d0
+updated: 2016-11-17T10:34:36.814756046+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
   subpackages:
   - compute/metadata
   - internal
+- name: github.com/Azure/go-ansiterm
+  version: 70b2c90b260171e829f1ebd7c17f600c11858dbe
+  subpackages:
+  - winterm
 - name: github.com/blang/semver
   version: 31b736133b98f26d5e078ec9eb591666edfd091f
 - name: github.com/coreos/go-oidc
@@ -179,14 +183,22 @@ imports:
   version: bbcb9da2d746f8bdbd6a936686a0a6067ada0ec5
 - name: github.com/imdario/mergo
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
 - name: github.com/jonboulle/clockwork
   version: 72f9bd7c4e0c2a40055ab3d0f09654f730cce982
 - name: github.com/juju/ratelimit
   version: 77ed1c8a01217656d2080ad51981f6e99adaa177
 - name: github.com/Masterminds/semver
   version: 808ed7761c233af2de3f9729a041d68c62527f3a
+- name: github.com/mgutz/ansi
+  version: c286dcecd19ff979eeb73ea444e479b903f2cfcb
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
 - name: github.com/Sirupsen/logrus
   version: d26492970760ca5d33129d2d799e34be5c4782eb
 - name: github.com/spf13/cobra
@@ -234,6 +246,22 @@ imports:
   - internal
   - jws
   - jwt
+- name: golang.org/x/sys
+  version: 9c60d1c508f5134d1ca726b4641db998f2523357
+  subpackages:
+  - unix
+- name: google.golang.org/appengine
+  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
+  subpackages:
+  - internal
+  - internal/app_identity
+  - internal/base
+  - internal/datastore
+  - internal/log
+  - internal/modules
+  - internal/remote_api
+  - internal/urlfetch
+  - urlfetch
 - name: google.golang.org/grpc
   version: 0032a855ba5c8a3c8e0d71c2deef354b70af1584
   subpackages:
@@ -320,7 +348,7 @@ imports:
   - 1.4/tools/metrics
   - 1.4/transport
 - name: k8s.io/helm
-  version: f8037c83c647b56d9ef42d0d5254e5fc563e3048
+  version: 51bdad42756dfaf3234f53ef3d3cb6bcd94144c2
   subpackages:
   - cmd/helm/downloader
   - cmd/helm/helmpath
@@ -337,7 +365,7 @@ imports:
   - pkg/repo
   - pkg/version
 - name: k8s.io/kubernetes
-  version: 39df7e7ef8b5087b34ff7351f1b7fc1bcc128716
+  version: fd8fac83034df346529c6e11aabceea2db48d663
   subpackages:
   - federation/apis/federation
   - federation/apis/federation/install
@@ -505,10 +533,6 @@ imports:
   - third_party/forked/golang/reflect
   - third_party/forked/golang/template
 testImports:
-- name: github.com/pmezard/go-difflib
-  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
-  subpackages:
-  - difflib
 - name: github.com/stretchr/testify
   version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
   subpackages:

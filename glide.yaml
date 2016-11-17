@@ -8,7 +8,7 @@ import:
 - package: k8s.io/client-go
   version: v1.4.0
 - package: k8s.io/helm
-  version: ^2.0.0-rc.2
+  version: ^2.0.0
   subpackages:
   - pkg/chartutil
   - pkg/helm
