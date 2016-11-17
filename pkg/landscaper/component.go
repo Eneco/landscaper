@@ -1,6 +1,7 @@
 package landscaper
 
 import (
+	"fmt"
 	"reflect"
 
 	"gopkg.in/validator.v2"
@@ -39,4 +40,26 @@ func (c *Component) Validate() error {
 // Equals checks if this component's values are equal to another
 func (c *Component) Equals(other *Component) bool {
 	return reflect.DeepEqual(c, other)
+}
+
+// validateComponents validates the individual components as well as duplicate names in the total collection
+func validateComponents(cs []*Component) error {
+	// are the individual components okay?
+	for _, c := range cs {
+		if err := c.Validate(); err != nil {
+			return err
+		}
+	}
+
+	// is the collection as a whole okay: no dup names?
+	cMap := make(map[string]*Component)
+
+	for _, c := range cs {
+		if _, ok := cMap[c.Name]; ok {
+			return fmt.Errorf("duplicate component name `%s`", c.Name)
+		}
+		cMap[c.Name] = c
+	}
+
+	return nil
 }

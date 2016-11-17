@@ -92,8 +92,10 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 			continue
 		}
 
+		filename := filepath.Join(cp.env.LandscapeDir, file.Name())
+
 		logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir, "file": file.Name()}).Debug("Read desired state from file")
-		cmp, err := readComponentFromYAMLFilePath(filepath.Join(cp.env.LandscapeDir, file.Name()))
+		cmp, err := readComponentFromYAMLFilePath(filename)
 		if err != nil {
 			return components, err
 		}
@@ -106,7 +108,15 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 		cmp.Configuration["Name"] = cmp.Name
 		cmp.Name = cp.env.ReleaseName(cmp.Name)
 
+		if err := cmp.Validate(); err != nil {
+			return nil, fmt.Errorf("failed to validate `%s`: %s", filename, err)
+		}
+
 		components = append(components, cmp)
+	}
+
+	if err := validateComponents(components); err != nil {
+		return nil, err
 	}
 
 	logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir, "components": len(components)}).Debug("Desired state has been read")
