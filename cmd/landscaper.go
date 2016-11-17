@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"time"
 
 	"github.com/eneco/landscaper/pkg/landscaper"
 	"github.com/Sirupsen/logrus"
@@ -32,7 +33,9 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	_ = rootCmd.PersistentFlags()
-	logrus.SetFormatter(&prefixed.TextFormatter{})
+	p := &prefixed.TextFormatter{}
+	p.TimestampFormat = time.RFC3339
+	logrus.SetFormatter(p)
 }
 
 func main() {
