@@ -34,7 +34,8 @@ type ComponentProvider interface {
 }
 
 type componentProvider struct {
-	env *Environment
+	env             *Environment
+	secretsProvider *secretsProvider
 }
 
 // NewComponentProvider is a factory method to create a new ComponentProvider
@@ -201,7 +202,7 @@ func newComponentFromHelmRelease(release *release.Release) (*Component, error) {
 			Version: metadata[releaseVersionKey].(string),
 		},
 		cfg,
-		nil, // TODO: secrets
+		Secrets{},
 	), nil
 }
 

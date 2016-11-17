@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
+	"k8s.io/client-go/1.4/tools/clientcmd"
 	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/kube"
 	helmversion "k8s.io/helm/pkg/version"
@@ -50,6 +51,27 @@ func (e *Environment) EnsureHelmClient() error {
 		if !compatible {
 			logrus.Warn("Helm and Tiller report incompatible version numbers")
 		}
+	}
+
+	return nil
+}
+
+// EnsureKubeClient makes sure the environment has a KubeClient initialized
+func (e *Environment) EnsureKubeClient() error {
+	if e.HelmClient == nil {
+		clientcmd.NewDefaultClientConfig(clientcmdapi.Config{})
+		// logrus.WithFields(logrus.Fields{"kubernetesClientVersion": kubernetes.Version}).Info("Setup Kubernetes Client")
+		// // creates the clientset
+		// clientset, err := kubernetes.GetConfig()
+		// if err != nil {
+		// 	return err
+		// }
+
+		// tillerVersion, err := e.HelmClient.GetVersion()
+		// if err != nil {
+		// 	return err
+		// }
+		// logrus.WithFields(logrus.Fields{"tillerVersion": tillerVersion.Version.SemVer}).Info("Connected to Tiller")
 	}
 
 	return nil
