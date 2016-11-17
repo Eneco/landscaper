@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/Sirupsen/logrus"
+
 	"gopkg.in/yaml.v2"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/helm"
@@ -49,6 +51,8 @@ func NewComponentProvider(env *Environment) (ComponentProvider, error) {
 func (cp *componentProvider) Current() ([]*Component, error) {
 	components := []*Component{}
 
+	logrus.Info("Obtain current state Helm Releases (Components) from Tiller")
+
 	// Retrieve the raw Helm release from the tiller
 	helmReleases, err := cp.listHelmReleases()
 	if err != nil {
@@ -67,12 +71,16 @@ func (cp *componentProvider) Current() ([]*Component, error) {
 		components = append(components, cmp)
 	}
 
+	logrus.WithFields(logrus.Fields{"totalReleases": len(helmReleases), "landscapedComponents": len(components)}).Info("Retrieved Releases (Components)")
+
 	return components, nil
 }
 
 // Desired returns all desired components according to their descriptions
 func (cp *componentProvider) Desired() ([]*Component, error) {
 	components := []*Component{}
+
+	logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir}).Info("Obtain desired state from directory")
 
 	files, err := ioutil.ReadDir(cp.env.LandscapeDir)
 	if err != nil {
@@ -84,6 +92,7 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 			continue
 		}
 
+		logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir, "file": file.Name()}).Debug("Read desired state from file")
 		cmp, err := readComponentFromYAMLFilePath(filepath.Join(cp.env.LandscapeDir, file.Name()))
 		if err != nil {
 			return components, err
@@ -100,6 +109,8 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 		components = append(components, cmp)
 	}
 
+	logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir, "components": len(components)}).Debug("Desired state has been read")
+
 	return components, nil
 }
 
@@ -115,6 +126,7 @@ func newComponentFromYAML(content []byte) (*Component, error) {
 
 // coalesceComponent takes a component, loads the chart and coalesces the configuration with the default values
 func (cp *componentProvider) coalesceComponent(cmp *Component) error {
+	logrus.WithFields(logrus.Fields{"chart": cmp.Release.Chart}).Debug("coalesceComponent")
 	ch, _, err := cp.env.ChartLoader.Load(fmt.Sprintf("%s/%s", cp.env.HelmRepositoryName, cmp.Release.Chart))
 	if err != nil {
 		return err
@@ -137,6 +149,7 @@ func (cp *componentProvider) coalesceComponent(cmp *Component) error {
 
 // listHelmReleases lists all releases that are prefixed with env.LandscapeName
 func (cp *componentProvider) listHelmReleases() ([]*release.Release, error) {
+	logrus.Debug("listHelmReleases")
 	filter := helm.ReleaseListFilter(fmt.Sprintf("^%s.+", cp.env.ReleaseNamePrefix()))
 	res, err := cp.env.HelmClient.ListReleases(filter)
 	if err != nil {
@@ -148,6 +161,7 @@ func (cp *componentProvider) listHelmReleases() ([]*release.Release, error) {
 
 // getHelmRelease gets a Release
 func (cp *componentProvider) getHelmRelease(releaseName string) (*release.Release, error) {
+	logrus.WithFields(logrus.Fields{"releaseName": releaseName}).Debug("getHelmRelease")
 	res, err := cp.env.HelmClient.ReleaseContent(releaseName)
 	if err != nil {
 		return nil, err

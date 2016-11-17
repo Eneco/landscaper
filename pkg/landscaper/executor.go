@@ -1,10 +1,12 @@
 package landscaper
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/pmezard/go-difflib/difflib"
 	"google.golang.org/grpc"
 	"k8s.io/helm/pkg/helm"
 )
@@ -35,31 +37,34 @@ func NewExecutor(env *Environment) (Executor, error) {
 func (e *executor) Apply(desired, current []*Component) error {
 	create, update, delete := diff(desired, current)
 
-	logrus.WithFields(logrus.Fields{
-		"create": create,
-		"update": update,
-		"delete": delete,
-		"dryrun": e.env.DryRun,
-	}).Info("proposed changes")
+	logrus.WithFields(logrus.Fields{"create": len(create), "update": len(update), "delete": len(delete)}).Info("Apply desired state")
+
+	if err := logDifferences(current, create, update, delete, logrus.Infof); err != nil {
+		return err
+	}
 
 	for _, cmp := range delete {
 		if err := e.DeleteComponent(cmp); err != nil {
+			logrus.Error("DeleteComponent failed", err)
 			return err
 		}
 	}
 
 	for _, cmp := range create {
 		if err := e.CreateComponent(cmp); err != nil {
+			logrus.Error("CreateComponent failed", err)
 			return err
 		}
 	}
 
 	for _, cmp := range update {
 		if err := e.UpdateComponent(cmp); err != nil {
+			logrus.Error("UpdateComponent failed", err)
 			return err
 		}
 	}
 
+	logrus.WithFields(logrus.Fields{"created": len(create), "updated": len(update), "deleted": len(delete)}).Info("Applied desired state sucessfully")
 	return nil
 }
 
@@ -85,7 +90,7 @@ func (e *executor) CreateComponent(cmp *Component) error {
 		"chartPath": chartPath,
 		"values":    cmp.Configuration,
 		"dryrun":    e.env.DryRun,
-	}).Info("create component")
+	}).Debug("create component")
 
 	_, err = e.env.HelmClient.InstallRelease(
 		chartPath,
@@ -124,7 +129,7 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 		"chartPath": chartPath,
 		"values":    cmp.Configuration,
 		"dryrun":    e.env.DryRun,
-	}).Info("update component")
+	}).Debug("update component")
 
 	_, err = e.env.HelmClient.UpdateRelease(
 		cmp.Name,
@@ -145,7 +150,7 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 		"release": cmp.Name,
 		"values":  cmp.Configuration,
 		"dryrun":  e.env.DryRun,
-	}).Info("delete component")
+	}).Debug("delete component")
 
 	// TODO: work around https://github.com/kubernetes/helm/pull/1527 as long as needed
 	if e.env.DryRun {
@@ -193,4 +198,70 @@ func diff(desired, current []*Component) (create, update, delete []*Component) {
 	}
 
 	return create, update, delete
+}
+
+// componentDiffText returns a diff as text. current and desired can be nil and indicate non-existence (e.g. current nil and desired non-nil means: create)
+func componentDiffText(current, desired *Component) (string, error) {
+	cText, dText := []string{}, []string{}
+	cName, dName := "<none>", "<none>"
+	if current != nil {
+		cs, err := json.MarshalIndent(current, "", "  ")
+		if err != nil {
+			return "", err
+		}
+		cText = difflib.SplitLines(string(cs))
+		cName = current.Name
+	}
+	if desired != nil {
+		ds, err := json.MarshalIndent(desired, "", "  ")
+		if err != nil {
+			return "", err
+		}
+		dText = difflib.SplitLines(string(ds))
+		dName = desired.Name
+	}
+
+	return difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
+		A:        cText,
+		FromFile: "Current " + cName,
+		B:        dText,
+		ToFile:   "Desired " + dName,
+		Context:  3,
+	})
+}
+
+// logDifferences logs the Create, Update and Delete w.r.t. current to logf
+func logDifferences(current, creates, updates, deletes []*Component, logf func(format string, args ...interface{})) error {
+	currentMap := make(map[string]*Component)
+	for _, c := range current {
+		currentMap[c.Name] = c
+	}
+
+	log := func(action string, current, desired *Component) error {
+		diff, err := componentDiffText(current, desired)
+		if err != nil {
+			return err
+		}
+		logf("%s\n%s", action, diff)
+		return nil
+	}
+
+	for _, d := range creates {
+		if err := log("Create: "+d.Name, nil, d); err != nil {
+			return err
+		}
+	}
+
+	for _, d := range updates {
+		c := currentMap[d.Name]
+		if err := log("Update: "+d.Name, c, d); err != nil {
+			return err
+		}
+	}
+
+	for _, d := range deletes {
+		logf("Delete: %s", d.Name)
+	}
+
+	return nil
 }

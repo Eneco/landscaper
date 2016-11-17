@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/eneco/landscaper/pkg/landscaper"
+	"github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -11,6 +12,8 @@ var addCmd = &cobra.Command{
 	Use:   "apply",
 	Short: "Makes the current landscape match the desired landscape",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		logrus.WithFields(logrus.Fields{"namespace": env.Namespace, "landscapeName": env.LandscapeName, "repo": env.HelmRepositoryName, "dir": env.LandscapeDir, "dryRun": env.DryRun}).Info("Apply landscape desired state")
+
 		cp, err := landscaper.NewComponentProvider(env)
 		if err != nil {
 			return err
@@ -34,6 +37,10 @@ var addCmd = &cobra.Command{
 		err = exec.Apply(desired, current)
 		if err != nil {
 			return err
+		}
+
+		if env.DryRun {
+			logrus.Warn("Since dry-run is enabled, no actual actions have been performed")
 		}
 
 		return nil
