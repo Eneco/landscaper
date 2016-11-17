@@ -12,7 +12,7 @@ var addCmd = &cobra.Command{
 	Use:   "apply",
 	Short: "Makes the current landscape match the desired landscape",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		logrus.WithFields(logrus.Fields{"namespace": env.Namespace, "landscapeName": env.LandscapeName, "repo": env.HelmRepositoryName, "dir": env.LandscapeDir, "dryRun": env.DryRun}).Info("Apply landscape desired state")
+		logrus.WithFields(logrus.Fields{"version": landscaper.GetVersion(), "namespace": env.Namespace, "landscapeName": env.LandscapeName, "repo": env.HelmRepositoryName, "dir": env.LandscapeDir, "dryRun": env.DryRun}).Info("Apply landscape desired state")
 
 		cp, err := landscaper.NewComponentProvider(env)
 		if err != nil {
