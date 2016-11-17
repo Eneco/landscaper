@@ -16,26 +16,30 @@ var addCmd = &cobra.Command{
 
 		cp, err := landscaper.NewComponentProvider(env)
 		if err != nil {
+			logrus.WithFields(logrus.Fields{"error": err}).Error("NewComponentProvider failed")
 			return err
 		}
 
 		exec, err := landscaper.NewExecutor(env)
 		if err != nil {
+			logrus.WithFields(logrus.Fields{"error": err}).Error("NewExecutor failed")
 			return err
 		}
 
 		desired, err := cp.Desired()
 		if err != nil {
+			logrus.WithFields(logrus.Fields{"error": err}).Error("Loading desired state failed")
 			return err
 		}
 
 		current, err := cp.Current()
 		if err != nil {
+			logrus.WithFields(logrus.Fields{"error": err}).Error("Loading current state failed")
 			return err
 		}
 
-		err = exec.Apply(desired, current)
-		if err != nil {
+		if err = exec.Apply(desired, current); err != nil {
+			logrus.WithFields(logrus.Fields{"error": err}).Error("Applying desired state failed")
 			return err
 		}
 
