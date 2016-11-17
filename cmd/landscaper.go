@@ -25,6 +25,7 @@ var rootCmd = &cobra.Command{
 		}
 		return env.EnsureHelmClient()
 	},
+	SilenceUsage: true,
 	// @TODO: figure out if the following is needed?!
 	// PersistentPostRun: func(cmd *cobra.Command, args []string) {
 	// 	env.Teardown()
