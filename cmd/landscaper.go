@@ -23,15 +23,9 @@ var rootCmd = &cobra.Command{
 		if env.Verbose {
 			logrus.SetLevel(logrus.DebugLevel)
 		}
-		ver := landscaper.GetVersion()
-		logrus.Infof("This is landscaper v%s (%s; %s)", ver.SemVer, ver.GitTag, ver.GitCommit)
-		return env.EnsureHelmClient()
+		return nil
 	},
 	SilenceUsage: true,
-	// @TODO: figure out if the following is needed?!
-	// PersistentPostRun: func(cmd *cobra.Command, args []string) {
-	// 	env.Teardown()
-	// },
 }
 
 func init() {
