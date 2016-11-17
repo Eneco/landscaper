@@ -45,7 +45,11 @@ func (e *Environment) EnsureHelmClient() error {
 		if err != nil {
 			return err
 		}
-		logrus.WithFields(logrus.Fields{"tillerVersion": tillerVersion.Version.SemVer}).Info("Connected to Tiller")
+		compatible := helmversion.IsCompatible(helmversion.Version, tillerVersion.Version.SemVer)
+		logrus.WithFields(logrus.Fields{"tillerVersion": tillerVersion.Version.SemVer, "clientServerCompatible": compatible}).Info("Connected to Tiller")
+		if !compatible {
+			logrus.Warn("Helm and Tiller report incompatible version numbers")
+		}
 	}
 
 	return nil
