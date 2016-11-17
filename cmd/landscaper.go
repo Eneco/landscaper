@@ -19,6 +19,9 @@ var rootCmd = &cobra.Command{
 	Use:   "landscaper",
 	Short: "A landscape desired state applicator",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		if env.Verbose {
+			logrus.SetLevel(logrus.DebugLevel)
+		}
 		return env.EnsureHelmClient()
 	},
 	// @TODO: figure out if the following is needed?!
