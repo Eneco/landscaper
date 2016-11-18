@@ -16,9 +16,6 @@ import (
 )
 
 var (
-	metadataKey       = "_metadata"
-	releaseVersionKey = "releaseVersion"
-	landscaperTagKey  = "landscaperControlled"
 
 	// ErrNonLandscapeComponent is an error to indicate release is not controlled by landscaper
 	ErrNonLandscapeComponent = errors.New("release is not controlled by landscaper")
@@ -99,18 +96,21 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 		if err != nil {
 			return components, err
 		}
+		cmp.normalizeFromFile(cp.env)
 
 		err = cp.coalesceComponent(cmp)
 		if err != nil {
 			return components, err
 		}
 
-		cmp.Configuration["Name"] = cmp.Name
-		cmp.Name = cp.env.ReleaseName(cmp.Name)
+		m, _ := getReleaseMetadata(cmp.Configuration)
+		cmp.Configuration[metadataKey] = m
 
 		if err := cmp.Validate(); err != nil {
 			return nil, fmt.Errorf("failed to validate `%s`: %s", filename, err)
 		}
+
+		logrus.Debugf("desired %#v", *cmp)
 
 		components = append(components, cmp)
 	}
@@ -137,7 +137,7 @@ func newComponentFromYAML(content []byte) (*Component, error) {
 // coalesceComponent takes a component, loads the chart and coalesces the configuration with the default values
 func (cp *componentProvider) coalesceComponent(cmp *Component) error {
 	logrus.WithFields(logrus.Fields{"chart": cmp.Release.Chart}).Debug("coalesceComponent")
-	ch, _, err := cp.env.ChartLoader.Load(fmt.Sprintf("%s/%s", cp.env.HelmRepositoryName, cmp.Release.Chart))
+	ch, _, err := cp.env.ChartLoader.Load(cmp.Release.fullChartRef())
 	if err != nil {
 		return err
 	}
@@ -192,17 +192,22 @@ func newComponentFromHelmRelease(release *release.Release) (*Component, error) {
 		return nil, err
 	}
 
-	delete(cfg, metadataKey)
+	//delete(cfg, metadataKey)
 
-	return NewComponent(
+	cmp := NewComponent(
 		release.Name,
 		&Release{
 			Chart:   fmt.Sprintf("%s:%s", release.Chart.Metadata.Name, release.Chart.Metadata.Version),
-			Version: metadata[releaseVersionKey].(string),
+			Version: metadata.ReleaseVersion,
 		},
 		cfg,
 		nil, // TODO: secrets
-	), nil
+	)
+
+	cmp.Configuration[metadataKey] = metadata
+	cmp.normalizeFromHelm(metadata.ChartRepository)
+
+	return cmp, nil
 }
 
 // readComponentFromYAMLFilePath reads a yaml file from disk and returns an initialized Component
@@ -226,20 +231,20 @@ func getReleaseConfiguration(helmRelease *release.Release) (Configuration, error
 }
 
 // getReleaseMetadata extracts landscaper's metadata from a Configuration
-func getReleaseMetadata(cfg Configuration) (map[string]interface{}, error) {
+func getReleaseMetadata(cfg Configuration) (*Metadata, error) {
 	val, ok := cfg[metadataKey]
 	if !ok {
-		return make(map[string]interface{}), ErrNonLandscapeComponent
+		return nil, ErrNonLandscapeComponent
 	}
 
 	metadata := val.(map[string]interface{})
 
-	if _, ok := metadata[releaseVersionKey]; !ok {
+	if _, ok := metadata[metaReleaseVersion]; !ok {
 		return nil, ErrInvalidLandscapeMetadata
 	}
-	if _, ok := metadata[landscaperTagKey]; !ok {
+	if _, ok := metadata[metaChartRepo]; !ok {
 		return nil, ErrInvalidLandscapeMetadata
 	}
 
-	return metadata, nil
+	return &Metadata{ReleaseVersion: metadata[metaReleaseVersion].(string), ChartRepository: metadata[metaChartRepo].(string)}, nil
 }

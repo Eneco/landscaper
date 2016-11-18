@@ -20,14 +20,13 @@ var tillerNamespace = "kube-system"
 
 // Environment contains all the information about the k8s cluster and local configuration
 type Environment struct {
-	DryRun             bool
-	ChartLoader        ChartLoader
-	HelmClient         helm.Interface
-	HelmRepositoryName string
-	LandscapeName      string
-	LandscapeDir       string
-	Namespace          string
-	Verbose            bool
+	DryRun        bool
+	ChartLoader   ChartLoader
+	HelmClient    helm.Interface
+	LandscapeName string
+	LandscapeDir  string
+	Namespace     string
+	Verbose       bool
 }
 
 // EnsureHelmClient makes sure the environment has a HelmClient initialized

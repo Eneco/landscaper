@@ -12,7 +12,7 @@ var addCmd = &cobra.Command{
 	Use:   "apply",
 	Short: "Makes the current landscape match the desired landscape",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		logrus.WithFields(logrus.Fields{"version": landscaper.GetVersion(), "namespace": env.Namespace, "landscapeName": env.LandscapeName, "repo": env.HelmRepositoryName, "dir": env.LandscapeDir, "dryRun": env.DryRun}).Info("Apply landscape desired state")
+		logrus.WithFields(logrus.Fields{"version": landscaper.GetVersion(), "namespace": env.Namespace, "landscapeName": env.LandscapeName, "dir": env.LandscapeDir, "dryRun": env.DryRun}).Info("Apply landscape desired state")
 
 		cp, err := landscaper.NewComponentProvider(env)
 		if err != nil {
@@ -54,11 +54,6 @@ var addCmd = &cobra.Command{
 func init() {
 	f := addCmd.Flags()
 
-	helmRepositoryName := os.Getenv("HELM_REPOSITORY_NAME")
-	if helmRepositoryName == "" {
-		helmRepositoryName = "eet"
-	}
-
 	landscapeName := os.Getenv("LANDSCAPE_NAME")
 	if landscapeName == "" {
 		landscapeName = "acceptance"
@@ -78,7 +73,6 @@ func init() {
 
 	f.BoolVar(&env.DryRun, "dry-run", false, "simulate the applying of the landscape. useful in merge requests")
 	f.BoolVarP(&env.Verbose, "verbose", "v", false, "be verbose")
-	f.StringVar(&env.HelmRepositoryName, "helm-repo-name", helmRepositoryName, "the name of the helm repository that contains all the charts")
 	f.StringVar(&env.LandscapeName, "landscape-name", landscapeName, "name of the landscape. the first letter of this is used as a prefix, e.g. acceptance creates releases like a-release-name")
 	f.StringVar(&env.LandscapeDir, "landscape-dir", landscapeDir, "path to a folder that contains all the landscape desired state files")
 	f.StringVar(&env.Namespace, "landscape-namespace", landscapeNamespace, "namespace to apply the landscape to")
