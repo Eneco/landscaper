@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Sirupsen/logrus"
 	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/kube"
+	helmversion "k8s.io/helm/pkg/version"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/restclient"
 	"k8s.io/kubernetes/pkg/client/unversioned"
@@ -25,17 +27,29 @@ type Environment struct {
 	LandscapeName      string
 	LandscapeDir       string
 	Namespace          string
+	Verbose            bool
 }
 
 // EnsureHelmClient makes sure the environment has a HelmClient initialized
 func (e *Environment) EnsureHelmClient() error {
 	if e.HelmClient == nil {
+		logrus.WithFields(logrus.Fields{"helmClientVersion": helmversion.Version}).Info("Setup Helm Client")
 		tillerHost, err := setupConnection()
 		if err != nil {
 			return err
 		}
 
 		e.HelmClient = helm.NewClient(helm.Host(tillerHost))
+
+		tillerVersion, err := e.HelmClient.GetVersion()
+		if err != nil {
+			return err
+		}
+		compatible := helmversion.IsCompatible(helmversion.Version, tillerVersion.Version.SemVer)
+		logrus.WithFields(logrus.Fields{"tillerVersion": tillerVersion.Version.SemVer, "clientServerCompatible": compatible}).Info("Connected to Tiller")
+		if !compatible {
+			logrus.Warn("Helm and Tiller report incompatible version numbers")
+		}
 	}
 
 	return nil
@@ -58,12 +72,16 @@ func (e *Environment) ReleaseNamePrefix() string {
 
 // setupConnection creates and returns tiller port forwarding tunnel
 func setupConnection() (string, error) {
+	logrus.WithFields(logrus.Fields{"tillerNamespace": tillerNamespace}).Info("Create tiller tunnel")
 	tunnel, err := newTillerPortForwarder(tillerNamespace, "")
 	if err != nil {
+		logrus.WithFields(logrus.Fields{"tillerNamespace": tillerNamespace, "error": err}).Error("Failed to create tiller tunnel")
 		return "", err
 	}
 
 	tillerTunnel = tunnel
+
+	logrus.WithFields(logrus.Fields{"port": tunnel.Local}).Info("Created tiller tunnel")
 
 	return fmt.Sprintf(":%d", tunnel.Local), nil
 }
@@ -71,6 +89,7 @@ func setupConnection() (string, error) {
 // teardown closes the tunnel
 func teardown() {
 	if tillerTunnel != nil {
+		logrus.Info("teardown tunnel")
 		tillerTunnel.Close()
 		tillerTunnel = nil
 	}

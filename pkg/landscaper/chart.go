@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Sirupsen/logrus"
+
 	"k8s.io/helm/cmd/helm/downloader"
 	"k8s.io/helm/cmd/helm/helmpath"
 	"k8s.io/helm/pkg/chartutil"
@@ -32,6 +34,8 @@ var ErrChartNotFound = errors.New("chart not found")
 
 // Load locates, and potentially downloads, a chart to the local repository
 func (c *LocalCharts) Load(chartRef string) (*chart.Chart, string, error) {
+	logrus.WithFields(logrus.Fields{"chartRef": chartRef}).Debug("Load Chart")
+
 	chartPath, err := locateChartPath(c.HomePath, chartRef)
 	if err != nil {
 		return nil, "", err
@@ -42,11 +46,13 @@ func (c *LocalCharts) Load(chartRef string) (*chart.Chart, string, error) {
 		return nil, "", err
 	}
 
+	logrus.WithFields(logrus.Fields{"chartRef": chartRef}).Debug("Loaded Chart successfully")
 	return chart, chartPath, nil
 }
 
 // locateChartPath searches for a chart in homePath, downloads it otherwise and if that fails and possibly returns an ErrChartNotFound
 func locateChartPath(homePath, chartRef string) (string, error) {
+	logrus.WithFields(logrus.Fields{"chartRef": chartRef, "homePath": homePath}).Debug("locateChartPath")
 	name, version := parseChartRef(chartRef)
 
 	chartFile := filepath.Join(helmpath.Home(homePath).Repository(), name)
@@ -59,6 +65,7 @@ func locateChartPath(homePath, chartRef string) (string, error) {
 		Out:      os.Stdout,
 	}
 
+	logrus.WithFields(logrus.Fields{"name": name, "version": version, "homePath": homePath}).Debug("Download Chart")
 	chartFile, _, err := dl.DownloadTo(name, version, helmpath.Home(homePath).Repository())
 	if err == nil {
 		chartFile, err = filepath.Abs(chartFile)
@@ -75,9 +82,11 @@ func locateChartPath(homePath, chartRef string) (string, error) {
 		// Extract the chart for easier reference the next time
 		chartutil.ExpandFile(filepath.Join(helmpath.Home(homePath).Repository(), repoName), chartFile)
 
+		logrus.WithFields(logrus.Fields{"chartFile": chartFile}).Debug("Downloaded Chart")
 		return chartFile, nil
 	}
 
+	logrus.WithFields(logrus.Fields{"name": name, "version": version, "homePath": homePath, "err": err}).Error("Failed to download Chart")
 	return "", ErrChartNotFound
 }
 

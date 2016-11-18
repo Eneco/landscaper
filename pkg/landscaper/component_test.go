@@ -15,7 +15,6 @@ func TestComponentNew(t *testing.T) {
 	cAct := NewComponent("name", &Release{"cha", "1.1.1"}, map[string]interface{}{"config": "awesome"}, &Secrets{"09F911029D74E35BD84156C5635688C0"})
 
 	cExp := &Component{Name: "name", Release: &Release{"cha", "1.1.1"}, Configuration: map[string]interface{}{"config": "awesome"}, Secrets: &Secrets{"09F911029D74E35BD84156C5635688C0"}}
-	cExp.Configuration["Name"] = "name"
 	cExp.Configuration[metadataKey] = map[string]interface{}{
 		releaseVersionKey: "1.1.1",
 		landscaperTagKey:  true,
