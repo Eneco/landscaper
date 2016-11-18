@@ -69,10 +69,13 @@ func TestExecutorUpdate(t *testing.T) {
 	comp := newTestComponent()
 	env := newTestEnvironment()
 
+	comp.Configuration["Name"] = comp.Name
+	comp.Name = env.ReleaseName(comp.Name)
+
 	env.Namespace = nameSpace
 	env.HelmClient = &HelmclientMock{updateRelease: func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
 		t.Logf("updateRelease %#v %#v %#v", rlsName, chStr, opts)
-		require.Equal(t, rlsName, "t-"+comp.Name)
+		require.Equal(t, rlsName, comp.Name)
 		require.Equal(t, chartPath, chStr)
 		return nil, nil
 	}}
@@ -96,15 +99,18 @@ func TestExecutorDelete(t *testing.T) {
 	comp := newTestComponent()
 	env := newTestEnvironment()
 
+	comp.Configuration["Name"] = comp.Name
+	comp.Name = env.ReleaseName(comp.Name)
+
 	env.Namespace = nameSpace
 	env.HelmClient = &HelmclientMock{deleteRelease: func(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
 		t.Logf("deleteRelease %#v", rlsName)
-		require.Equal(t, rlsName, "t-"+comp.Name)
+		require.Equal(t, comp.Name, rlsName)
 		return nil, nil
 	}}
 	env.ChartLoader = MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
 		t.Logf("MockChartLoader %#v", chartRef)
-		require.Equal(t, chartRef, env.HelmRepositoryName+"/"+comp.Release.Chart)
+		require.Equal(t, env.HelmRepositoryName+"/"+comp.Release.Chart, chartRef)
 		return nil, chartPath, nil
 	})
 
