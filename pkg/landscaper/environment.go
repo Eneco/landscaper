@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
+	"k8s.io/client-go/1.4/kubernetes"
+	v1core "k8s.io/client-go/1.4/kubernetes/typed/core/v1"
 	"k8s.io/client-go/1.4/tools/clientcmd"
 	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/kube"
@@ -23,58 +25,75 @@ var tillerNamespace = "kube-system"
 type Environment struct {
 	DryRun             bool
 	ChartLoader        ChartLoader
-	HelmClient         helm.Interface
 	HelmRepositoryName string
 	LandscapeName      string
 	LandscapeDir       string
 	Namespace          string
 	Verbose            bool
+
+	helmClient helm.Interface
+	kubeClient v1core.CoreInterface
 }
 
-// EnsureHelmClient makes sure the environment has a HelmClient initialized
-func (e *Environment) EnsureHelmClient() error {
-	if e.HelmClient == nil {
+// HelmClient makes sure the environment has a HelmClient initialized and returns it
+func (e *Environment) HelmClient() helm.Interface {
+	if e.helmClient == nil {
 		logrus.WithFields(logrus.Fields{"helmClientVersion": helmversion.Version}).Info("Setup Helm Client")
+
 		tillerHost, err := setupConnection()
 		if err != nil {
-			return err
+			logrus.WithField("error", err).Fatalf("Could not set up connection to helm")
+			return nil
 		}
 
-		e.HelmClient = helm.NewClient(helm.Host(tillerHost))
+		e.helmClient = helm.NewClient(helm.Host(tillerHost))
 
-		tillerVersion, err := e.HelmClient.GetVersion()
+		tillerVersion, err := e.helmClient.GetVersion()
 		if err != nil {
-			return err
+			logrus.WithField("error", err).Fatalf("Could not retrieve Helm Tiller version")
+			return nil
 		}
+
 		compatible := helmversion.IsCompatible(helmversion.Version, tillerVersion.Version.SemVer)
 		logrus.WithFields(logrus.Fields{"tillerVersion": tillerVersion.Version.SemVer, "clientServerCompatible": compatible}).Info("Connected to Tiller")
+
 		if !compatible {
 			logrus.Warn("Helm and Tiller report incompatible version numbers")
 		}
 	}
 
-	return nil
+	return e.helmClient
 }
 
-// EnsureKubeClient makes sure the environment has a KubeClient initialized
-func (e *Environment) EnsureKubeClient() error {
-	if e.HelmClient == nil {
-		clientcmd.NewDefaultClientConfig(clientcmdapi.Config{})
-		// logrus.WithFields(logrus.Fields{"kubernetesClientVersion": kubernetes.Version}).Info("Setup Kubernetes Client")
-		// // creates the clientset
-		// clientset, err := kubernetes.GetConfig()
-		// if err != nil {
-		// 	return err
-		// }
+// KubeClient makes sure the environment has a KubeClient initialized
+func (e *Environment) KubeClient() v1core.CoreInterface {
+	if e.kubeClient == nil {
+		logrus.Info("Setup Kubernetes Client")
 
-		// tillerVersion, err := e.HelmClient.GetVersion()
-		// if err != nil {
-		// 	return err
-		// }
-		// logrus.WithFields(logrus.Fields{"tillerVersion": tillerVersion.Version.SemVer}).Info("Connected to Tiller")
+		cfg, err := clientcmd.BuildConfigFromFlags("", clientcmd.NewDefaultPathOptions().GlobalFile)
+		if err != nil {
+			logrus.WithField("error", err).Fatalf("Could not build Kubernetes client config")
+			return nil
+		}
+
+		client, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			logrus.WithField("error", err).Fatalf("Could not create Kubernetes client")
+			return nil
+		}
+
+		version, err := client.ServerVersion()
+		if err != nil {
+			logrus.WithField("error", err).Fatalf("Could not create retrieve Kubernetes server version")
+			return nil
+		}
+
+		logrus.WithFields(logrus.Fields{"kubernetesVersion": version.String()}).Info("Connected to Kubernetes")
+
+		e.kubeClient = client.Core()
 	}
 
-	return nil
+	return e.kubeClient
 }
 
 // Teardown closes the tunnel

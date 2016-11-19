@@ -43,7 +43,7 @@ func TestExecutorCreate(t *testing.T) {
 	env := newTestEnvironment()
 
 	env.Namespace = nameSpace
-	env.HelmClient = &HelmclientMock{installRelease: func(chStr string, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error) {
+	env.helmClient = &HelmclientMock{installRelease: func(chStr string, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error) {
 		t.Logf("installRelease %#v %#v %#v", chStr, namespace, opts)
 		require.Equal(t, chartPath, chStr)
 		require.Equal(t, nameSpace, namespace)
@@ -55,10 +55,7 @@ func TestExecutorCreate(t *testing.T) {
 		return nil, chartPath, nil
 	})
 
-	exec, err := NewExecutor(env)
-	require.NoError(t, err)
-
-	err = exec.CreateComponent(comp)
+	err := NewExecutor(env).CreateComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -73,7 +70,7 @@ func TestExecutorUpdate(t *testing.T) {
 	comp.Name = env.ReleaseName(comp.Name)
 
 	env.Namespace = nameSpace
-	env.HelmClient = &HelmclientMock{updateRelease: func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
+	env.helmClient = &HelmclientMock{updateRelease: func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
 		t.Logf("updateRelease %#v %#v %#v", rlsName, chStr, opts)
 		require.Equal(t, rlsName, comp.Name)
 		require.Equal(t, chartPath, chStr)
@@ -85,10 +82,7 @@ func TestExecutorUpdate(t *testing.T) {
 		return nil, chartPath, nil
 	})
 
-	exec, err := NewExecutor(env)
-	require.NoError(t, err)
-
-	err = exec.UpdateComponent(comp)
+	err := NewExecutor(env).UpdateComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -103,7 +97,7 @@ func TestExecutorDelete(t *testing.T) {
 	comp.Name = env.ReleaseName(comp.Name)
 
 	env.Namespace = nameSpace
-	env.HelmClient = &HelmclientMock{deleteRelease: func(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
+	env.helmClient = &HelmclientMock{deleteRelease: func(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
 		t.Logf("deleteRelease %#v", rlsName)
 		require.Equal(t, comp.Name, rlsName)
 		return nil, nil
@@ -114,10 +108,7 @@ func TestExecutorDelete(t *testing.T) {
 		return nil, chartPath, nil
 	})
 
-	exec, err := NewExecutor(env)
-	require.NoError(t, err)
-
-	err = exec.DeleteComponent(comp)
+	err := NewExecutor(env).DeleteComponent(comp)
 	require.NoError(t, err)
 }
 

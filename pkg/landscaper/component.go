@@ -9,7 +9,7 @@ import (
 
 // Component contains information about the release, configuration and secrets of a component
 type Component struct {
-	Name          string        `json:"name" validate:"nonzero,max=12"`
+	Name          string        `json:"name" validate:"nonzero,max=51"`
 	Release       *Release      `json:"release" validate:"nonzero"`
 	Configuration Configuration `json:"configuration"`
 	Secrets       Secrets       `json:"secrets"`

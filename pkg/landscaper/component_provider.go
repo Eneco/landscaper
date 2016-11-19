@@ -39,13 +39,8 @@ type componentProvider struct {
 }
 
 // NewComponentProvider is a factory method to create a new ComponentProvider
-func NewComponentProvider(env *Environment) (ComponentProvider, error) {
-	err := env.EnsureHelmClient()
-	if err != nil {
-		return nil, err
-	}
-
-	return &componentProvider{env: env}, nil
+func NewComponentProvider(env *Environment) ComponentProvider {
+	return &componentProvider{env: env}
 }
 
 // Current returns all Components in the cluster
@@ -162,7 +157,7 @@ func (cp *componentProvider) coalesceComponent(cmp *Component) error {
 func (cp *componentProvider) listHelmReleases() ([]*release.Release, error) {
 	logrus.Debug("listHelmReleases")
 	filter := helm.ReleaseListFilter(fmt.Sprintf("^%s.+", cp.env.ReleaseNamePrefix()))
-	res, err := cp.env.HelmClient.ListReleases(filter)
+	res, err := cp.env.HelmClient().ListReleases(filter)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +168,7 @@ func (cp *componentProvider) listHelmReleases() ([]*release.Release, error) {
 // getHelmRelease gets a Release
 func (cp *componentProvider) getHelmRelease(releaseName string) (*release.Release, error) {
 	logrus.WithFields(logrus.Fields{"releaseName": releaseName}).Debug("getHelmRelease")
-	res, err := cp.env.HelmClient.ReleaseContent(releaseName)
+	res, err := cp.env.HelmClient().ReleaseContent(releaseName)
 	if err != nil {
 		return nil, err
 	}

@@ -25,12 +25,8 @@ type executor struct {
 }
 
 // NewExecutor is a factory method to create a new Executor
-func NewExecutor(env *Environment) (Executor, error) {
-	if err := env.EnsureHelmClient(); err != nil {
-		return nil, err
-	}
-
-	return &executor{env: env}, nil
+func NewExecutor(env *Environment) Executor {
+	return &executor{env: env}
 }
 
 // Apply transforms the current state into the desired state
@@ -92,7 +88,7 @@ func (e *executor) CreateComponent(cmp *Component) error {
 		"dryrun":    e.env.DryRun,
 	}).Debug("create component")
 
-	_, err = e.env.HelmClient.InstallRelease(
+	_, err = e.env.HelmClient().InstallRelease(
 		chartPath,
 		e.env.Namespace,
 		helm.ValueOverrides([]byte(rawValues)),
@@ -131,7 +127,7 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 		"dryrun":    e.env.DryRun,
 	}).Debug("update component")
 
-	_, err = e.env.HelmClient.UpdateRelease(
+	_, err = e.env.HelmClient().UpdateRelease(
 		cmp.Name,
 		chartPath,
 		helm.UpdateValueOverrides([]byte(rawValues)),
@@ -152,7 +148,7 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 		"dryrun":  e.env.DryRun,
 	}).Debug("delete component")
 
-	_, err := e.env.HelmClient.DeleteRelease(
+	_, err := e.env.HelmClient().DeleteRelease(
 		cmp.Name,
 		helm.DeletePurge(true),
 		helm.DeleteDryRun(e.env.DryRun),
