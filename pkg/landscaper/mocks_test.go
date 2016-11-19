@@ -12,42 +12,60 @@ type HelmclientMock struct {
 	updateRelease  func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error)
 }
 
-func (_m *HelmclientMock) DeleteRelease(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
-	return _m.deleteRelease(rlsName, opts...)
+func (m *HelmclientMock) DeleteRelease(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
+	return m.deleteRelease(rlsName, opts...)
 }
 
-func (_m *HelmclientMock) GetVersion(opts ...helm.VersionOption) (*services.GetVersionResponse, error) {
+func (m *HelmclientMock) GetVersion(opts ...helm.VersionOption) (*services.GetVersionResponse, error) {
 	return nil, nil
 }
 
-func (_m *HelmclientMock) InstallRelease(chStr string, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error) {
-	return _m.installRelease(chStr, namespace, opts...)
+func (m *HelmclientMock) InstallRelease(chStr string, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error) {
+	return m.installRelease(chStr, namespace, opts...)
 }
 
-func (_m *HelmclientMock) ListReleases(opts ...helm.ReleaseListOption) (*services.ListReleasesResponse, error) {
+func (m *HelmclientMock) ListReleases(opts ...helm.ReleaseListOption) (*services.ListReleasesResponse, error) {
 	return nil, nil
 }
 
-func (_m *HelmclientMock) ReleaseContent(rlsName string, opts ...helm.ContentOption) (*services.GetReleaseContentResponse, error) {
+func (m *HelmclientMock) ReleaseContent(rlsName string, opts ...helm.ContentOption) (*services.GetReleaseContentResponse, error) {
 	return nil, nil
 }
 
-func (_m *HelmclientMock) ReleaseHistory(rlsName string, opts ...helm.HistoryOption) (*services.GetHistoryResponse, error) {
+func (m *HelmclientMock) ReleaseHistory(rlsName string, opts ...helm.HistoryOption) (*services.GetHistoryResponse, error) {
 	return nil, nil
 }
 
-func (_m *HelmclientMock) ReleaseStatus(rlsName string, opts ...helm.StatusOption) (*services.GetReleaseStatusResponse, error) {
+func (m *HelmclientMock) ReleaseStatus(rlsName string, opts ...helm.StatusOption) (*services.GetReleaseStatusResponse, error) {
 	return nil, nil
 }
 
-func (_m *HelmclientMock) RollbackRelease(rlsName string, opts ...helm.RollbackOption) (*services.RollbackReleaseResponse, error) {
+func (m *HelmclientMock) RollbackRelease(rlsName string, opts ...helm.RollbackOption) (*services.RollbackReleaseResponse, error) {
 	return nil, nil
 }
 
-func (_m *HelmclientMock) UpdateRelease(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
-	return _m.updateRelease(rlsName, chStr, opts...)
+func (m *HelmclientMock) UpdateRelease(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
+	return m.updateRelease(rlsName, chStr, opts...)
 }
 
 type MockChartLoader func(chartRef string) (*chart.Chart, string, error)
 
-func (_m MockChartLoader) Load(chartRef string) (*chart.Chart, string, error) { return _m(chartRef) }
+func (m MockChartLoader) Load(chartRef string) (*chart.Chart, string, error) { return m(chartRef) }
+
+type SecretsProviderMock struct {
+	write  func(releaseName string, values SecretValues, isUpdate bool) error
+	read   func(releaseName string) (SecretValues, error)
+	delete func(releaseName string) error
+}
+
+func (m SecretsProviderMock) Write(releaseName string, values SecretValues, isUpdate bool) error {
+	return m.write(releaseName, values, isUpdate)
+}
+
+func (m SecretsProviderMock) Read(releaseName string) (SecretValues, error) {
+	return m.read(releaseName)
+}
+
+func (m SecretsProviderMock) Delete(releaseName string) error {
+	return m.delete(releaseName)
+}

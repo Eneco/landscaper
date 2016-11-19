@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/Sirupsen/logrus"
-
 	"gopkg.in/yaml.v2"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/helm"
@@ -35,12 +34,15 @@ type ComponentProvider interface {
 
 type componentProvider struct {
 	env             *Environment
-	secretsProvider *secretsProvider
+	secretsProvider SecretsProvider
 }
 
 // NewComponentProvider is a factory method to create a new ComponentProvider
-func NewComponentProvider(env *Environment) ComponentProvider {
-	return &componentProvider{env: env}
+func NewComponentProvider(env *Environment, secretsProvider SecretsProvider) ComponentProvider {
+	return &componentProvider{
+		env:             env,
+		secretsProvider: secretsProvider,
+	}
 }
 
 // Current returns all Components in the cluster
@@ -62,6 +64,16 @@ func (cp *componentProvider) Current() ([]*Component, error) {
 		}
 		if err != nil {
 			return components, err
+		}
+
+		secretValues, err := cp.secretsProvider.Read(cmp.Name)
+		if err != nil {
+			return components, err
+		}
+
+		cmp.Secrets = Secrets{}
+		for key := range secretValues {
+			cmp.Secrets = append(cmp.Secrets, key)
 		}
 
 		components = append(components, cmp)
@@ -103,6 +115,8 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 
 		cmp.Configuration["Name"] = cmp.Name
 		cmp.Name = cp.env.ReleaseName(cmp.Name)
+
+		readSecretValues(cmp)
 
 		if err := cmp.Validate(); err != nil {
 			return nil, fmt.Errorf("failed to validate `%s`: %s", filename, err)

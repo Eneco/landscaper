@@ -21,12 +21,16 @@ type Executor interface {
 }
 
 type executor struct {
-	env *Environment
+	env             *Environment
+	secretsProvider SecretsProvider
 }
 
 // NewExecutor is a factory method to create a new Executor
-func NewExecutor(env *Environment) Executor {
-	return &executor{env: env}
+func NewExecutor(env *Environment, secretsProvider SecretsProvider) Executor {
+	return &executor{
+		env:             env,
+		secretsProvider: secretsProvider,
+	}
 }
 
 // Apply transforms the current state into the desired state
@@ -86,7 +90,14 @@ func (e *executor) CreateComponent(cmp *Component) error {
 		"chartPath": chartPath,
 		"values":    cmp.Configuration,
 		"dryrun":    e.env.DryRun,
-	}).Debug("create component")
+	}).Debug("Create component")
+
+	if !e.env.DryRun {
+		err = e.secretsProvider.Write(cmp.Name, cmp.SecretValues, false)
+		if err != nil {
+			return err
+		}
+	}
 
 	_, err = e.env.HelmClient().InstallRelease(
 		chartPath,
@@ -119,13 +130,20 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 		return err
 	}
 
+	if !e.env.DryRun {
+		err = e.secretsProvider.Write(cmp.Name, cmp.SecretValues, true)
+		if err != nil {
+			return err
+		}
+	}
+
 	logrus.WithFields(logrus.Fields{
 		"release":   cmp.Name,
 		"chartRef":  chartRef,
 		"chartPath": chartPath,
 		"values":    cmp.Configuration,
 		"dryrun":    e.env.DryRun,
-	}).Debug("update component")
+	}).Debug("Update component")
 
 	_, err = e.env.HelmClient().UpdateRelease(
 		cmp.Name,
@@ -146,7 +164,14 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 		"release": cmp.Name,
 		"values":  cmp.Configuration,
 		"dryrun":  e.env.DryRun,
-	}).Debug("delete component")
+	}).Debug("Delete component")
+
+	if !e.env.DryRun {
+		err := e.secretsProvider.Delete(cmp.Name)
+		if err != nil {
+			return err
+		}
+	}
 
 	_, err := e.env.HelmClient().DeleteRelease(
 		cmp.Name,

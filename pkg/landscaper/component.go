@@ -13,6 +13,7 @@ type Component struct {
 	Release       *Release      `json:"release" validate:"nonzero"`
 	Configuration Configuration `json:"configuration"`
 	Secrets       Secrets       `json:"secrets"`
+	SecretValues  SecretValues  `json:"-"`
 }
 
 // NewComponent creates a Component and adds Name to the configuration
@@ -22,6 +23,7 @@ func NewComponent(name string, release *Release, cfg Configuration, secrets Secr
 		Release:       release,
 		Configuration: cfg,
 		Secrets:       secrets,
+		SecretValues:  SecretValues{},
 	}
 
 	cmp.Configuration[metadataKey] = map[string]interface{}{

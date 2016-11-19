@@ -55,7 +55,12 @@ func TestExecutorCreate(t *testing.T) {
 		return nil, chartPath, nil
 	})
 
-	err := NewExecutor(env).CreateComponent(comp)
+	err := NewExecutor(env, SecretsProviderMock{write: func(componentName string, values SecretValues, isUpdate bool) error {
+		require.Equal(t, false, isUpdate)
+		require.Equal(t, comp.Name, componentName)
+		require.Equal(t, comp.SecretValues, values)
+		return nil
+	}}).CreateComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -82,7 +87,12 @@ func TestExecutorUpdate(t *testing.T) {
 		return nil, chartPath, nil
 	})
 
-	err := NewExecutor(env).UpdateComponent(comp)
+	err := NewExecutor(env, SecretsProviderMock{write: func(componentName string, values SecretValues, isUpdate bool) error {
+		require.Equal(t, true, isUpdate)
+		require.Equal(t, comp.Name, componentName)
+		require.Equal(t, comp.SecretValues, values)
+		return nil
+	}}).UpdateComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -108,12 +118,15 @@ func TestExecutorDelete(t *testing.T) {
 		return nil, chartPath, nil
 	})
 
-	err := NewExecutor(env).DeleteComponent(comp)
+	err := NewExecutor(env, SecretsProviderMock{delete: func(componentName string) error {
+		require.Equal(t, comp.Name, componentName)
+		return nil
+	}}).DeleteComponent(comp)
 	require.NoError(t, err)
 }
 
 func newTestComponent() *Component {
-	return NewComponent(
+	cmp := NewComponent(
 		"create-test",
 		&Release{
 			Chart:   "connector-hdfs:0.1.0",
@@ -130,6 +143,13 @@ func newTestComponent() *Component {
 		},
 		Secrets{},
 	)
+
+	cmp.SecretValues = SecretValues{
+		"TestSecret1": "secret value 1",
+		"TestSecret2": "secret value 2",
+	}
+
+	return cmp
 }
 
 func newTestEnvironment() *Environment {
