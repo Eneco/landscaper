@@ -6,6 +6,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/fatih/camelcase"
+	"k8s.io/client-go/1.4/pkg/api/errors"
 	"k8s.io/client-go/1.4/pkg/api/v1"
 )
 
@@ -19,7 +20,7 @@ type SecretValues map[string]string
 // SecretsProvider reads secrets for a release from both the desired state as well as the current state
 type SecretsProvider interface {
 	Read(componentName string) (SecretValues, error)
-	Write(componentName string, secretValues SecretValues, isUpdate bool) error
+	Write(componentName string, secretValues SecretValues) error
 	Delete(componentName string) error
 }
 
@@ -35,8 +36,15 @@ func NewSecretsProvider(env *Environment) SecretsProvider {
 func (sp *secretsProvider) Read(componentName string) (SecretValues, error) {
 	logrus.WithField("component", componentName).Info("Reading secrets for component")
 
+	secrets := SecretValues{}
+
 	secret, err := sp.env.KubeClient().Secrets(sp.env.Namespace).Get(componentName)
 	if err != nil {
+		if errors.IsNotFound(err) {
+			logrus.WithField("component", componentName).Info("No secrets found for component")
+			return secrets, nil
+		}
+
 		logrus.WithFields(logrus.Fields{
 			"component": componentName,
 			"error":     err,
@@ -44,25 +52,17 @@ func (sp *secretsProvider) Read(componentName string) (SecretValues, error) {
 		return nil, err
 	}
 
-	logrus.WithField("component", componentName).Info("Successfully read secrets for component")
-
-	secrets := SecretValues{}
 	for key, val := range secret.Data {
 		secrets[key] = string(val)
 	}
 
+	logrus.WithField("component", componentName).Info("Successfully read secrets for component")
+
 	return secrets, nil
 }
 
-func (sp *secretsProvider) Write(componentName string, secrets SecretValues, isUpdate bool) error {
+func (sp *secretsProvider) Write(componentName string, secrets SecretValues) error {
 	logrus.WithField("component", componentName).Info("Writing secrets for component")
-
-	if isUpdate {
-		err := sp.Delete(componentName)
-		if err != nil {
-			return err
-		}
-	}
 
 	_, err := sp.env.KubeClient().Secrets(sp.env.Namespace).Create(&v1.Secret{
 		ObjectMeta: v1.ObjectMeta{
@@ -84,11 +84,16 @@ func (sp *secretsProvider) Write(componentName string, secrets SecretValues, isU
 }
 
 func (sp *secretsProvider) Delete(componentName string) error {
-	logrus.WithField("component", componentName).Error("Deleting existing secrets for component")
+	logrus.WithField("component", componentName).Info("Deleting existing secrets for component")
 
 	// We first completely delete the current secrets
 	err := sp.env.KubeClient().Secrets(sp.env.Namespace).Delete(componentName, nil)
 	if err != nil {
+		if errors.IsNotFound(err) {
+			logrus.WithField("component", componentName).Info("No secrets found for component")
+			return nil
+		}
+
 		logrus.WithFields(logrus.Fields{
 			"component": componentName,
 			"error":     err,

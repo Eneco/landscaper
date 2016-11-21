@@ -26,6 +26,14 @@ func NewComponent(name string, release *Release, cfg Configuration, secrets Secr
 		SecretValues:  SecretValues{},
 	}
 
+	if cmp.Configuration == nil {
+		cmp.Configuration = Configuration{}
+	}
+
+	if cmp.Secrets == nil {
+		cmp.Secrets = Secrets{}
+	}
+
 	cmp.Configuration[metadataKey] = map[string]interface{}{
 		releaseVersionKey: cmp.Release.Version,
 		landscaperTagKey:  true,

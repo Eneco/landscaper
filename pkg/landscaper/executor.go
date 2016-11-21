@@ -92,8 +92,8 @@ func (e *executor) CreateComponent(cmp *Component) error {
 		"dryrun":    e.env.DryRun,
 	}).Debug("Create component")
 
-	if !e.env.DryRun {
-		err = e.secretsProvider.Write(cmp.Name, cmp.SecretValues, false)
+	if len(cmp.Secrets) > 0 && !e.env.DryRun {
+		err = e.secretsProvider.Write(cmp.Name, cmp.SecretValues)
 		if err != nil {
 			return err
 		}
@@ -131,9 +131,13 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 	}
 
 	if !e.env.DryRun {
-		err = e.secretsProvider.Write(cmp.Name, cmp.SecretValues, true)
-		if err != nil {
-			return err
+		err = e.secretsProvider.Delete(cmp.Name)
+
+		if len(cmp.Secrets) > 0 {
+			err = e.secretsProvider.Write(cmp.Name, cmp.SecretValues)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -166,7 +170,7 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 		"dryrun":  e.env.DryRun,
 	}).Debug("Delete component")
 
-	if !e.env.DryRun {
+	if len(cmp.Secrets) > 0 && !e.env.DryRun {
 		err := e.secretsProvider.Delete(cmp.Name)
 		if err != nil {
 			return err

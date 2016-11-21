@@ -71,7 +71,9 @@ func (cp *componentProvider) Current() ([]*Component, error) {
 			return components, err
 		}
 
+		cmp.SecretValues = secretValues
 		cmp.Secrets = Secrets{}
+
 		for key := range secretValues {
 			cmp.Secrets = append(cmp.Secrets, key)
 		}
@@ -117,7 +119,9 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 		cmp.Configuration["SecretsRef"] = cp.env.ReleaseName(cmp.Name)
 		cmp.Name = cp.env.ReleaseName(cmp.Name)
 
-		readSecretValues(cmp)
+		if len(cmp.Secrets) > 0 {
+			readSecretValues(cmp)
+		}
 
 		if err := cmp.Validate(); err != nil {
 			return nil, fmt.Errorf("failed to validate `%s`: %s", filename, err)

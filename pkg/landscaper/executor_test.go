@@ -55,8 +55,7 @@ func TestExecutorCreate(t *testing.T) {
 		return nil, chartPath, nil
 	})
 
-	err := NewExecutor(env, SecretsProviderMock{write: func(componentName string, values SecretValues, isUpdate bool) error {
-		require.Equal(t, false, isUpdate)
+	err := NewExecutor(env, SecretsProviderMock{write: func(componentName string, values SecretValues) error {
 		require.Equal(t, comp.Name, componentName)
 		require.Equal(t, comp.SecretValues, values)
 		return nil
@@ -87,8 +86,7 @@ func TestExecutorUpdate(t *testing.T) {
 		return nil, chartPath, nil
 	})
 
-	err := NewExecutor(env, SecretsProviderMock{write: func(componentName string, values SecretValues, isUpdate bool) error {
-		require.Equal(t, true, isUpdate)
+	err := NewExecutor(env, SecretsProviderMock{write: func(componentName string, values SecretValues) error {
 		require.Equal(t, comp.Name, componentName)
 		require.Equal(t, comp.SecretValues, values)
 		return nil
