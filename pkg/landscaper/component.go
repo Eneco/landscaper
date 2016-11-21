@@ -3,6 +3,7 @@ package landscaper
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"gopkg.in/validator.v2"
 )
@@ -34,10 +35,7 @@ func NewComponent(name string, release *Release, cfg Configuration, secrets Secr
 		cmp.Secrets = Secrets{}
 	}
 
-	cmp.Configuration[metadataKey] = map[string]interface{}{
-		releaseVersionKey: cmp.Release.Version,
-		landscaperTagKey:  true,
-	}
+	cmp.Configuration[metadataKey] = Metadata{ReleaseVersion: cmp.Release.Version}
 
 	return cmp
 }
@@ -72,4 +70,40 @@ func validateComponents(cs []*Component) error {
 	}
 
 	return nil
+}
+
+func (c *Component) normalizeFromFile(env *Environment) error {
+	c.Configuration["Name"] = c.Name
+	c.Configuration["SecretsRef"] = env.ReleaseName(c.Name)
+	c.Name = env.ReleaseName(c.Name)
+
+	// releases from file contain repo as part of the chartname
+	if !strings.Contains(c.Release.Chart, "/") {
+		if c.Release.repo == "" {
+			return fmt.Errorf("bad") //TODO
+		}
+		return nil
+	}
+
+	ss := strings.Split(c.Release.Chart, "/")
+	if len(ss) != 2 {
+		return fmt.Errorf("bad release.chart: `%s`", c.Release.Chart)
+	}
+	c.Release.repo = ss[0]
+	c.Release.Chart = ss[1]
+
+	m := c.Configuration[metadataKey].(Metadata)
+	m.ChartRepository = c.Release.repo
+	c.Configuration[metadataKey] = m
+	return nil
+}
+
+func (c *Component) normalizeFromHelm(repo string) {
+	// releases from helm lack the repo name
+	c.Release.repo = repo
+
+	c.Secrets = Secrets{}
+	for key := range c.SecretValues {
+		c.Secrets = append(c.Secrets, key)
+	}
 }
