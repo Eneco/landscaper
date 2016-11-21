@@ -114,6 +114,7 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 		}
 
 		cmp.Configuration["Name"] = cmp.Name
+		cmp.Configuration["SecretsRef"] = cp.env.ReleaseName(cmp.Name)
 		cmp.Name = cp.env.ReleaseName(cmp.Name)
 
 		readSecretValues(cmp)
