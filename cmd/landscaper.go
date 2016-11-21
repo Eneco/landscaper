@@ -30,7 +30,9 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	_ = rootCmd.PersistentFlags()
-	p := &prefixed.TextFormatter{}
+	p := &prefixed.TextFormatter{
+		ForceColors: true,
+	}
 	p.TimestampFormat = time.RFC3339
 	logrus.SetFormatter(p)
 }
