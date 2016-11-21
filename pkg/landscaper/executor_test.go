@@ -86,11 +86,17 @@ func TestExecutorUpdate(t *testing.T) {
 		return nil, chartPath, nil
 	})
 
-	err := NewExecutor(env, SecretsProviderMock{write: func(componentName string, values SecretValues) error {
-		require.Equal(t, comp.Name, componentName)
-		require.Equal(t, comp.SecretValues, values)
-		return nil
-	}}).UpdateComponent(comp)
+	err := NewExecutor(env, SecretsProviderMock{
+		write: func(componentName string, values SecretValues) error {
+			require.Equal(t, comp.Name, componentName)
+			require.Equal(t, comp.SecretValues, values)
+			return nil
+		},
+		delete: func(componentName string) error {
+			require.Equal(t, comp.Name, componentName)
+			return nil
+		},
+	}).UpdateComponent(comp)
 	require.NoError(t, err)
 }
 
