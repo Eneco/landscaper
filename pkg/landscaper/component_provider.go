@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/Sirupsen/logrus"
-
 	"gopkg.in/yaml.v2"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/helm"
@@ -34,17 +33,16 @@ type ComponentProvider interface {
 }
 
 type componentProvider struct {
-	env *Environment
+	env             *Environment
+	secretsProvider SecretsProvider
 }
 
 // NewComponentProvider is a factory method to create a new ComponentProvider
-func NewComponentProvider(env *Environment) (ComponentProvider, error) {
-	err := env.EnsureHelmClient()
-	if err != nil {
-		return nil, err
+func NewComponentProvider(env *Environment, secretsProvider SecretsProvider) ComponentProvider {
+	return &componentProvider{
+		env:             env,
+		secretsProvider: secretsProvider,
 	}
-
-	return &componentProvider{env: env}, nil
 }
 
 // Current returns all Components in the cluster
@@ -66,6 +64,18 @@ func (cp *componentProvider) Current() ([]*Component, error) {
 		}
 		if err != nil {
 			return components, err
+		}
+
+		secretValues, err := cp.secretsProvider.Read(cmp.Name)
+		if err != nil {
+			return components, err
+		}
+
+		cmp.SecretValues = secretValues
+		cmp.Secrets = Secrets{}
+
+		for key := range secretValues {
+			cmp.Secrets = append(cmp.Secrets, key)
 		}
 
 		components = append(components, cmp)
@@ -106,7 +116,12 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 		}
 
 		cmp.Configuration["Name"] = cmp.Name
+		cmp.Configuration["SecretsRef"] = cp.env.ReleaseName(cmp.Name)
 		cmp.Name = cp.env.ReleaseName(cmp.Name)
+
+		if len(cmp.Secrets) > 0 {
+			readSecretValues(cmp)
+		}
 
 		if err := cmp.Validate(); err != nil {
 			return nil, fmt.Errorf("failed to validate `%s`: %s", filename, err)
@@ -161,7 +176,7 @@ func (cp *componentProvider) coalesceComponent(cmp *Component) error {
 func (cp *componentProvider) listHelmReleases() ([]*release.Release, error) {
 	logrus.Debug("listHelmReleases")
 	filter := helm.ReleaseListFilter(fmt.Sprintf("^%s.+", cp.env.ReleaseNamePrefix()))
-	res, err := cp.env.HelmClient.ListReleases(filter)
+	res, err := cp.env.HelmClient().ListReleases(filter)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +187,7 @@ func (cp *componentProvider) listHelmReleases() ([]*release.Release, error) {
 // getHelmRelease gets a Release
 func (cp *componentProvider) getHelmRelease(releaseName string) (*release.Release, error) {
 	logrus.WithFields(logrus.Fields{"releaseName": releaseName}).Debug("getHelmRelease")
-	res, err := cp.env.HelmClient.ReleaseContent(releaseName)
+	res, err := cp.env.HelmClient().ReleaseContent(releaseName)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +216,7 @@ func newComponentFromHelmRelease(release *release.Release) (*Component, error) {
 			Version: metadata[releaseVersionKey].(string),
 		},
 		cfg,
-		nil, // TODO: secrets
+		Secrets{},
 	), nil
 }
 

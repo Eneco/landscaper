@@ -21,16 +21,16 @@ type Executor interface {
 }
 
 type executor struct {
-	env *Environment
+	env             *Environment
+	secretsProvider SecretsProvider
 }
 
 // NewExecutor is a factory method to create a new Executor
-func NewExecutor(env *Environment) (Executor, error) {
-	if err := env.EnsureHelmClient(); err != nil {
-		return nil, err
+func NewExecutor(env *Environment, secretsProvider SecretsProvider) Executor {
+	return &executor{
+		env:             env,
+		secretsProvider: secretsProvider,
 	}
-
-	return &executor{env: env}, nil
 }
 
 // Apply transforms the current state into the desired state
@@ -90,9 +90,16 @@ func (e *executor) CreateComponent(cmp *Component) error {
 		"chartPath": chartPath,
 		"values":    cmp.Configuration,
 		"dryrun":    e.env.DryRun,
-	}).Debug("create component")
+	}).Debug("Create component")
 
-	_, err = e.env.HelmClient.InstallRelease(
+	if len(cmp.Secrets) > 0 && !e.env.DryRun {
+		err = e.secretsProvider.Write(cmp.Name, cmp.SecretValues)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = e.env.HelmClient().InstallRelease(
 		chartPath,
 		e.env.Namespace,
 		helm.ValueOverrides([]byte(rawValues)),
@@ -123,15 +130,26 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 		return err
 	}
 
+	if !e.env.DryRun {
+		err = e.secretsProvider.Delete(cmp.Name)
+
+		if len(cmp.Secrets) > 0 {
+			err = e.secretsProvider.Write(cmp.Name, cmp.SecretValues)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	logrus.WithFields(logrus.Fields{
 		"release":   cmp.Name,
 		"chartRef":  chartRef,
 		"chartPath": chartPath,
 		"values":    cmp.Configuration,
 		"dryrun":    e.env.DryRun,
-	}).Debug("update component")
+	}).Debug("Update component")
 
-	_, err = e.env.HelmClient.UpdateRelease(
+	_, err = e.env.HelmClient().UpdateRelease(
 		cmp.Name,
 		chartPath,
 		helm.UpdateValueOverrides([]byte(rawValues)),
@@ -150,9 +168,16 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 		"release": cmp.Name,
 		"values":  cmp.Configuration,
 		"dryrun":  e.env.DryRun,
-	}).Debug("delete component")
+	}).Debug("Delete component")
 
-	_, err := e.env.HelmClient.DeleteRelease(
+	if len(cmp.Secrets) > 0 && !e.env.DryRun {
+		err := e.secretsProvider.Delete(cmp.Name)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err := e.env.HelmClient().DeleteRelease(
 		cmp.Name,
 		helm.DeletePurge(true),
 		helm.DeleteDryRun(e.env.DryRun),

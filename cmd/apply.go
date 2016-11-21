@@ -14,17 +14,9 @@ var addCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logrus.WithFields(logrus.Fields{"version": landscaper.GetVersion(), "namespace": env.Namespace, "landscapeName": env.LandscapeName, "repo": env.HelmRepositoryName, "dir": env.LandscapeDir, "dryRun": env.DryRun}).Info("Apply landscape desired state")
 
-		cp, err := landscaper.NewComponentProvider(env)
-		if err != nil {
-			logrus.WithFields(logrus.Fields{"error": err}).Error("NewComponentProvider failed")
-			return err
-		}
-
-		exec, err := landscaper.NewExecutor(env)
-		if err != nil {
-			logrus.WithFields(logrus.Fields{"error": err}).Error("NewExecutor failed")
-			return err
-		}
+		sp := landscaper.NewSecretsProvider(env)
+		cp := landscaper.NewComponentProvider(env, sp)
+		executor := landscaper.NewExecutor(env, sp)
 
 		desired, err := cp.Desired()
 		if err != nil {
@@ -38,7 +30,7 @@ var addCmd = &cobra.Command{
 			return err
 		}
 
-		if err = exec.Apply(desired, current); err != nil {
+		if err = executor.Apply(desired, current); err != nil {
 			logrus.WithFields(logrus.Fields{"error": err}).Error("Applying desired state failed")
 			return err
 		}

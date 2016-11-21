@@ -1,5 +1,5 @@
-hash: 6fbb0c9a01789547ce70f42332b5afab299eb59ea86f54c9f7041a718484f7d0
-updated: 2016-11-17T10:34:36.814756046+01:00
+hash: 962e130c0d3bc371f9cd41a730c740ce91dcf8fdca775562549a99655e50764d
+updated: 2016-11-21T11:35:36.663417764+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -93,36 +93,15 @@ imports:
   - swagger
 - name: github.com/evanphx/json-patch
   version: 465937c80b3c07a7c7ad20cc934898646a91c1de
+- name: github.com/fatih/camelcase
+  version: f6a740d52f961c60348ebb109adde9f4635d7540
 - name: github.com/ghodss/yaml
   version: bea76d6a4713e18b7f5321a2b020738552def3ea
 - name: github.com/gogo/protobuf
   version: e18d7aa8f8c624c915db340349aad4c49b10d173
   subpackages:
-  - gogoproto
-  - plugin/compare
-  - plugin/defaultcheck
-  - plugin/description
-  - plugin/embedcheck
-  - plugin/enumstringer
-  - plugin/equal
-  - plugin/face
-  - plugin/gostring
-  - plugin/marshalto
-  - plugin/oneofcheck
-  - plugin/populate
-  - plugin/size
-  - plugin/stringer
-  - plugin/testgen
-  - plugin/union
-  - plugin/unmarshal
   - proto
-  - protoc-gen-gogo/descriptor
-  - protoc-gen-gogo/generator
-  - protoc-gen-gogo/grpc
-  - protoc-gen-gogo/plugin
   - sortkeys
-  - vanity
-  - vanity/command
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
@@ -202,14 +181,13 @@ imports:
 - name: github.com/Sirupsen/logrus
   version: d26492970760ca5d33129d2d799e34be5c4782eb
 - name: github.com/spf13/cobra
-  version: 6e91dded25d73176bf7f60b40dd7aa1f0bf9be8d
+  version: 9495bc009a56819bdb0ddbc1a373e29c140bc674
 - name: github.com/spf13/pflag
   version: 5ccb023bc27df288a957c5e994cd44fd19619465
 - name: github.com/ugorji/go
   version: f1f1a805ed361a0e078bb537e4ea78cd37dcf065
   subpackages:
   - codec
-  - codec/codecgen
 - name: github.com/x-cray/logrus-prefixed-formatter
   version: 1d837bc239d1686e1ae281c4629495bd0e7da8d5
 - name: golang.org/x/crypto
@@ -247,7 +225,7 @@ imports:
   - jws
   - jwt
 - name: golang.org/x/sys
-  version: 9c60d1c508f5134d1ca726b4641db998f2523357
+  version: b699b7032584f0953262cb2788a0ca19bb494703
   subpackages:
   - unix
 - name: google.golang.org/appengine
@@ -282,9 +260,23 @@ imports:
 - name: k8s.io/client-go
   version: 3a5b96cfd3d3ff1d53d979b4297c4f3b869aab09
   subpackages:
+  - 1.4/discovery
+  - 1.4/kubernetes
+  - 1.4/kubernetes/typed/apps/v1alpha1
+  - 1.4/kubernetes/typed/authentication/v1beta1
+  - 1.4/kubernetes/typed/authorization/v1beta1
+  - 1.4/kubernetes/typed/autoscaling/v1
+  - 1.4/kubernetes/typed/batch/v1
+  - 1.4/kubernetes/typed/certificates/v1alpha1
+  - 1.4/kubernetes/typed/core/v1
+  - 1.4/kubernetes/typed/extensions/v1beta1
+  - 1.4/kubernetes/typed/policy/v1alpha1
+  - 1.4/kubernetes/typed/rbac/v1alpha1
+  - 1.4/kubernetes/typed/storage/v1beta1
   - 1.4/pkg/api
   - 1.4/pkg/api/endpoints
   - 1.4/pkg/api/errors
+  - 1.4/pkg/api/install
   - 1.4/pkg/api/meta
   - 1.4/pkg/api/meta/metatypes
   - 1.4/pkg/api/pod
@@ -297,9 +289,37 @@ imports:
   - 1.4/pkg/api/validation
   - 1.4/pkg/apimachinery
   - 1.4/pkg/apimachinery/registered
+  - 1.4/pkg/apis/apps
+  - 1.4/pkg/apis/apps/install
+  - 1.4/pkg/apis/apps/v1alpha1
+  - 1.4/pkg/apis/authentication
+  - 1.4/pkg/apis/authentication/install
+  - 1.4/pkg/apis/authentication/v1beta1
+  - 1.4/pkg/apis/authorization
+  - 1.4/pkg/apis/authorization/install
+  - 1.4/pkg/apis/authorization/v1beta1
   - 1.4/pkg/apis/autoscaling
+  - 1.4/pkg/apis/autoscaling/install
+  - 1.4/pkg/apis/autoscaling/v1
   - 1.4/pkg/apis/batch
+  - 1.4/pkg/apis/batch/install
+  - 1.4/pkg/apis/batch/v1
+  - 1.4/pkg/apis/batch/v2alpha1
+  - 1.4/pkg/apis/certificates
+  - 1.4/pkg/apis/certificates/install
+  - 1.4/pkg/apis/certificates/v1alpha1
   - 1.4/pkg/apis/extensions
+  - 1.4/pkg/apis/extensions/install
+  - 1.4/pkg/apis/extensions/v1beta1
+  - 1.4/pkg/apis/policy
+  - 1.4/pkg/apis/policy/install
+  - 1.4/pkg/apis/policy/v1alpha1
+  - 1.4/pkg/apis/rbac
+  - 1.4/pkg/apis/rbac/install
+  - 1.4/pkg/apis/rbac/v1alpha1
+  - 1.4/pkg/apis/storage
+  - 1.4/pkg/apis/storage/install
+  - 1.4/pkg/apis/storage/v1beta1
   - 1.4/pkg/auth/user
   - 1.4/pkg/capabilities
   - 1.4/pkg/conversion
@@ -325,6 +345,7 @@ imports:
   - 1.4/pkg/util/flowcontrol
   - 1.4/pkg/util/framer
   - 1.4/pkg/util/hash
+  - 1.4/pkg/util/homedir
   - 1.4/pkg/util/integer
   - 1.4/pkg/util/intstr
   - 1.4/pkg/util/json
@@ -344,7 +365,11 @@ imports:
   - 1.4/pkg/watch
   - 1.4/pkg/watch/versioned
   - 1.4/rest
+  - 1.4/tools/auth
+  - 1.4/tools/clientcmd
   - 1.4/tools/clientcmd/api
+  - 1.4/tools/clientcmd/api/latest
+  - 1.4/tools/clientcmd/api/v1
   - 1.4/tools/metrics
   - 1.4/transport
 - name: k8s.io/helm
