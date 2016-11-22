@@ -6,6 +6,7 @@ var (
 	metaChartRepo      = "chartrepository"
 )
 
+// Metadata holds landscaper metadata that is attached to a component/release through its Configuration
 type Metadata struct {
 	ReleaseVersion  string
 	ChartRepository string
