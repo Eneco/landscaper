@@ -112,9 +112,6 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 			return components, err
 		}
 
-		m, _ := getReleaseMetadata(cmp.Configuration)
-		cmp.Configuration[metadataKey] = m
-
 		if len(cmp.Secrets) > 0 {
 			readSecretValues(cmp)
 		}
@@ -150,7 +147,11 @@ func newComponentFromYAML(content []byte) (*Component, error) {
 // coalesceComponent takes a component, loads the chart and coalesces the configuration with the default values
 func (cp *componentProvider) coalesceComponent(cmp *Component) error {
 	logrus.WithFields(logrus.Fields{"chart": cmp.Release.Chart}).Debug("coalesceComponent")
-	ch, _, err := cp.env.ChartLoader.Load(cmp.Release.fullChartRef())
+	chartRef, err := cmp.FullChartRef()
+	if err != nil {
+		return err
+	}
+	ch, _, err := cp.env.ChartLoader.Load(chartRef)
 	if err != nil {
 		return err
 	}
@@ -200,24 +201,24 @@ func newComponentFromHelmRelease(release *release.Release) (*Component, error) {
 		return nil, err
 	}
 
-	metadata, err := getReleaseMetadata(cfg)
+	if !cfg.HasMetadata() {
+		return nil, ErrNonLandscapeComponent
+	}
+
+	m, err := cfg.GetMetadata()
 	if err != nil {
 		return nil, err
 	}
-
-	//delete(cfg, metadataKey)
 
 	cmp := NewComponent(
 		release.Name,
 		&Release{
 			Chart:   fmt.Sprintf("%s:%s", release.Chart.Metadata.Name, release.Chart.Metadata.Version),
-			Version: metadata.ReleaseVersion,
+			Version: m.ReleaseVersion,
 		},
 		cfg,
 		Secrets{},
 	)
-
-	cmp.Configuration[metadataKey] = metadata
 
 	return cmp, nil
 }
@@ -240,23 +241,4 @@ func getReleaseConfiguration(helmRelease *release.Release) (Configuration, error
 	}
 
 	return Configuration(helmValues), nil
-}
-
-// getReleaseMetadata extracts landscaper's metadata from a Configuration
-func getReleaseMetadata(cfg Configuration) (*Metadata, error) {
-	val, ok := cfg[metadataKey]
-	if !ok {
-		return nil, ErrNonLandscapeComponent
-	}
-
-	metadata := val.(map[string]interface{})
-
-	if _, ok := metadata[metaReleaseVersion]; !ok {
-		return nil, ErrInvalidLandscapeMetadata
-	}
-	if _, ok := metadata[metaChartRepo]; !ok {
-		return nil, ErrInvalidLandscapeMetadata
-	}
-
-	return &Metadata{ReleaseVersion: metadata[metaReleaseVersion].(string), ChartRepository: metadata[metaChartRepo].(string)}, nil
 }

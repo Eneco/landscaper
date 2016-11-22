@@ -35,7 +35,12 @@ func NewComponent(name string, release *Release, cfg Configuration, secrets Secr
 		cmp.Secrets = Secrets{}
 	}
 
-	cmp.Configuration[metadataKey] = Metadata{ReleaseVersion: cmp.Release.Version}
+	m := &Metadata{}
+	if cmp.Configuration.HasMetadata() {
+		m, _ = cmp.Configuration.GetMetadata()
+	}
+	m.ReleaseVersion = cmp.Release.Version
+	cmp.Configuration.SetMetadata(m)
 
 	return cmp
 }
@@ -77,33 +82,44 @@ func (c *Component) normalizeFromFile(env *Environment) error {
 	c.Configuration["SecretsRef"] = env.ReleaseName(c.Name)
 	c.Name = env.ReleaseName(c.Name)
 
-	// releases from file contain repo as part of the chartname
-	if !strings.Contains(c.Release.Chart, "/") {
-		if c.Release.repo == "" {
-			return fmt.Errorf("bad") //TODO
-		}
-		return nil
-	}
-
 	ss := strings.Split(c.Release.Chart, "/")
 	if len(ss) != 2 {
-		return fmt.Errorf("bad release.chart: `%s`", c.Release.Chart)
+		return fmt.Errorf("bad release.chart: `%s`, expecting `some_repo/some_name`", c.Release.Chart)
 	}
-	c.Release.repo = ss[0]
 	c.Release.Chart = ss[1]
 
-	m := c.Configuration[metadataKey].(Metadata)
-	m.ChartRepository = c.Release.repo
-	c.Configuration[metadataKey] = m
+	c.Configuration.SetMetadata(&Metadata{ChartRepository: ss[0], ReleaseVersion: c.Release.Version})
+
 	return nil
 }
 
-func (c *Component) normalizeFromHelm(repo string) {
-	// releases from helm lack the repo name
-	c.Release.repo = repo
+func (cfg Configuration) HasMetadata() bool {
+	_, ok := cfg[metadataKey]
+	return ok
+}
 
-	c.Secrets = Secrets{}
-	for key := range c.SecretValues {
-		c.Secrets = append(c.Secrets, key)
+func (cfg Configuration) GetMetadata() (*Metadata, error) {
+	val, ok := cfg[metadataKey]
+	if !ok {
+		return nil, fmt.Errorf("configuration has no metadata")
 	}
+
+	metadata := val.(map[string]interface{})
+
+	return &Metadata{ReleaseVersion: metadata[metaReleaseVersion].(string), ChartRepository: metadata[metaChartRepo].(string)}, nil
+}
+
+func (cfg Configuration) SetMetadata(m *Metadata) {
+	cfg[metadataKey] = map[string]interface{}{
+		metaReleaseVersion: m.ReleaseVersion,
+		metaChartRepo:      m.ChartRepository,
+	}
+}
+
+func (c *Component) FullChartRef() (string, error) {
+	m, err := c.Configuration.GetMetadata()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s/%s", m.ChartRepository, c.Release.Chart), nil
 }
