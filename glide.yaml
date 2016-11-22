@@ -20,7 +20,6 @@ import:
   - pkg/client/unversioned
   - pkg/labels
 - package: github.com/x-cray/logrus-prefixed-formatter
-- package: github.com/fatih/camelcase
 testImport:
 - package: github.com/stretchr/testify
   version: ^1.1.4

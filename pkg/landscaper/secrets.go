@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/fatih/camelcase"
 	"k8s.io/client-go/1.4/pkg/api/errors"
 	"k8s.io/client-go/1.4/pkg/api/v1"
 )
@@ -106,11 +105,7 @@ func (sp *secretsProvider) Delete(componentName string) error {
 
 func readSecretValues(cmp *Component) {
 	for _, key := range cmp.Secrets {
-		parts := camelcase.Split(key)
-		for i, val := range parts {
-			parts[i] = strings.ToUpper(val)
-		}
-		envName := strings.Join(parts, "_")
+		envName := strings.Replace(strings.ToUpper(key), "-", "_", -1)
 
 		secretValue := os.Getenv(envName)
 		if len(secretValue) == 0 {
