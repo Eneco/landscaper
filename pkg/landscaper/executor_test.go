@@ -51,7 +51,7 @@ func TestExecutorCreate(t *testing.T) {
 	}}
 	env.ChartLoader = MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
 		t.Logf("MockChartLoader %#v", chartRef)
-		require.Equal(t, "repo/"+chartRef, comp.Release.Chart)
+		require.Equal(t, "repo/"+comp.Release.Chart, chartRef)
 		return nil, chartPath, nil
 	})
 

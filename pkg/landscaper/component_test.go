@@ -28,6 +28,7 @@ func TestComponentNew(t *testing.T) {
 	}
 	cExp.Configuration[metadataKey] = map[string]interface{}{
 		metaReleaseVersion: "1.1.1",
+		metaChartRepo:      "",
 	}
 
 	assert.Equal(t, cExp, cAct)
