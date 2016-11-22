@@ -3,6 +3,7 @@ package landscaper
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"gopkg.in/validator.v2"
 )
@@ -34,10 +35,12 @@ func NewComponent(name string, release *Release, cfg Configuration, secrets Secr
 		cmp.Secrets = Secrets{}
 	}
 
-	cmp.Configuration[metadataKey] = map[string]interface{}{
-		releaseVersionKey: cmp.Release.Version,
-		landscaperTagKey:  true,
+	m := &Metadata{}
+	if cmp.Configuration.HasMetadata() {
+		m, _ = cmp.Configuration.GetMetadata()
 	}
+	m.ReleaseVersion = cmp.Release.Version
+	cmp.Configuration.SetMetadata(m)
 
 	return cmp
 }
@@ -72,4 +75,57 @@ func validateComponents(cs []*Component) error {
 	}
 
 	return nil
+}
+
+func (c *Component) normalizeFromFile(env *Environment) error {
+	c.Configuration["Name"] = c.Name
+	if len(c.Secrets) > 0 {
+		c.Configuration["SecretsRef"] = env.ReleaseName(c.Name)
+	}
+	c.Name = env.ReleaseName(c.Name)
+
+	ss := strings.Split(c.Release.Chart, "/")
+	if len(ss) != 2 {
+		return fmt.Errorf("bad release.chart: `%s`, expecting `some_repo/some_name`", c.Release.Chart)
+	}
+	c.Release.Chart = ss[1]
+
+	c.Configuration.SetMetadata(&Metadata{ChartRepository: ss[0], ReleaseVersion: c.Release.Version})
+
+	return nil
+}
+
+// HasMetadata returns true if the config contains a landscaper metadata structure
+func (cfg Configuration) HasMetadata() bool {
+	_, ok := cfg[metadataKey]
+	return ok
+}
+
+// GetMetadata returns a Metadata if present
+func (cfg Configuration) GetMetadata() (*Metadata, error) {
+	val, ok := cfg[metadataKey]
+	if !ok {
+		return nil, fmt.Errorf("configuration has no metadata")
+	}
+
+	metadata := val.(map[string]interface{})
+
+	return &Metadata{ReleaseVersion: metadata[metaReleaseVersion].(string), ChartRepository: metadata[metaChartRepo].(string)}, nil
+}
+
+// SetMetadata sets the provided Metadata
+func (cfg Configuration) SetMetadata(m *Metadata) {
+	cfg[metadataKey] = map[string]interface{}{
+		metaReleaseVersion: m.ReleaseVersion,
+		metaChartRepo:      m.ChartRepository,
+	}
+}
+
+// FullChartRef provides a chart references like "myRepo/chartName"
+func (c *Component) FullChartRef() (string, error) {
+	m, err := c.Configuration.GetMetadata()
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s/%s", m.ChartRepository, c.Release.Chart), nil
 }

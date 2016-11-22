@@ -3,7 +3,6 @@ package landscaper
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/pmezard/go-difflib/difflib"
@@ -70,10 +69,12 @@ func (e *executor) Apply(desired, current []*Component) error {
 
 // CreateComponent creates the given Component
 func (e *executor) CreateComponent(cmp *Component) error {
-	chartRef := fmt.Sprintf("%s/%s", e.env.HelmRepositoryName, cmp.Release.Chart)
-
 	// We need to ensure the chart is available on the local system. LoadChart will ensure
 	// this is the case by downloading the chart if it is not there yet
+	chartRef, err := cmp.FullChartRef()
+	if err != nil {
+		return err
+	}
 	_, chartPath, err := e.env.ChartLoader.Load(chartRef)
 	if err != nil {
 		return err
@@ -86,7 +87,7 @@ func (e *executor) CreateComponent(cmp *Component) error {
 
 	logrus.WithFields(logrus.Fields{
 		"release":   cmp.Name,
-		"chartRef":  chartRef,
+		"chart":     cmp.Release.Chart,
 		"chartPath": chartPath,
 		"values":    cmp.Configuration,
 		"dryrun":    e.env.DryRun,
@@ -116,10 +117,12 @@ func (e *executor) CreateComponent(cmp *Component) error {
 
 // UpdateComponent updates the given Component
 func (e *executor) UpdateComponent(cmp *Component) error {
-	chartRef := fmt.Sprintf("%s/%s", e.env.HelmRepositoryName, cmp.Release.Chart)
-
 	// We need to ensure the chart is available on the local system. LoadChart will ensure
 	// this is the case by downloading the chart if it is not there yet
+	chartRef, err := cmp.FullChartRef()
+	if err != nil {
+		return err
+	}
 	_, chartPath, err := e.env.ChartLoader.Load(chartRef)
 	if err != nil {
 		return err
@@ -143,7 +146,7 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 
 	logrus.WithFields(logrus.Fields{
 		"release":   cmp.Name,
-		"chartRef":  chartRef,
+		"chart":     cmp.Release.Chart,
 		"chartPath": chartPath,
 		"values":    cmp.Configuration,
 		"dryrun":    e.env.DryRun,
@@ -177,13 +180,15 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 		}
 	}
 
-	_, err := e.env.HelmClient().DeleteRelease(
-		cmp.Name,
-		helm.DeletePurge(true),
-		helm.DeleteDryRun(e.env.DryRun),
-	)
-	if err != nil {
-		return errors.New(grpc.ErrorDesc(err))
+	if !e.env.DryRun {
+		_, err := e.env.HelmClient().DeleteRelease(
+			cmp.Name,
+			helm.DeletePurge(true),
+			helm.DeleteDryRun(e.env.DryRun),
+		)
+		if err != nil {
+			return errors.New(grpc.ErrorDesc(err))
+		}
 	}
 
 	return nil

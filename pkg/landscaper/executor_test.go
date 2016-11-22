@@ -51,7 +51,7 @@ func TestExecutorCreate(t *testing.T) {
 	}}
 	env.ChartLoader = MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
 		t.Logf("MockChartLoader %#v", chartRef)
-		require.Equal(t, chartRef, env.HelmRepositoryName+"/"+comp.Release.Chart)
+		require.Equal(t, "repo/"+comp.Release.Chart, chartRef)
 		return nil, chartPath, nil
 	})
 
@@ -76,13 +76,13 @@ func TestExecutorUpdate(t *testing.T) {
 	env.Namespace = nameSpace
 	env.helmClient = &HelmclientMock{updateRelease: func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
 		t.Logf("updateRelease %#v %#v %#v", rlsName, chStr, opts)
-		require.Equal(t, rlsName, comp.Name)
+		require.Equal(t, comp.Name, rlsName)
 		require.Equal(t, chartPath, chStr)
 		return nil, nil
 	}}
 	env.ChartLoader = MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
 		t.Logf("MockChartLoader %#v", chartRef)
-		require.Equal(t, chartRef, env.HelmRepositoryName+"/"+comp.Release.Chart)
+		require.Equal(t, "repo/"+comp.Release.Chart, chartRef)
 		return nil, chartPath, nil
 	})
 
@@ -118,7 +118,7 @@ func TestExecutorDelete(t *testing.T) {
 	}}
 	env.ChartLoader = MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
 		t.Logf("MockChartLoader %#v", chartRef)
-		require.Equal(t, env.HelmRepositoryName+"/"+comp.Release.Chart, chartRef)
+		require.Equal(t, comp.Release.Chart, chartRef)
 		return nil, chartPath, nil
 	})
 
@@ -153,14 +153,15 @@ func newTestComponent() *Component {
 		"TestSecret2": "secret value 2",
 	}
 
+	cmp.Configuration.SetMetadata(&Metadata{ChartRepository: "repo", ReleaseVersion: "1.0.0"})
+
 	return cmp
 }
 
 func newTestEnvironment() *Environment {
 	return &Environment{
-		Namespace:          "landscaper-testing",
-		LandscapeName:      "testing",
-		LandscapeDir:       "../../test",
-		HelmRepositoryName: "eet",
+		Namespace:     "landscaper-testing",
+		LandscapeName: "testing",
+		LandscapeDir:  "../../test",
 	}
 }

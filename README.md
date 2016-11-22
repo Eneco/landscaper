@@ -1,45 +1,29 @@
-# Rough outline of the flow
-- Prepare release configurations
-    - Read secrets from environment
-    - Create Release structs
-- Diff
-    - Get current releases and their configurations/secrets from k8s namespace
-    - Compare Releases with current desired state
-- Apply
-    - Create secrets in k8s namespace for all releases
-    - Run each ReleaseTask
+# Landscaper
 
-# Secrets design principles
-- Charts should use k8s secrets to get values into the environment of containers
-- Secrets should be a separate array in the component file
+Landscaper eliminates difference between desired and actual state of Helm releases in a Kubernetes cluster.
 
-# Rough brain dump of required entities
-## Configuration
-- Read()
+## Introduction
 
-## Secrets
-- Read()
+### Why
 
-## Release
-- Chart
-- Version
+ - The set of applications (e.g. connectors, processors) in the Kubernetes cluster is potentially large and complex.
+ - Manually inspecting and administrating them, and keeping different environments (prod, acceptance) in sync is laborious and difficult.
+ - Cooperating in this shared cluster increases the complexity.
 
-## Component
-- Name
-- Release
-- Configuration
-- Secrets
-- Equals(Component) bool
+### How
 
-## Executor
-- Apply(desired []Component, current []Component)
-- CreateComponent(Component)
-- UpdateComponent(Component)
-- DeleteComponent(Component)
+ - Have a blue print of what the landscape (apps in the cluster) looks like;
+ - Keep track of changes: when, what, why and by who;
+ - Allow others to review changes before applying them;
+ - Let the changes be promoted to specific environments.
 
-## ComponentProvider
-- Current() []Component
-- Desired() []Component
+### What
 
-## SecretProvider
-- Read() []Secret
+ - A Git repository contains a desired state description of the landscape, with CI/CD;
+ - Landscaper, an app that eliminates difference between desired and actual state of Helm releases in a Kubernetes cluster.
+
+## Usage
+
+Landscaper takes as input a set of files that constitute the desired state.
+These files contain (a) reference(s) to a Helm Chart and its configuration (Values).
+Additionally, it receives settings needed to query and modify a Kubernetes cluster via Helm/Tiller.
