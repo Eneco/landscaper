@@ -180,13 +180,15 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 		}
 	}
 
-	_, err := e.env.HelmClient().DeleteRelease(
-		cmp.Name,
-		helm.DeletePurge(true),
-		helm.DeleteDryRun(e.env.DryRun),
-	)
-	if err != nil {
-		return errors.New(grpc.ErrorDesc(err))
+	if !e.env.DryRun {
+		_, err := e.env.HelmClient().DeleteRelease(
+			cmp.Name,
+			helm.DeletePurge(true),
+			helm.DeleteDryRun(e.env.DryRun),
+		)
+		if err != nil {
+			return errors.New(grpc.ErrorDesc(err))
+		}
 	}
 
 	return nil
