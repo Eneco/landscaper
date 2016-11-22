@@ -27,8 +27,7 @@ func TestComponentNew(t *testing.T) {
 		SecretValues:  SecretValues{},
 	}
 	cExp.Configuration[metadataKey] = map[string]interface{}{
-		releaseVersionKey: "1.1.1",
-		landscaperTagKey:  true,
+		metaReleaseVersion: "1.1.1",
 	}
 
 	assert.Equal(t, cExp, cAct)
