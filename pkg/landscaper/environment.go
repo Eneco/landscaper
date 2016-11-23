@@ -23,12 +23,12 @@ var tillerNamespace = "kube-system"
 
 // Environment contains all the information about the k8s cluster and local configuration
 type Environment struct {
-	DryRun        bool
-	ChartLoader   ChartLoader
-	LandscapeName string
-	LandscapeDir  string
-	Namespace     string
-	Verbose       bool
+	DryRun            bool
+	ChartLoader       ChartLoader
+	ReleaseNamePrefix string
+	LandscapeDir      string
+	Namespace         string
+	Verbose           bool
 
 	helmClient helm.Interface
 	kubeClient v1core.CoreInterface
@@ -102,12 +102,7 @@ func (e *Environment) Teardown() {
 
 // ReleaseName takes a component name, and uses info in the environment to return a release name
 func (e *Environment) ReleaseName(componentName string) string {
-	return e.ReleaseNamePrefix() + strings.ToLower(componentName)
-}
-
-// ReleaseNamePrefix returns the release name prefix derived from env.LandscapeName
-func (e *Environment) ReleaseNamePrefix() string {
-	return fmt.Sprintf("%s-", strings.ToLower(string(e.LandscapeName[0])))
+	return e.ReleaseNamePrefix + strings.ToLower(componentName)
 }
 
 // setupConnection creates and returns tiller port forwarding tunnel

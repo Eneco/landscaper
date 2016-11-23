@@ -174,7 +174,7 @@ func (cp *componentProvider) coalesceComponent(cmp *Component) error {
 // listHelmReleases lists all releases that are prefixed with env.LandscapeName
 func (cp *componentProvider) listHelmReleases() ([]*release.Release, error) {
 	logrus.Debug("listHelmReleases")
-	filter := helm.ReleaseListFilter(fmt.Sprintf("^%s.+", cp.env.ReleaseNamePrefix()))
+	filter := helm.ReleaseListFilter(fmt.Sprintf("^%s.+", cp.env.ReleaseNamePrefix))
 	res, err := cp.env.HelmClient().ListReleases(filter)
 	if err != nil {
 		return nil, err
