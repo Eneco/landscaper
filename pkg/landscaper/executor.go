@@ -3,6 +3,7 @@ package landscaper
 import (
 	"encoding/json"
 	"errors"
+	"reflect"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/pmezard/go-difflib/difflib"
@@ -267,7 +268,13 @@ func logDifferences(current, creates, updates, deletes []*Component, logf func(f
 		if err != nil {
 			return err
 		}
-		logf("%s\n%s", action, diff)
+		logf("%s", action)
+		if diff != "" {
+			logf("Diff:\n%s", diff)
+		}
+		if !reflect.DeepEqual(current.SecretValues, desired.SecretValues) {
+			logrus.Info("Diff: secrets have changed, not shown here")
+		}
 		return nil
 	}
 
