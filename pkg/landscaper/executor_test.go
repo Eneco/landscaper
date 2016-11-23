@@ -160,8 +160,8 @@ func newTestComponent() *Component {
 
 func newTestEnvironment() *Environment {
 	return &Environment{
-		Namespace:     "landscaper-testing",
-		LandscapeName: "testing",
-		LandscapeDir:  "../../test",
+		Namespace:         "landscaper-testing",
+		ReleaseNamePrefix: "testing",
+		LandscapeDir:      "../../test",
 	}
 }

@@ -44,21 +44,21 @@ func (e *executor) Apply(desired, current []*Component) error {
 
 	for _, cmp := range delete {
 		if err := e.DeleteComponent(cmp); err != nil {
-			logrus.Error("DeleteComponent failed", err)
+			logrus.WithFields(logrus.Fields{"error": err}).Error("DeleteComponent failed")
 			return err
 		}
 	}
 
 	for _, cmp := range create {
 		if err := e.CreateComponent(cmp); err != nil {
-			logrus.Error("CreateComponent failed", err)
+			logrus.WithFields(logrus.Fields{"error": err}).Error("CreateComponent failed")
 			return err
 		}
 	}
 
 	for _, cmp := range update {
 		if err := e.UpdateComponent(cmp); err != nil {
-			logrus.Error("UpdateComponent failed", err)
+			logrus.WithFields(logrus.Fields{"error": err}).Error("UpdateComponent failed")
 			return err
 		}
 	}

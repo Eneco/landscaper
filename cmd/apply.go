@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/eneco/landscaper/pkg/landscaper"
@@ -8,11 +9,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var prefixDisable bool
+
 var addCmd = &cobra.Command{
 	Use:   "apply",
 	Short: "Makes the current landscape match the desired landscape",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		logrus.WithFields(logrus.Fields{"version": landscaper.GetVersion(), "namespace": env.Namespace, "landscapeName": env.LandscapeName, "dir": env.LandscapeDir, "dryRun": env.DryRun}).Info("Apply landscape desired state")
+		// setup env
+		if prefixDisable {
+			env.ReleaseNamePrefix = ""
+		} else {
+			if env.ReleaseNamePrefix == "" {
+				env.ReleaseNamePrefix = fmt.Sprintf("%s-", env.Namespace) // prefix not overridden; default to '<namespace>-'
+			}
+		}
+		env.ChartLoader = landscaper.NewLocalCharts(env.ChartDir)
+
+		v := landscaper.GetVersion()
+		logrus.WithFields(logrus.Fields{"tag": v.GitTag, "commit": v.GitCommit}).Infof("This is Landscaper v%s", v.SemVer)
+		logrus.WithFields(logrus.Fields{"namespace": env.Namespace, "releasePrefix": env.ReleaseNamePrefix, "dir": env.LandscapeDir, "dryRun": env.DryRun, "chartDir": env.ChartDir, "verbose": env.Verbose}).Info("Apply landscape desired state")
 
 		sp := landscaper.NewSecretsProvider(env)
 		cp := landscaper.NewComponentProvider(env, sp)
@@ -46,10 +61,7 @@ var addCmd = &cobra.Command{
 func init() {
 	f := addCmd.Flags()
 
-	landscapeName := os.Getenv("LANDSCAPE_NAME")
-	if landscapeName == "" {
-		landscapeName = "acceptance"
-	}
+	landscapePrefix := os.Getenv("LANDSCAPE_PREFIX")
 
 	landscapeDir := os.Getenv("LANDSCAPE_DIR")
 	if landscapeDir == "" {
@@ -61,13 +73,15 @@ func init() {
 		landscapeNamespace = "acceptance"
 	}
 
-	env.ChartLoader = landscaper.NewLocalCharts(os.ExpandEnv("$HOME/.helm"))
+	chartDir := os.ExpandEnv("$HOME/.helm")
 
 	f.BoolVar(&env.DryRun, "dry-run", false, "simulate the applying of the landscape. useful in merge requests")
 	f.BoolVarP(&env.Verbose, "verbose", "v", false, "be verbose")
-	f.StringVar(&env.LandscapeName, "landscape-name", landscapeName, "name of the landscape. the first letter of this is used as a prefix, e.g. acceptance creates releases like a-release-name")
-	f.StringVar(&env.LandscapeDir, "landscape-dir", landscapeDir, "path to a folder that contains all the landscape desired state files")
-	f.StringVar(&env.Namespace, "landscape-namespace", landscapeNamespace, "namespace to apply the landscape to")
+	f.BoolVar(&prefixDisable, "no-prefix", false, "disable prefixing release names")
+	f.StringVar(&env.ReleaseNamePrefix, "prefix", landscapePrefix, "prefix release names with this string instead of <namespace>; overrides LANDSCAPE_PREFIX")
+	f.StringVar(&env.LandscapeDir, "dir", landscapeDir, "path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR")
+	f.StringVar(&env.Namespace, "namespace", landscapeNamespace, "namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE")
+	f.StringVar(&env.ChartDir, "chart-dir", chartDir, "where the charts are stored")
 
 	rootCmd.AddCommand(addCmd)
 }
