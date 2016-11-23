@@ -23,6 +23,7 @@ var tillerNamespace = "kube-system"
 
 // Environment contains all the information about the k8s cluster and local configuration
 type Environment struct {
+	ChartDir          string
 	DryRun            bool
 	ChartLoader       ChartLoader
 	ReleaseNamePrefix string
