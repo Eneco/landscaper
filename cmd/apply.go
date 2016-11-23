@@ -22,7 +22,10 @@ var addCmd = &cobra.Command{
 				env.ReleaseNamePrefix = fmt.Sprintf("%s-", env.Namespace) // prefix not overridden; default to '<namespace>-'
 			}
 		}
-		logrus.WithFields(logrus.Fields{"version": landscaper.GetVersion(), "namespace": env.Namespace, "releasePrefix": env.ReleaseNamePrefix, "dir": env.LandscapeDir, "dryRun": env.DryRun}).Info("Apply landscape desired state")
+
+		v := landscaper.GetVersion()
+		logrus.WithFields(logrus.Fields{"tag": v.GitTag, "commit": v.GitCommit}).Infof("This is Landscaper v%s", v.SemVer)
+		logrus.WithFields(logrus.Fields{"namespace": env.Namespace, "releasePrefix": env.ReleaseNamePrefix, "dir": env.LandscapeDir, "dryRun": env.DryRun, "verbose": env.Verbose}).Info("Apply landscape desired state")
 
 		sp := landscaper.NewSecretsProvider(env)
 		cp := landscaper.NewComponentProvider(env, sp)
