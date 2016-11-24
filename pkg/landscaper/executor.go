@@ -272,7 +272,7 @@ func logDifferences(current, creates, updates, deletes []*Component, logf func(f
 		if diff != "" {
 			logf("Diff:\n%s", diff)
 		}
-		if !reflect.DeepEqual(current.SecretValues, desired.SecretValues) {
+		if current != nil && desired != nil && !reflect.DeepEqual(current.SecretValues, desired.SecretValues) {
 			logrus.Info("Diff: secrets have changed, not shown here")
 		}
 		return nil
