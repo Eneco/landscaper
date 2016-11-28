@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/Sirupsen/logrus"
+	validator "gopkg.in/validator.v2"
 	"gopkg.in/yaml.v2"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/helm"
@@ -103,7 +104,7 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 		logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir, "file": file.Name()}).Debug("Read desired state from file")
 		cmp, err := readComponentFromYAMLFilePath(filename)
 		if err != nil {
-			return components, err
+			return components, fmt.Errorf("readComponentFromYAMLFilePath file `%s` failed: %s", filename, err)
 		}
 		cmp.normalizeFromFile(cp.env)
 
@@ -138,6 +139,18 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 func newComponentFromYAML(content []byte) (*Component, error) {
 	cmp := &Component{}
 	if err := yaml.Unmarshal(content, cmp); err != nil {
+		return nil, err
+	}
+
+	if cmp.Name == "" {
+		return nil, errors.New("invalid input yaml; name missing")
+	}
+
+	if cmp.Release == nil {
+		return nil, errors.New("invalid input yaml; release missing")
+	}
+
+	if err := validator.Validate(cmp.Release); err != nil {
 		return nil, err
 	}
 
