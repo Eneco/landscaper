@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/Sirupsen/logrus"
@@ -89,19 +90,22 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 
 	logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir}).Info("Obtain desired state from directory")
 
-	files, err := ioutil.ReadDir(cp.env.LandscapeDir)
+	files, err := filepath.Glob(filepath.Join(cp.env.LandscapeDir, "*.yaml"))
 	if err != nil {
 		return components, err
 	}
 
-	for _, file := range files {
-		if file.IsDir() {
+	for _, filename := range files {
+		fileInfo, err := os.Stat(filename)
+		if err != nil {
+			return components, err
+		}
+		if fileInfo.IsDir() {
+			logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir, "file": filename}).Debugf("Skip directory")
 			continue
 		}
 
-		filename := filepath.Join(cp.env.LandscapeDir, file.Name())
-
-		logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir, "file": file.Name()}).Debug("Read desired state from file")
+		logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir, "file": filename}).Debug("Read desired state from file")
 		cmp, err := readComponentFromYAMLFilePath(filename)
 		if err != nil {
 			return components, fmt.Errorf("readComponentFromYAMLFilePath file `%s` failed: %s", filename, err)
