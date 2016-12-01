@@ -1,14 +1,16 @@
 # Landscaper
 
-Landscaper eliminates difference between desired and actual state of Helm releases in a Kubernetes cluster.
+Landscaper takes a set of Helm Chart references with values (a desired state), and realizes this in a Kubernetes cluster. The intended use case is to have this desired state under version control, and let Landscaper first test and then apply the state as part of the CI/CD stages.
+
+The Landscaper project is an ongoing project in an early stage, opened due to demand in the community. Contributions and feedback are more than welcome!
 
 ## Introduction
 
 ### Why
 
- - The set of applications (e.g. connectors, processors) in the Kubernetes cluster is potentially large and complex.
- - Manually inspecting and administering them, and keeping different environments (prod, acceptance) in sync is laborious and difficult.
- - Cooperating in this shared cluster increases the complexity.
+ - The set of applications in the Kubernetes cluster is potentially large and complex;
+ - Manually inspecting and administering them, and keeping different environments (e.g. production, acceptance) in sync is laborious and difficult;
+ - Cooperating with multiple tenants in this shared cluster increases the complexity.
 
 ### How
 
@@ -19,14 +21,15 @@ Landscaper eliminates difference between desired and actual state of Helm releas
 
 ### What
 
- - A Git repository contains a desired state description of the landscape, with CI/CD;
+ - A Git repository contains a desired state description of the landscape, with CI/CD and a review before merge regime;
  - Landscaper, an app that eliminates difference between desired and actual state of Helm releases in a Kubernetes cluster.
 
 ## Usage
 
-Landscaper is a CLI. It takes as input a set of files that constitute the desired state.
+Landscaper consists of a core API and a command line interface (CLI) that consumes this API. It takes as input a set of files that constitute the desired state. The CLI assumes that `kubectl` and `helm` have been setup!
+
 These files contain (a) reference(s) to a Helm Chart and its configuration (Values).
-Additionally, Landscaper receives settings (tokens, credentials) needed to query and modify a Kubernetes cluster via Helm/Tiller.
+Additionally, Landscaper receives settings (tokens, credentials) needed to query and modify a Kubernetes cluster via Helm/Tiller. Typically these settings are provided by the CI/CD system.
 
 The CLI uses a command structure in the spirit of `git` et al. The main command is `landscaper apply` to apply a desired state.
 The `apply` command accepts the following arguments:
@@ -76,3 +79,7 @@ In the Chart template there are lines like:
 Which receive the landscaped FTPServer address and provided password.
 
 Now do a `landscaper apply --dry-run` to give it a try, or omit `dry-run` for the real thing.
+
+## Example Use Case
+
+We, at Eneco, have setup a git repository with the inputs to the landscaper. During CI, non-master branches are Landscaped `--dry-run` to validate the inputs. After a pull request is reviewed, the changes are merged into `master` after which the Landscaper applies the new desired state.
