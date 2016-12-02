@@ -1,0 +1,7 @@
+name: landscaped-mysql
+release:
+  chart: stable/mysql
+  version: 0.1.0
+configuration:
+  mysqlUser: landscaper
+  mysqlPassword: demo
