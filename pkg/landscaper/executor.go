@@ -90,6 +90,7 @@ func (e *executor) CreateComponent(cmp *Component) error {
 		"release":   cmp.Name,
 		"chart":     cmp.Release.Chart,
 		"chartPath": chartPath,
+		"rawValues": rawValues,
 		"values":    cmp.Configuration,
 		"dryrun":    e.env.DryRun,
 	}).Debug("Create component")
