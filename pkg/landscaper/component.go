@@ -80,7 +80,7 @@ func validateComponents(cs []*Component) error {
 func (c *Component) normalizeFromFile(env *Environment) error {
 	c.Configuration["Name"] = c.Name
 	if len(c.Secrets) > 0 {
-		c.Configuration["SecretsRef"] = env.ReleaseName(c.Name)
+		c.Configuration["secretsRef"] = env.ReleaseName(c.Name)
 	}
 	c.Name = env.ReleaseName(c.Name)
 
