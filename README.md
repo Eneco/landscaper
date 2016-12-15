@@ -97,3 +97,7 @@ In another terminal, assuming the `mysql` client being installed, connect with t
 ## Example Use Case
 
 We, at Eneco, have setup a git repository with the inputs to the landscaper. During CI, non-master branches are Landscaped `--dry-run` to validate the inputs. After a pull request is reviewed, the changes are merged into `master` after which the Landscaper applies the new desired state.
+
+## Contributing
+
+We'd love to accept your contributions! Please use GitHub pull requests: fork the repo, develop and test your code, submit a pull request. Thanks!
