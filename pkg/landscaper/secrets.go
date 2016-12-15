@@ -63,7 +63,16 @@ func (sp *secretsProvider) Read(componentName string) (SecretValues, error) {
 func (sp *secretsProvider) Write(componentName string, secrets SecretValues) error {
 	logrus.WithField("component", componentName).Info("Writing secrets for component")
 
-	_, err := sp.env.KubeClient().Secrets(sp.env.Namespace).Create(&v1.Secret{
+	err := sp.ensureNamespace()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"component": componentName,
+			"error":     err,
+		}).Error("Error when ensuring namespace exists for secret")
+		return err
+	}
+
+	_, err = sp.env.KubeClient().Secrets(sp.env.Namespace).Create(&v1.Secret{
 		ObjectMeta: v1.ObjectMeta{
 			Name: componentName,
 		},
@@ -100,6 +109,22 @@ func (sp *secretsProvider) Delete(componentName string) error {
 		return err
 	}
 
+	return nil
+}
+
+// ensureNamespace Trigger namespace creation and filter errors, only already-exists type of error won't be returned.
+func (sp *secretsProvider) ensureNamespace() error {
+	_, err := sp.env.KubeClient().NameSpace().Create(
+		&v1.Namespace{
+			ObjectMeta: v1.ObjectMeta{
+				Name: sp.env.Namespace,
+			},
+		},
+	)
+
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return err
+	}
 	return nil
 }
 
