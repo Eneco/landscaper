@@ -24,6 +24,23 @@ The Landscaper project is an ongoing project in an early stage, opened due to de
  - A Git repository contains a desired state description of the landscape, with CI/CD and a review before merge regime;
  - Landscaper, an app that eliminates difference between desired and actual state of Helm releases in a Kubernetes cluster.
 
+## Installation
+
+### From source
+
+You must have a working Go environment with [glide](https://github.com/Masterminds/glide) and `Make` installed.
+
+```console
+  $ cd $GOPATH
+  $ mkdir -p src/github.com/eneco/
+  $ cd !$
+  $ git clone https://github.com/Eneco/landscaper.git
+  $ cd landscaper
+  $ glide install -v
+  $ cd cmd
+  $ go build
+```
+
 ## Usage
 
 Landscaper consists of a core API and a command line interface (CLI) that consumes this API. It takes as input a set of files that constitute the desired state. The CLI assumes that `kubectl` and `helm` have been setup!
