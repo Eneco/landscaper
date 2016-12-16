@@ -114,7 +114,7 @@ func (sp *secretsProvider) Delete(componentName string) error {
 
 // ensureNamespace Trigger namespace creation and filter errors, only already-exists type of error won't be returned.
 func (sp *secretsProvider) ensureNamespace() error {
-	_, err := sp.env.KubeClient().NameSpace().Create(
+	_, err := sp.env.KubeClient().Namespaces().Create(
 		&v1.Namespace{
 			ObjectMeta: v1.ObjectMeta{
 				Name: sp.env.Namespace,
@@ -122,10 +122,11 @@ func (sp *secretsProvider) ensureNamespace() error {
 		},
 	)
 
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return err
+	if errors.IsAlreadyExists(err) {
+		return nil
 	}
-	return nil
+
+	return err
 }
 
 func readSecretValues(cmp *Component) {
