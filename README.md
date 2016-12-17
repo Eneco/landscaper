@@ -30,16 +30,17 @@ The Landscaper project is an ongoing project in an early stage, opened due to de
 
 You must have a working Go environment with [glide](https://github.com/Masterminds/glide) and `Make` installed.
 
-```console
-  $ cd $GOPATH
-  $ mkdir -p src/github.com/eneco/
-  $ cd !$
-  $ git clone https://github.com/Eneco/landscaper.git
-  $ cd landscaper
-  $ glide install -v
-  $ cd cmd
-  $ go build
+From a terminal:
+```shell
+  cd $GOPATH
+  mkdir -p src/github.com/eneco/
+  cd !$
+  git clone https://github.com/Eneco/landscaper.git
+  cd landscaper
+  make bootstrap build
 ```
+
+Outputs the landscaper binary in `./build/landscaper`.
 
 ## Usage
 
