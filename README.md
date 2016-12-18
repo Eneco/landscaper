@@ -4,6 +4,12 @@ Landscaper takes a set of Helm Chart references with values (a desired state), a
 
 The Landscaper project is an ongoing project in an early stage, opened due to demand in the community. Contributions and feedback are more than welcome!
 
+ - [Introduction](#introduction)
+ - [Usage](#usage)
+ - [Example](#example)
+ - [Example Use Case](#example-use-case)
+ - [Contributing](#contributing)
+
 ## Introduction
 
 ### Why
