@@ -1,0 +1,13 @@
+language: go
+
+go:
+  - '1.7.x'
+
+go_import_path: github.com/eneco/landscaper
+
+before_install:
+  - go get -u github.com/Masterminds/glide
+  - make bootstrap
+
+script:
+  - make test
