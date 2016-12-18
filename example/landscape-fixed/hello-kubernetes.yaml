@@ -1,0 +1,6 @@
+name: hello-kubernetes
+release:
+  chart: local/hello-world:0.1.0
+  version: 0.1.0
+configuration:
+  message: Hello, Kubernetes people!

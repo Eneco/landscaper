@@ -67,33 +67,9 @@ Unless otherwise specified, Helm releases are prefixed with the same namespace s
 Input desired state files are in YAML and contain the name that identifies the "component", a reference to a chart, configuration and optionally secrets.
 Currently, secrets are handled by specifying the name in the YAML, e.g. `my-secret`, and having a matching environment variable available with the secret, e.g. `export MY_SECRET=Rumpelstiltskin`
 
-## Basic Example
+## Example
 
-Create a directory with only a file `landscaped-mysql.yaml` that contains:
-
-    name: landscaped-mysql
-    release:
-      chart: stable/mysql
-      version: 0.1.0
-    configuration:
-      mysqlUser: landscaper
-      mysqlPassword: demo
-
-(or use the provided `/example/`).
-From that directory, execute `landscaper apply --namespace example` and inspect the output.
-On succes, `helm list` should output something like:
-
-    NAME                        REVISION    UPDATED                     STATUS      CHART
-    example-landscaped-mysql    1           Thu Dec  1 21:54:21 2016    DEPLOYED    mysql-0.2.1
-
-Now use `kubectl get pod --namespace example` to obtain the pod name and status.
-When the pod is `Running`, port forward with:
-
-    kubectl port-forward --namespace example <your-pod> 3306
-
-In another terminal, assuming the `mysql` client being installed, connect with the landscaped user/password:
-
-    mysql --host localhost --protocol=TCP --user=landscaper --password=demo
+An example is provided [here](./example).
 
 ## Example Use Case
 

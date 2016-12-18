@@ -1,0 +1,4 @@
+apiVersion: v1
+name: hello-world
+description: Says hello world, or something else, ad infinitum.
+version: 0.1.0
