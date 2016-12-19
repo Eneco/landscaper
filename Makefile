@@ -33,8 +33,7 @@ static:
 	cd cmd && CGO_ENABLED=0 go build -ldflags "$(LD_RELEASE_FLAGS)" -o ../$(BUILD_DIR)/$(APP); cd ..
 
 docker: static
-	cp ./$(BUILD_DIR)/landscaper docker
-	docker build -t eneco/landscaper docker
+	cp docker/* ./$(BUILD_DIR)/
+	docker build -t eneco/landscaper ./$(BUILD_DIR)/
 	docker tag eneco/landscaper eneco/landscaper:latest
 	docker tag eneco/landscaper eneco/landscaper:$(GIT_TAG)
-	rm ./$(BUILD_DIR)/landscaper
