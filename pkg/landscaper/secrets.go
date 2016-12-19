@@ -33,14 +33,14 @@ func NewSecretsProvider(env *Environment) SecretsProvider {
 }
 
 func (sp *secretsProvider) Read(componentName string) (SecretValues, error) {
-	logrus.WithField("component", componentName).Info("Reading secrets for component")
+	logrus.WithField("component", componentName).Debug("Reading secrets for component")
 
 	secrets := SecretValues{}
 
 	secret, err := sp.env.KubeClient().Secrets(sp.env.Namespace).Get(componentName)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			logrus.WithField("component", componentName).Info("No secrets found for component")
+			logrus.WithField("component", componentName).Debug("No secrets found for component")
 			return secrets, nil
 		}
 
@@ -55,7 +55,7 @@ func (sp *secretsProvider) Read(componentName string) (SecretValues, error) {
 		secrets[key] = string(val)
 	}
 
-	logrus.WithField("component", componentName).Info("Successfully read secrets for component")
+	logrus.WithField("component", componentName).Debug("Successfully read secrets for component")
 
 	return secrets, nil
 }

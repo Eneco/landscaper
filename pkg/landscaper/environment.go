@@ -39,7 +39,7 @@ type Environment struct {
 // HelmClient makes sure the environment has a HelmClient initialized and returns it
 func (e *Environment) HelmClient() helm.Interface {
 	if e.helmClient == nil {
-		logrus.WithFields(logrus.Fields{"helmClientVersion": helmversion.Version}).Info("Setup Helm Client")
+		logrus.WithFields(logrus.Fields{"helmClientVersion": helmversion.Version}).Debug("Setup Helm Client")
 
 		tillerHost, err := setupConnection()
 		if err != nil {
@@ -69,7 +69,7 @@ func (e *Environment) HelmClient() helm.Interface {
 // KubeClient makes sure the environment has a KubeClient initialized
 func (e *Environment) KubeClient() v1core.CoreInterface {
 	if e.kubeClient == nil {
-		logrus.Info("Setup Kubernetes Client")
+		logrus.Debug("Setup Kubernetes Client")
 
 		cfg, err := clientcmd.BuildConfigFromFlags("", clientcmd.NewDefaultPathOptions().GlobalFile)
 		if err != nil {
@@ -109,7 +109,7 @@ func (e *Environment) ReleaseName(componentName string) string {
 
 // setupConnection creates and returns tiller port forwarding tunnel
 func setupConnection() (string, error) {
-	logrus.WithFields(logrus.Fields{"tillerNamespace": tillerNamespace}).Info("Create tiller tunnel")
+	logrus.WithFields(logrus.Fields{"tillerNamespace": tillerNamespace}).Debug("Create tiller tunnel")
 	tunnel, err := newTillerPortForwarder(tillerNamespace, "")
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"tillerNamespace": tillerNamespace, "error": err}).Error("Failed to create tiller tunnel")
@@ -118,7 +118,7 @@ func setupConnection() (string, error) {
 
 	tillerTunnel = tunnel
 
-	logrus.WithFields(logrus.Fields{"port": tunnel.Local}).Info("Created tiller tunnel")
+	logrus.WithFields(logrus.Fields{"port": tunnel.Local}).Debug("Created tiller tunnel")
 
 	return fmt.Sprintf(":%d", tunnel.Local), nil
 }
