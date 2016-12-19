@@ -1,0 +1,24 @@
+#/bin/bash -x
+#fills in /root/.kube/config from environment; issues a helm repo update
+cat >/root/.kube/config <<EOF
+apiVersion: v1
+clusters:
+- cluster:
+    insecure-skip-tls-verify: true
+    server: ${K8S_MASTER_URL}
+  name: engd
+contexts:
+- context:
+    cluster: engd
+    user: ${K8S_USERNAME}
+  name: engd
+current-context: engd
+kind: Config
+preferences: {}
+users:
+- name: ${K8S_USERNAME}
+  user:
+    token: ${K8S_PASSWORD}
+EOF
+
+helm repo update

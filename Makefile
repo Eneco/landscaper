@@ -13,7 +13,7 @@ LD_RELEASE_FLAGS += -X github.com/eneco/landscaper/pkg/landscaper.GitCommit=${GI
 LD_RELEASE_FLAGS += -X github.com/eneco/landscaper/pkg/landscaper.GitTag=${GIT_TAG}
 LD_RELEASE_FLAGS += -X github.com/eneco/landscaper/pkg/landscaper.SemVer=${VERSION}
 
-.PHONY: default bootstrap clean test build
+.PHONY: default bootstrap clean test build static docker
 
 default: build
 
@@ -31,3 +31,10 @@ build:
 
 static:
 	cd cmd && CGO_ENABLED=0 go build -ldflags "$(LD_RELEASE_FLAGS)" -o ../$(BUILD_DIR)/$(APP); cd ..
+
+docker: static
+	cp ./$(BUILD_DIR)/landscaper docker
+	docker build -t eneco/landscaper docker
+	docker tag eneco/landscaper eneco/landscaper:latest
+	docker tag eneco/landscaper eneco/landscaper:$(GIT_TAG)
+	rm ./$(BUILD_DIR)/landscaper
