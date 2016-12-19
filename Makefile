@@ -28,3 +28,6 @@ test:
 
 build:
 	cd cmd && go build -ldflags "$(LD_RELEASE_FLAGS)" -o ../$(BUILD_DIR)/$(APP); cd ..
+
+static:
+	cd cmd && CGO_ENABLED=0 go build -ldflags "$(LD_RELEASE_FLAGS)" -o ../$(BUILD_DIR)/$(APP); cd ..
