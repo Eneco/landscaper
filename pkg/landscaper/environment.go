@@ -30,6 +30,7 @@ type Environment struct {
 	LandscapeDir      string
 	Namespace         string
 	Verbose           bool
+	NoCronUpdate      bool // NoCronUpdate replaces a CronJob update with a create+delete; k8s #35149 work around
 
 	helmClient helm.Interface
 	kubeClient v1core.CoreInterface

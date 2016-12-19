@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/pmezard/go-difflib/difflib"
@@ -36,6 +37,14 @@ func NewExecutor(env *Environment, secretsProvider SecretsProvider) Executor {
 // Apply transforms the current state into the desired state
 func (e *executor) Apply(desired, current []*Component) error {
 	create, update, delete := diff(desired, current)
+
+	if e.env.NoCronUpdate {
+		var err error
+		create, update, delete, err = e.workAround35149(desired, current, create, update, delete)
+		if err != nil {
+			return err
+		}
+	}
 
 	logrus.WithFields(logrus.Fields{"create": len(create), "update": len(update), "delete": len(delete)}).Info("Apply desired state")
 
@@ -279,6 +288,10 @@ func logDifferences(current, creates, updates, deletes []*Component, logf func(f
 		return nil
 	}
 
+	for _, d := range deletes {
+		logf("Delete: %s", d.Name)
+	}
+
 	for _, d := range creates {
 		if err := log("Create: "+d.Name, nil, d); err != nil {
 			return err
@@ -292,9 +305,49 @@ func logDifferences(current, creates, updates, deletes []*Component, logf func(f
 		}
 	}
 
-	for _, d := range deletes {
-		logf("Delete: %s", d.Name)
+	return nil
+}
+
+// workAround35149 removes CronJobs from update and places it into a delete current + create desired combo.
+// get rid of it when fixed.
+func (e *executor) workAround35149(desired, current, create, update, delete []*Component) ([]*Component, []*Component, []*Component, error) {
+	var fixUpdate []*Component
+	for _, cmp := range update {
+		cronJob, err := isCronJob(e.env, cmp)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		if cronJob {
+			logrus.Infof("%s is CronJob; work around k8s #35149: don't update but create/delete instead", cmp.Name)
+			for _, currentCmp := range current {
+				if currentCmp.Name == cmp.Name {
+					delete = append(delete, currentCmp) // delete the current component
+				}
+			}
+			create = append(create, cmp) // create cmp, by definition a desired component
+		} else {
+			fixUpdate = append(fixUpdate, cmp)
+		}
+	}
+	return create, fixUpdate, delete, nil
+}
+
+// TODO. hacky. ugly. needed to work around https://github.com/kubernetes/kubernetes/issues/35149
+// get rid of it when fixed.
+func isCronJob(env *Environment, cmp *Component) (bool, error) {
+	chartRef, err := cmp.FullChartRef()
+	if err != nil {
+		return false, err
+	}
+	ch, _, err := env.ChartLoader.Load(chartRef)
+	if err != nil {
+		return false, err
+	}
+	for _, t := range ch.Templates {
+		if strings.Contains(string(t.Data), "CronJob") || strings.Contains(string(t.Data), "ScheduledJob") {
+			return true, nil
+		}
 	}
 
-	return nil
+	return false, nil
 }

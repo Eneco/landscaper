@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/eneco/landscaper/pkg/landscaper"
 	"github.com/Sirupsen/logrus"
+	"github.com/eneco/landscaper/pkg/landscaper"
 	"github.com/spf13/cobra"
 )
 
@@ -82,6 +82,7 @@ func init() {
 	f.StringVar(&env.LandscapeDir, "dir", landscapeDir, "path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR")
 	f.StringVar(&env.Namespace, "namespace", landscapeNamespace, "namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE")
 	f.StringVar(&env.ChartDir, "chart-dir", chartDir, "where the charts are stored")
+	f.BoolVar(&env.NoCronUpdate, "no-cronjob-update", false, "replaces CronJob updates with a create+delete; k8s #35149 work around")
 
 	rootCmd.AddCommand(addCmd)
 }
