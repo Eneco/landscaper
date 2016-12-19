@@ -1,0 +1,2 @@
+schedule: "*/1 * * * *"
+message: Hello, cron world!

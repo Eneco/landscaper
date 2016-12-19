@@ -1,0 +1,26 @@
+apiVersion: batch/v2alpha1
+kind: CronJob
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  schedule: {{ .Values.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+           metadata:
+             labels:
+               app: {{ template "fullname" . }}
+          containers:
+          - name: {{ .Chart.Name }}
+            image: busybox
+            args:
+            - /bin/sh
+            - -c
+            - echo `date` "| {{ .Values.message }}"

@@ -1,0 +1,4 @@
+apiVersion: v1
+name: hello-cron
+description: A CronJob that says hello
+version: 0.1.0
