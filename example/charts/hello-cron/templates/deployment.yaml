@@ -14,9 +14,9 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
-           metadata:
-             labels:
-               app: {{ template "fullname" . }}
+          metadata:
+           labels:
+             app: {{ template "fullname" . }}
           containers:
           - name: {{ .Chart.Name }}
             image: busybox
