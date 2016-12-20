@@ -60,13 +60,18 @@ Additionally, Landscaper receives settings (tokens, credentials) needed to query
 The CLI uses a command structure in the spirit of `git` et al. The main command is `landscaper apply` to apply a desired state.
 The `apply` command accepts the following arguments:
 
-        --chart-dir string   where the charts are stored (default "$HOME/.helm")
-        --dir string         path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR (default ".")
-        --dry-run            simulate the applying of the landscape. useful in merge requests
-        --namespace string   namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE (default "acceptance")
-        --no-prefix          disable prefixing release names
-        --prefix string      prefix release names with this string instead of <namespace>; overrides LANDSCAPE_PREFIX
-    -v, --verbose            be verbose
+    Usage:
+      landscaper apply [flags]
+
+    Flags:
+          --chart-dir string    where the charts are stored (default "$HOME/.helm")
+          --dir string          path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR (default ".")
+          --dry-run             simulate the applying of the landscape. useful in merge requests
+          --namespace string    namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE (default "acceptance")
+          --no-cronjob-update   replaces CronJob updates with a create+delete; k8s #35149 work around
+          --no-prefix           disable prefixing release names
+          --prefix string       prefix release names with this string instead of <namespace>; overrides LANDSCAPE_PREFIX
+      -v, --verbose             be verbose
 
 Instead of using arguments, environment variables can be used. When arguments are present, they override environment variables.
 `--namespace` is used to isolate landscapes through Kubernetes namespaces.
