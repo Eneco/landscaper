@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  template:
+    metadata:
+      labels:
+        app: {{ template "fullname" . }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        env:
+        - name: "NAME"
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secretsRef }}
+              key: hello-name
+        - name: "AGE"
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secretsRef }}
+              key: hello-age
+        image: busybox
+        args:
+        - /bin/sh
+        - -c
+        - while true; do echo `date` "| my name is $NAME and I am $AGE years old"; sleep {{ .Values.sleep }}; done

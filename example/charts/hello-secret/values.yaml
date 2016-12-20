@@ -1,0 +1,2 @@
+secretsRef: "__required__" # name of the Secrets object; will be overridden by landscaper with an actual ref
+sleep: 1

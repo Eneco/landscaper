@@ -1,0 +1,4 @@
+apiVersion: v1
+name: hello-secret
+description: Says something secretive, ad infinitum.
+version: 0.1.0
