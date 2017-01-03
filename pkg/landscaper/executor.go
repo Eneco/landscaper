@@ -38,7 +38,7 @@ func NewExecutor(env *Environment, secretsProvider SecretsProvider) Executor {
 func (e *executor) Apply(desired, current []*Component) error {
 	create, update, delete := diff(desired, current)
 
-	if e.env.NoCronUpdate {
+	if e.env.NoCronUpdate && !e.env.DryRun {
 		var err error
 		create, update, delete, err = e.workAround35149(desired, current, create, update, delete)
 		if err != nil {
