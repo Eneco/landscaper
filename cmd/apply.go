@@ -70,7 +70,7 @@ func init() {
 
 	landscapeNamespace := os.Getenv("LANDSCAPE_NAMESPACE")
 	if landscapeNamespace == "" {
-		landscapeNamespace = "acceptance"
+		landscapeNamespace = "default"
 	}
 
 	chartDir := os.ExpandEnv("$HOME/.helm")
