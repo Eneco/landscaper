@@ -29,11 +29,13 @@ test:
 build:
 	cd cmd && go build -ldflags "$(LD_RELEASE_FLAGS)" -o ../$(BUILD_DIR)/$(APP); cd ..
 
-static:
-	cd cmd && CGO_ENABLED=0 go build -ldflags "$(LD_RELEASE_FLAGS)" -o ../$(BUILD_DIR)/$(APP); cd ..
+# builds a statically linked binary for linux-amd64
+dockerbinary:
+	cd cmd && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "$(LD_RELEASE_FLAGS)" -o ../$(BUILD_DIR)/$(APP); cd ..
 
-docker: static
+docker: dockerbinary
 	cp docker/* ./$(BUILD_DIR)/
 	docker build -t eneco/landscaper ./$(BUILD_DIR)/
+	docker run eneco/landscaper landscaper version
 	docker tag eneco/landscaper eneco/landscaper:latest
 	docker tag eneco/landscaper eneco/landscaper:$(GIT_TAG)
