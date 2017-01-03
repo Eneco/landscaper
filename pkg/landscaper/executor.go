@@ -59,16 +59,16 @@ func (e *executor) Apply(desired, current []*Component) error {
 		}
 	}
 
-	for _, cmp := range create {
-		if err := e.CreateComponent(cmp); err != nil {
-			logrus.WithFields(logrus.Fields{"error": err}).Error("CreateComponent failed")
+	for _, cmp := range update {
+		if err := e.UpdateComponent(cmp); err != nil {
+			logrus.WithFields(logrus.Fields{"error": err}).Error("UpdateComponent failed")
 			return err
 		}
 	}
 
-	for _, cmp := range update {
-		if err := e.UpdateComponent(cmp); err != nil {
-			logrus.WithFields(logrus.Fields{"error": err}).Error("UpdateComponent failed")
+	for _, cmp := range create {
+		if err := e.CreateComponent(cmp); err != nil {
+			logrus.WithFields(logrus.Fields{"error": err}).Error("CreateComponent failed")
 			return err
 		}
 	}
