@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/Sirupsen/logrus"
 	validator "gopkg.in/validator.v2"
@@ -75,6 +76,7 @@ func (cp *componentProvider) Current() ([]*Component, error) {
 		for key := range secretValues {
 			cmp.Secrets = append(cmp.Secrets, key)
 		}
+		sort.Strings(cmp.Secrets) // enforce a consistent ordering for proper diffing / deepEqualing
 
 		components = append(components, cmp)
 	}
@@ -118,6 +120,7 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 		}
 
 		if len(cmp.Secrets) > 0 {
+			sort.Strings(cmp.Secrets) // enforce a consistent ordering for proper diffing / deepEqualing
 			readSecretValues(cmp)
 		}
 
