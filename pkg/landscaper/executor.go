@@ -48,14 +48,14 @@ func (e *executor) Apply(desired, current []*Component) error {
 				return err
 			}
 			if cronJob {
-				logrus.Infof("%s is CronJob; work around k8s #35149: don't update but create/delete instead", cmp.Name)
+				logrus.Infof("%s is CronJob; work around k8s #35149: don't update but delete + create instead", cmp.Name)
 				needForcedUpdate[cmp.Name] = true
 			}
 		}
 		// releases that differ only in secret values are forced so that pods will restart with the new values
 		for _, curCmp := range current {
 			if curCmp.Name == cmp.Name && isOnlySecretValueDiff(*curCmp, *cmp) {
-				logrus.Infof("%s differs in secrets values only; don't update but create/delete instead", cmp.Name)
+				logrus.Infof("%s differs in secrets values only; don't update but delete + create instead", cmp.Name)
 				needForcedUpdate[cmp.Name] = true
 			}
 		}
