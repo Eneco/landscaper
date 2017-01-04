@@ -129,6 +129,44 @@ func TestExecutorDelete(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestIsOnlySecretValueDiff(t *testing.T) {
+	a := *newTestComponent()
+	require.False(t, isOnlySecretValueDiff(a, a), "Identical components")
+
+	b := *newTestComponent()
+	b.Name = b.Name + "X"
+	require.False(t, isOnlySecretValueDiff(a, b), "Components different on non-secretvals")
+
+	c := *newTestComponent()
+	c.SecretValues["x"] = "y"
+	require.True(t, isOnlySecretValueDiff(a, c), "Components different only on secretvals")
+}
+
+func TestIntegrateForcedUpdates(t *testing.T) {
+	c := newTestComponent()
+	u := newTestComponent()
+	d := newTestComponent()
+	f := newTestComponent()
+	c.Name = "C"
+	u.Name = "U"
+	d.Name = "D"
+	f.Name = "F"
+
+	current := []*Component{u, f, d}
+
+	create := []*Component{c}
+	update := []*Component{u, f}
+	delete := []*Component{d}
+
+	needForcedUpdate := map[string]bool{"F": true}
+
+	create, update, delete = integrateForcedUpdates(current, create, update, delete, needForcedUpdate)
+
+	require.Equal(t, []*Component{c, f}, create)
+	require.Equal(t, []*Component{u}, update)
+	require.Equal(t, []*Component{d, f}, delete)
+}
+
 func newTestComponent() *Component {
 	cmp := NewComponent(
 		"create-test",

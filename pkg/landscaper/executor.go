@@ -38,12 +38,31 @@ func NewExecutor(env *Environment, secretsProvider SecretsProvider) Executor {
 func (e *executor) Apply(desired, current []*Component) error {
 	create, update, delete := diff(desired, current)
 
-	if e.env.NoCronUpdate && !e.env.DryRun {
-		var err error
-		create, update, delete, err = e.workAround35149(desired, current, create, update, delete)
-		if err != nil {
-			return err
+	// some to-be-updated components need a delete + create instead
+	needForcedUpdate := map[string]bool{}
+	for _, cmp := range update {
+		// to work around k8s #35149, cronJobs need a force update
+		if e.env.NoCronUpdate {
+			cronJob, err := isCronJob(e.env, cmp)
+			if err != nil {
+				return err
+			}
+			if cronJob {
+				logrus.Infof("%s is CronJob; work around k8s #35149: don't update but delete + create instead", cmp.Name)
+				needForcedUpdate[cmp.Name] = true
+			}
 		}
+		// releases that differ only in secret values are forced so that pods will restart with the new values
+		for _, curCmp := range current {
+			if curCmp.Name == cmp.Name && isOnlySecretValueDiff(*curCmp, *cmp) {
+				logrus.Infof("%s differs in secrets values only; don't update but delete + create instead", cmp.Name)
+				needForcedUpdate[cmp.Name] = true
+			}
+		}
+	}
+	// delete+create pairs will never work in dry run since the dry-run "deleted" component will exist in create
+	if !e.env.DryRun {
+		create, update, delete = integrateForcedUpdates(current, create, update, delete, needForcedUpdate)
 	}
 
 	logrus.WithFields(logrus.Fields{"create": len(create), "update": len(update), "delete": len(delete)}).Info("Apply desired state")
@@ -308,17 +327,11 @@ func logDifferences(current, creates, updates, deletes []*Component, logf func(f
 	return nil
 }
 
-// workAround35149 removes CronJobs from update and places it into a delete current + create desired combo.
-// get rid of it when fixed.
-func (e *executor) workAround35149(desired, current, create, update, delete []*Component) ([]*Component, []*Component, []*Component, error) {
+// integrateForcedUpdates removes forceUpdate from update and inserts it into delete + create
+func integrateForcedUpdates(current, create, update, delete []*Component, forceUpdate map[string]bool) ([]*Component, []*Component, []*Component) {
 	var fixUpdate []*Component
 	for _, cmp := range update {
-		cronJob, err := isCronJob(e.env, cmp)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		if cronJob {
-			logrus.Infof("%s is CronJob; work around k8s #35149: don't update but create/delete instead", cmp.Name)
+		if forceUpdate[cmp.Name] {
 			for _, currentCmp := range current {
 				if currentCmp.Name == cmp.Name {
 					delete = append(delete, currentCmp) // delete the current component
@@ -329,9 +342,18 @@ func (e *executor) workAround35149(desired, current, create, update, delete []*C
 			fixUpdate = append(fixUpdate, cmp)
 		}
 	}
-	return create, fixUpdate, delete, nil
+	return create, fixUpdate, delete
 }
 
+// isOnlySecretValueDiff tells whether the given Components differ in their .SecretValues fields and are identical otherwise
+func isOnlySecretValueDiff(a, b Component) bool {
+	secValsEqual := reflect.DeepEqual(a.SecretValues, b.SecretValues)
+	a.SecretValues = SecretValues{}
+	b.SecretValues = SecretValues{}
+	return !secValsEqual && reflect.DeepEqual(a, b)
+}
+
+// isCronJob tells if the chart template contains the word "CronJob" or "ScheduledJob"
 // TODO. hacky. ugly. needed to work around https://github.com/kubernetes/kubernetes/issues/35149
 // get rid of it when fixed.
 func isCronJob(env *Environment, cmp *Component) (bool, error) {
