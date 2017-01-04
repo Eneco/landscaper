@@ -39,3 +39,7 @@ docker: dockerbinary
 	docker run eneco/landscaper landscaper version
 	docker tag eneco/landscaper eneco/landscaper:latest
 	docker tag eneco/landscaper eneco/landscaper:$(GIT_TAG)
+
+publish_docker: docker
+	docker push eneco/landscaper:latest
+	docker push eneco/landscaper:$(GIT_TAG)

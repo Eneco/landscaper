@@ -1,5 +1,8 @@
 language: go
 
+services:
+ - docker
+
 go:
   - '1.7.x'
 
@@ -11,3 +14,9 @@ before_install:
 
 script:
   - make test
+
+after_success:
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+    docker login -u="$DOCKER_USER" -p="$DOCKER_PASS";
+    make publish_docker;
+    fi
