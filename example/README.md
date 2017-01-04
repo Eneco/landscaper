@@ -69,7 +69,7 @@ Here, `secretsRef` is filled in by Landscaper with the name of the Secret object
 
 To make things a bit more concrete, run:
 
-    HELLO_NAME=rumpelstiltskin HELLO_AGE=42 ./build/landscaper apply --dir build --namespace example --dir example/landscape-complex
+    HELLO_NAME=rumpelstiltskin HELLO_AGE=42 ./build/landscaper apply --namespace example --dir example/landscape-complex
 
 Upon success, `kubectl get secret --namespace example` should contain a Secret object named `example-secretive`. Use `kubectl get pods --namespace example` to obtain the exact pod name, and inspecting its output with `kubectl --namespace example logs example-secretive-hello-secret-EXACT-NAME` should give output similar to:
 
