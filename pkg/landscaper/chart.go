@@ -1,7 +1,7 @@
 package landscaper
 
 import (
-	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,9 +29,6 @@ func NewLocalCharts(homePath string) *LocalCharts {
 	return &LocalCharts{HomePath: homePath}
 }
 
-// ErrChartNotFound is thrown when an unknown chart is trying to be loaded
-var ErrChartNotFound = errors.New("chart not found")
-
 // Load locates, and potentially downloads, a chart to the local repository
 func (c *LocalCharts) Load(chartRef string) (*chart.Chart, string, error) {
 	logrus.WithFields(logrus.Fields{"chartRef": chartRef}).Debug("Load Chart")
@@ -50,44 +47,54 @@ func (c *LocalCharts) Load(chartRef string) (*chart.Chart, string, error) {
 	return chart, chartPath, nil
 }
 
-// locateChartPath searches for a chart in homePath, downloads it otherwise and if that fails and possibly returns an ErrChartNotFound
+// locateChartPath downloads charts by reference. It stores the resulting tgzs in a temporary directory.
 func locateChartPath(homePath, chartRef string) (string, error) {
-	logrus.WithFields(logrus.Fields{"chartRef": chartRef, "homePath": homePath}).Debug("locateChartPath")
 	name, version := parseChartRef(chartRef)
+	logrus.WithFields(logrus.Fields{"chartRef": chartRef, "homePath": homePath, "name": name, "version": version}).Debug("locateChartPath")
 
-	chartFile := filepath.Join(helmpath.Home(homePath).Repository(), name)
-	if _, err := os.Stat(chartFile); err == nil {
-		return filepath.Abs(chartFile)
+	repoName := ""
+	info := strings.Split(name, "/")
+	if len(info) != 2 {
+		return "", fmt.Errorf("expect repo/name instead of `%s`", name)
 	}
+	repoName = info[0]
 
 	dl := downloader.ChartDownloader{
 		HelmHome: helmpath.Home(homePath),
 		Out:      os.Stdout,
 	}
 
-	logrus.WithFields(logrus.Fields{"name": name, "version": version, "homePath": homePath}).Debug("Download Chart")
-	chartFile, _, err := dl.DownloadTo(name, version, helmpath.Home(homePath).Repository())
-	if err == nil {
-		chartFile, err = filepath.Abs(chartFile)
-		if err != nil {
-			return "", err
-		}
-
-		repoName := ""
-		info := strings.Split(name, "/")
-		if len(info) == 2 {
-			repoName = info[0]
-		}
-
-		// Extract the chart for easier reference the next time
-		chartutil.ExpandFile(filepath.Join(helmpath.Home(homePath).Repository(), repoName), chartFile)
-
-		logrus.WithFields(logrus.Fields{"chartFile": chartFile}).Debug("Downloaded Chart")
-		return chartFile, nil
+	// ResolveChartVersion provides us through the repo index an url from which we can obtain the filename chart.tgz
+	url, err := dl.ResolveChartVersion(name, version)
+	if err != nil {
+		return "", fmt.Errorf("cannot resolve chartversion: %s", err)
 	}
 
-	logrus.WithFields(logrus.Fields{"name": name, "version": version, "homePath": homePath, "err": err}).Error("Failed to download Chart")
-	return "", ErrChartNotFound
+	_, chartFile := filepath.Split(url.Path)
+
+	repoDir := filepath.Join(os.TempDir(), "landscaper", repoName)
+	if err := os.MkdirAll(repoDir, 0755); err != nil {
+		return "", fmt.Errorf("cannot create work directory `%s`", repoDir)
+	}
+
+	chartPath, err := filepath.Abs(filepath.Join(repoDir, chartFile))
+	if err != nil {
+		return "", err
+	}
+
+	logrus.WithFields(logrus.Fields{"chartPath": chartPath}).Debug("Look for cached local package")
+
+	if _, err := os.Stat(chartPath); err == nil {
+		return chartPath, nil
+	}
+
+	logrus.WithFields(logrus.Fields{"name": name, "version": version, "repoDir": repoDir}).Debug("Download")
+	chartFile, _, err = dl.DownloadTo(name, version, repoDir)
+	if err != nil {
+		return "", fmt.Errorf("failed to download `%s`: %s", chartRef, err)
+	}
+
+	return chartPath, nil
 }
 
 // parseChartRef splits a name:version into a name and an (optional) version
