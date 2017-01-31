@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
-	"k8s.io/client-go/1.4/pkg/api/errors"
-	"k8s.io/client-go/1.4/pkg/api/v1"
+	"k8s.io/kubernetes/pkg/api"
+	"k8s.io/kubernetes/pkg/api/errors"
 )
 
 // Secrets is currently a slice of secret names that should be applied to a component
@@ -14,7 +14,7 @@ type Secrets []string
 
 // SecretValues is a map containing the actual values of the secrets. Note that this should not be written
 // to kubernetes or anywhere else persistent!
-type SecretValues map[string]string
+type SecretValues map[string][]byte
 
 // SecretsProvider reads secrets for a release from both the desired state as well as the current state
 type SecretsProvider interface {
@@ -52,7 +52,7 @@ func (sp *secretsProvider) Read(componentName string) (SecretValues, error) {
 	}
 
 	for key, val := range secret.Data {
-		secrets[key] = string(val)
+		secrets[key] = val
 	}
 
 	logrus.WithField("component", componentName).Debug("Successfully read secrets for component")
@@ -72,11 +72,11 @@ func (sp *secretsProvider) Write(componentName string, secrets SecretValues) err
 		return err
 	}
 
-	_, err = sp.env.KubeClient().Secrets(sp.env.Namespace).Create(&v1.Secret{
-		ObjectMeta: v1.ObjectMeta{
+	_, err = sp.env.KubeClient().Secrets(sp.env.Namespace).Create(&api.Secret{
+		ObjectMeta: api.ObjectMeta{
 			Name: componentName,
 		},
-		StringData: secrets,
+		Data: secrets,
 	})
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -115,8 +115,8 @@ func (sp *secretsProvider) Delete(componentName string) error {
 // ensureNamespace Trigger namespace creation and filter errors, only already-exists type of error won't be returned.
 func (sp *secretsProvider) ensureNamespace() error {
 	_, err := sp.env.KubeClient().Namespaces().Create(
-		&v1.Namespace{
-			ObjectMeta: v1.ObjectMeta{
+		&api.Namespace{
+			ObjectMeta: api.ObjectMeta{
 				Name: sp.env.Namespace,
 			},
 		},
@@ -138,6 +138,6 @@ func readSecretValues(cmp *Component) {
 			logrus.WithFields(logrus.Fields{"secret": key, "envName": envName}).Warn("Secret not found in environment")
 		}
 
-		cmp.SecretValues[key] = secretValue
+		cmp.SecretValues[key] = []byte(secretValue)
 	}
 }
