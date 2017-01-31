@@ -29,6 +29,7 @@ type Environment struct {
 	Namespace         string
 	Verbose           bool
 	NoCronUpdate      bool // NoCronUpdate replaces a CronJob update with a create+delete; k8s #35149 work around
+	Context           string
 
 	helmClient helm.Interface
 	kubeClient internalversion.CoreInterface
@@ -39,7 +40,7 @@ func (e *Environment) HelmClient() helm.Interface {
 	if e.helmClient == nil {
 		logrus.WithFields(logrus.Fields{"helmClientVersion": helmversion.Version}).Debug("Setup Helm Client")
 
-		tillerHost, err := setupConnection()
+		tillerHost, err := setupConnection(e.Context)
 		if err != nil {
 			logrus.WithField("error", err).Fatalf("Could not set up connection to helm")
 			return nil
@@ -69,7 +70,7 @@ func (e *Environment) KubeClient() internalversion.CoreInterface {
 	if e.kubeClient == nil {
 		logrus.Debug("Setup Kubernetes Client")
 
-		_, client, err := getKubeClient("")
+		_, client, err := getKubeClient(e.Context)
 		if err != nil {
 			logrus.WithField("error", err).Fatalf("Could not build Kubernetes client config")
 			return nil
@@ -100,9 +101,9 @@ func (e *Environment) ReleaseName(componentName string) string {
 }
 
 // setupConnection creates and returns tiller port forwarding tunnel
-func setupConnection() (string, error) {
+func setupConnection(context string) (string, error) {
 	logrus.WithFields(logrus.Fields{"tillerNamespace": tillerNamespace}).Debug("Create tiller tunnel")
-	tunnel, err := newTillerPortForwarder(tillerNamespace, "")
+	tunnel, err := newTillerPortForwarder(tillerNamespace, context)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{"tillerNamespace": tillerNamespace, "error": err}).Error("Failed to create tiller tunnel")
 		return "", err

@@ -78,6 +78,7 @@ func init() {
 	f.BoolVar(&env.DryRun, "dry-run", false, "simulate the applying of the landscape. useful in merge requests")
 	f.BoolVarP(&env.Verbose, "verbose", "v", false, "be verbose")
 	f.BoolVar(&prefixDisable, "no-prefix", false, "disable prefixing release names")
+	f.StringVar(&env.Context, "context", "", "the kube context to use. defaults to the current context")
 	f.StringVar(&env.ReleaseNamePrefix, "prefix", landscapePrefix, "prefix release names with this string instead of <namespace>; overrides LANDSCAPE_PREFIX")
 	f.StringVar(&env.LandscapeDir, "dir", landscapeDir, "path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR")
 	f.StringVar(&env.Namespace, "namespace", landscapeNamespace, "namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE")
