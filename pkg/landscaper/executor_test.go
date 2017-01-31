@@ -138,7 +138,7 @@ func TestIsOnlySecretValueDiff(t *testing.T) {
 	require.False(t, isOnlySecretValueDiff(a, b), "Components different on non-secretvals")
 
 	c := *newTestComponent()
-	c.SecretValues["x"] = "y"
+	c.SecretValues["x"] = []byte("y")
 	require.True(t, isOnlySecretValueDiff(a, c), "Components different only on secretvals")
 }
 
@@ -187,8 +187,8 @@ func newTestComponent() *Component {
 	)
 
 	cmp.SecretValues = SecretValues{
-		"TestSecret1": "secret value 1",
-		"TestSecret2": "secret value 2",
+		"TestSecret1": []byte("secret value 1"),
+		"TestSecret2": []byte("secret value 2"),
 	}
 
 	cmp.Configuration.SetMetadata(&Metadata{ChartRepository: "repo", ReleaseVersion: "1.0.0"})
