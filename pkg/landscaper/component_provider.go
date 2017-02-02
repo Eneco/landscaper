@@ -27,8 +27,8 @@ var (
 
 // ComponentProvider can be used to interact with components locally, as well as on the cluster
 type ComponentProvider interface {
-	Current() ([]*Component, error)
-	Desired() ([]*Component, error)
+	Current() (map[string]*Component, error)
+	Desired() (map[string]*Component, error)
 }
 
 type componentProvider struct {
@@ -45,8 +45,8 @@ func NewComponentProvider(env *Environment, secretsProvider SecretsProvider) Com
 }
 
 // Current returns all Components in the cluster
-func (cp *componentProvider) Current() ([]*Component, error) {
-	components := []*Component{}
+func (cp *componentProvider) Current() (map[string]*Component, error) {
+	components := make(map[string]*Component)
 
 	logrus.Info("Obtain current state Helm Releases (Components) from Tiller")
 
@@ -78,7 +78,7 @@ func (cp *componentProvider) Current() ([]*Component, error) {
 		}
 		sort.Strings(cmp.Secrets) // enforce a consistent ordering for proper diffing / deepEqualing
 
-		components = append(components, cmp)
+		components[cmp.Name] = cmp
 	}
 
 	logrus.WithFields(logrus.Fields{"totalReleases": len(helmReleases), "landscapedComponents": len(components)}).Info("Retrieved Releases (Components)")
@@ -87,8 +87,8 @@ func (cp *componentProvider) Current() ([]*Component, error) {
 }
 
 // Desired returns all desired components according to their descriptions
-func (cp *componentProvider) Desired() ([]*Component, error) {
-	components := []*Component{}
+func (cp *componentProvider) Desired() (map[string]*Component, error) {
+	components := make(map[string]*Component)
 
 	logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir}).Info("Obtain desired state from directory")
 
@@ -130,7 +130,7 @@ func (cp *componentProvider) Desired() ([]*Component, error) {
 
 		logrus.Debugf("desired %#v", *cmp)
 
-		components = append(components, cmp)
+		components[cmp.Name] = cmp
 	}
 
 	if err := validateComponents(components); err != nil {

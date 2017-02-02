@@ -56,7 +56,7 @@ func (c *Component) Equals(other *Component) bool {
 }
 
 // validateComponents validates the individual components as well as duplicate names in the total collection
-func validateComponents(cs []*Component) error {
+func validateComponents(cs map[string]*Component) error {
 	// are the individual components okay?
 	for _, c := range cs {
 		if err := c.Validate(); err != nil {
