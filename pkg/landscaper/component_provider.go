@@ -46,7 +46,7 @@ func NewComponentProvider(env *Environment, secretsProvider SecretsProvider) Com
 
 // Current returns all Components in the cluster
 func (cp *componentProvider) Current() (Components, error) {
-	components := make(Components)
+	components := Components{}
 
 	logrus.Info("Obtain current state Helm Releases (Components) from Tiller")
 
@@ -88,7 +88,7 @@ func (cp *componentProvider) Current() (Components, error) {
 
 // Desired returns all desired components according to their descriptions
 func (cp *componentProvider) Desired() (Components, error) {
-	components := make(Components)
+	components := Components{}
 
 	logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir}).Info("Obtain desired state from directory")
 

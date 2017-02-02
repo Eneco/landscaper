@@ -67,7 +67,7 @@ func validateComponents(cs Components) error {
 	}
 
 	// is the collection as a whole okay: no dup names?
-	cMap := make(Components)
+	cMap := Components{}
 
 	for _, c := range cs {
 		if _, ok := cMap[c.Name]; ok {

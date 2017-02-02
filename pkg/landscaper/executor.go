@@ -226,9 +226,9 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 
 // diff takes desired and current components, and returns the components to create, update and delete to get from current to desired
 func diff(desired, current Components) (create, update, delete Components) {
-	create = make(Components)
-	update = make(Components)
-	delete = make(Components)
+	create = Components{}
+	update = Components{}
+	delete = Components{}
 
 	for name, desiredCmp := range desired {
 		if currentCmp, ok := current[name]; ok {
@@ -318,7 +318,7 @@ func logDifferences(currentMap, creates, updates, deletes Components, logf func(
 
 // integrateForcedUpdates removes forceUpdate from update and inserts it into delete + create
 func integrateForcedUpdates(current, create, update, delete Components, forceUpdate map[string]bool) (Components, Components, Components) {
-	fixUpdate := make(Components)
+	fixUpdate := Components{}
 	for _, cmp := range update {
 		if forceUpdate[cmp.Name] {
 			for _, currentCmp := range current {
