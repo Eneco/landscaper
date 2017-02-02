@@ -14,7 +14,7 @@ import (
 
 // Executor is responsible for applying a desired landscape to the actual landscape
 type Executor interface {
-	Apply(map[string]*Component, map[string]*Component) error
+	Apply(Components, Components) error
 
 	CreateComponent(*Component) error
 	UpdateComponent(*Component) error
@@ -35,7 +35,7 @@ func NewExecutor(env *Environment, secretsProvider SecretsProvider) Executor {
 }
 
 // Apply transforms the current state into the desired state
-func (e *executor) Apply(desired, current map[string]*Component) error {
+func (e *executor) Apply(desired, current Components) error {
 	create, update, delete := diff(desired, current)
 
 	// some to-be-updated components need a delete + create instead
@@ -225,10 +225,10 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 }
 
 // diff takes desired and current components, and returns the components to create, update and delete to get from current to desired
-func diff(desired, current map[string]*Component) (create, update, delete map[string]*Component) {
-	create = make(map[string]*Component)
-	update = make(map[string]*Component)
-	delete = make(map[string]*Component)
+func diff(desired, current Components) (create, update, delete Components) {
+	create = make(Components)
+	update = make(Components)
+	delete = make(Components)
 
 	for name, desiredCmp := range desired {
 		if currentCmp, ok := current[name]; ok {
@@ -280,7 +280,7 @@ func componentDiffText(current, desired *Component) (string, error) {
 }
 
 // logDifferences logs the Create, Update and Delete w.r.t. current to logf
-func logDifferences(currentMap, creates, updates, deletes map[string]*Component, logf func(format string, args ...interface{})) error {
+func logDifferences(currentMap, creates, updates, deletes Components, logf func(format string, args ...interface{})) error {
 	log := func(action string, current, desired *Component) error {
 		diff, err := componentDiffText(current, desired)
 		if err != nil {
@@ -317,8 +317,8 @@ func logDifferences(currentMap, creates, updates, deletes map[string]*Component,
 }
 
 // integrateForcedUpdates removes forceUpdate from update and inserts it into delete + create
-func integrateForcedUpdates(current, create, update, delete map[string]*Component, forceUpdate map[string]bool) (map[string]*Component, map[string]*Component, map[string]*Component) {
-	fixUpdate := make(map[string]*Component)
+func integrateForcedUpdates(current, create, update, delete Components, forceUpdate map[string]bool) (Components, Components, Components) {
+	fixUpdate := make(Components)
 	for _, cmp := range update {
 		if forceUpdate[cmp.Name] {
 			for _, currentCmp := range current {

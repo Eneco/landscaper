@@ -27,8 +27,8 @@ var (
 
 // ComponentProvider can be used to interact with components locally, as well as on the cluster
 type ComponentProvider interface {
-	Current() (map[string]*Component, error)
-	Desired() (map[string]*Component, error)
+	Current() (Components, error)
+	Desired() (Components, error)
 }
 
 type componentProvider struct {
@@ -45,8 +45,8 @@ func NewComponentProvider(env *Environment, secretsProvider SecretsProvider) Com
 }
 
 // Current returns all Components in the cluster
-func (cp *componentProvider) Current() (map[string]*Component, error) {
-	components := make(map[string]*Component)
+func (cp *componentProvider) Current() (Components, error) {
+	components := make(Components)
 
 	logrus.Info("Obtain current state Helm Releases (Components) from Tiller")
 
@@ -87,8 +87,8 @@ func (cp *componentProvider) Current() (map[string]*Component, error) {
 }
 
 // Desired returns all desired components according to their descriptions
-func (cp *componentProvider) Desired() (map[string]*Component, error) {
-	components := make(map[string]*Component)
+func (cp *componentProvider) Desired() (Components, error) {
+	components := make(Components)
 
 	logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir}).Info("Obtain desired state from directory")
 
