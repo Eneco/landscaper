@@ -125,7 +125,12 @@ func (cp *componentProvider) Desired() (Components, error) {
 		}
 
 		if err := cmp.Validate(); err != nil {
-			return nil, fmt.Errorf("failed to validate `%s`: %s", filename, err)
+			return components, fmt.Errorf("failed to validate `%s`: %s", filename, err)
+		}
+
+		// make sure there are no duplicate names
+		if _, ok := components[cmp.Name]; ok {
+			return components, fmt.Errorf("duplicate component name `%s`", cmp.Name)
 		}
 
 		logrus.Debugf("desired %#v", *cmp)
@@ -134,7 +139,7 @@ func (cp *componentProvider) Desired() (Components, error) {
 	}
 
 	if err := validateComponents(components); err != nil {
-		return nil, err
+		return components, err
 	}
 
 	logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir, "components": len(components)}).Debug("Desired state has been read")

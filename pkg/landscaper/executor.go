@@ -225,10 +225,10 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 }
 
 // diff takes desired and current components, and returns the components to create, update and delete to get from current to desired
-func diff(desired, current Components) (create, update, delete Components) {
-	create = Components{}
-	update = Components{}
-	delete = Components{}
+func diff(desired, current Components) (Components, Components, Components) {
+	create := Components{}
+	update := Components{}
+	delete := Components{}
 
 	for name, desiredCmp := range desired {
 		if currentCmp, ok := current[name]; ok {
@@ -280,7 +280,7 @@ func componentDiffText(current, desired *Component) (string, error) {
 }
 
 // logDifferences logs the Create, Update and Delete w.r.t. current to logf
-func logDifferences(currentMap, creates, updates, deletes Components, logf func(format string, args ...interface{})) error {
+func logDifferences(current, creates, updates, deletes Components, logf func(format string, args ...interface{})) error {
 	log := func(action string, current, desired *Component) error {
 		diff, err := componentDiffText(current, desired)
 		if err != nil {
@@ -307,7 +307,7 @@ func logDifferences(currentMap, creates, updates, deletes Components, logf func(
 	}
 
 	for _, d := range updates {
-		c := currentMap[d.Name]
+		c := current[d.Name]
 		if err := log("Update: "+d.Name, c, d); err != nil {
 			return err
 		}
@@ -321,10 +321,8 @@ func integrateForcedUpdates(current, create, update, delete Components, forceUpd
 	fixUpdate := Components{}
 	for _, cmp := range update {
 		if forceUpdate[cmp.Name] {
-			for _, currentCmp := range current {
-				if currentCmp.Name == cmp.Name {
-					delete[currentCmp.Name] = currentCmp // delete the current component
-				}
+			if currentCmp, ok := current[cmp.Name]; ok {
+				delete[currentCmp.Name] = currentCmp // delete the current component
 			}
 			create[cmp.Name] = cmp // create cmp, by definition a desired component
 		} else {

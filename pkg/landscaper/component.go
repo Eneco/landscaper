@@ -17,6 +17,7 @@ type Component struct {
 	SecretValues  SecretValues  `json:"-"`
 }
 
+// Components is a collection of uniquely named Component objects
 type Components map[string]*Component
 
 // NewComponent creates a Component and adds Name to the configuration
@@ -64,16 +65,6 @@ func validateComponents(cs Components) error {
 		if err := c.Validate(); err != nil {
 			return err
 		}
-	}
-
-	// is the collection as a whole okay: no dup names?
-	cMap := Components{}
-
-	for _, c := range cs {
-		if _, ok := cMap[c.Name]; ok {
-			return fmt.Errorf("duplicate component name `%s`", c.Name)
-		}
-		cMap[c.Name] = c
 	}
 
 	return nil
