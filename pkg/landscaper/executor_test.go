@@ -12,23 +12,23 @@ import (
 )
 
 func TestExecutorDiff(t *testing.T) {
-	current := []*Component{
-		&Component{Name: "cmpA"},
-		&Component{Name: "cmpB", Release: &Release{Chart: "chart1"}},
-		&Component{Name: "cmpC"},
+	current := Components{
+		"cmpA": &Component{Name: "cmpA"},
+		"cmpB": &Component{Name: "cmpB", Release: &Release{Chart: "chart1"}},
+		"cmpC": &Component{Name: "cmpC"},
 	}
 
-	desired := []*Component{
-		&Component{Name: "cmpD"},
-		&Component{Name: "cmpB", Release: &Release{Chart: "chart2"}},
-		&Component{Name: "cmpC"},
+	desired := Components{
+		"cmpD": &Component{Name: "cmpD"},
+		"cmpB": &Component{Name: "cmpB", Release: &Release{Chart: "chart2"}},
+		"cmpC": &Component{Name: "cmpC"},
 	}
 
 	actualC, actualU, actualD := diff(desired, current)
 
-	expectedC := []*Component{&Component{Name: "cmpD"}}
-	expectedU := []*Component{&Component{Name: "cmpB", Release: &Release{Chart: "chart2"}}}
-	expectedD := []*Component{&Component{Name: "cmpA"}}
+	expectedC := Components{"cmpD": &Component{Name: "cmpD"}}
+	expectedU := Components{"cmpB": &Component{Name: "cmpB", Release: &Release{Chart: "chart2"}}}
+	expectedD := Components{"cmpA": &Component{Name: "cmpA"}}
 
 	assert.Equal(t, expectedC, actualC)
 	assert.Equal(t, expectedU, actualU)
@@ -152,19 +152,19 @@ func TestIntegrateForcedUpdates(t *testing.T) {
 	d.Name = "D"
 	f.Name = "F"
 
-	current := []*Component{u, f, d}
+	current := Components{u.Name: u, f.Name: f, d.Name: d}
 
-	create := []*Component{c}
-	update := []*Component{u, f}
-	delete := []*Component{d}
+	create := Components{c.Name: c}
+	update := Components{u.Name: u, f.Name: f}
+	delete := Components{d.Name: d}
 
 	needForcedUpdate := map[string]bool{"F": true}
 
 	create, update, delete = integrateForcedUpdates(current, create, update, delete, needForcedUpdate)
 
-	require.Equal(t, []*Component{c, f}, create)
-	require.Equal(t, []*Component{u}, update)
-	require.Equal(t, []*Component{d, f}, delete)
+	require.Equal(t, Components{c.Name: c, f.Name: f}, create)
+	require.Equal(t, Components{u.Name: u}, update)
+	require.Equal(t, Components{d.Name: d, f.Name: f}, delete)
 }
 
 func newTestComponent() *Component {

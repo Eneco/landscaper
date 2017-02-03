@@ -14,7 +14,7 @@ import (
 
 // Executor is responsible for applying a desired landscape to the actual landscape
 type Executor interface {
-	Apply([]*Component, []*Component) error
+	Apply(Components, Components) error
 
 	CreateComponent(*Component) error
 	UpdateComponent(*Component) error
@@ -35,7 +35,7 @@ func NewExecutor(env *Environment, secretsProvider SecretsProvider) Executor {
 }
 
 // Apply transforms the current state into the desired state
-func (e *executor) Apply(desired, current []*Component) error {
+func (e *executor) Apply(desired, current Components) error {
 	create, update, delete := diff(desired, current)
 
 	// some to-be-updated components need a delete + create instead
@@ -225,30 +225,24 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 }
 
 // diff takes desired and current components, and returns the components to create, update and delete to get from current to desired
-func diff(desired, current []*Component) (create, update, delete []*Component) {
-	desiredMap := make(map[string]*Component)
-	currentMap := make(map[string]*Component)
+func diff(desired, current Components) (Components, Components, Components) {
+	create := Components{}
+	update := Components{}
+	delete := Components{}
 
-	for _, c := range desired {
-		desiredMap[c.Name] = c
-	}
-	for _, c := range current {
-		currentMap[c.Name] = c
-	}
-
-	for name, desiredCmp := range desiredMap {
-		if currentCmp, ok := currentMap[name]; ok {
+	for name, desiredCmp := range desired {
+		if currentCmp, ok := current[name]; ok {
 			if !desiredCmp.Equals(currentCmp) {
-				update = append(update, desiredCmp)
+				update[name] = desiredCmp
 			}
 		} else {
-			create = append(create, desiredCmp)
+			create[name] = desiredCmp
 		}
 	}
 
-	for name, currentCmp := range currentMap {
-		if _, ok := desiredMap[name]; !ok {
-			delete = append(delete, currentCmp)
+	for name, currentCmp := range current {
+		if _, ok := desired[name]; !ok {
+			delete[name] = currentCmp
 		}
 	}
 
@@ -286,12 +280,7 @@ func componentDiffText(current, desired *Component) (string, error) {
 }
 
 // logDifferences logs the Create, Update and Delete w.r.t. current to logf
-func logDifferences(current, creates, updates, deletes []*Component, logf func(format string, args ...interface{})) error {
-	currentMap := make(map[string]*Component)
-	for _, c := range current {
-		currentMap[c.Name] = c
-	}
-
+func logDifferences(current, creates, updates, deletes Components, logf func(format string, args ...interface{})) error {
 	log := func(action string, current, desired *Component) error {
 		diff, err := componentDiffText(current, desired)
 		if err != nil {
@@ -318,7 +307,7 @@ func logDifferences(current, creates, updates, deletes []*Component, logf func(f
 	}
 
 	for _, d := range updates {
-		c := currentMap[d.Name]
+		c := current[d.Name]
 		if err := log("Update: "+d.Name, c, d); err != nil {
 			return err
 		}
@@ -328,18 +317,16 @@ func logDifferences(current, creates, updates, deletes []*Component, logf func(f
 }
 
 // integrateForcedUpdates removes forceUpdate from update and inserts it into delete + create
-func integrateForcedUpdates(current, create, update, delete []*Component, forceUpdate map[string]bool) ([]*Component, []*Component, []*Component) {
-	var fixUpdate []*Component
+func integrateForcedUpdates(current, create, update, delete Components, forceUpdate map[string]bool) (Components, Components, Components) {
+	fixUpdate := Components{}
 	for _, cmp := range update {
 		if forceUpdate[cmp.Name] {
-			for _, currentCmp := range current {
-				if currentCmp.Name == cmp.Name {
-					delete = append(delete, currentCmp) // delete the current component
-				}
+			if currentCmp, ok := current[cmp.Name]; ok {
+				delete[currentCmp.Name] = currentCmp // delete the current component
 			}
-			create = append(create, cmp) // create cmp, by definition a desired component
+			create[cmp.Name] = cmp // create cmp, by definition a desired component
 		} else {
-			fixUpdate = append(fixUpdate, cmp)
+			fixUpdate[cmp.Name] = cmp
 		}
 	}
 	return create, fixUpdate, delete
