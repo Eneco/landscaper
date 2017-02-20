@@ -3,6 +3,7 @@ package landscaper
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"k8s.io/helm/pkg/helm"
@@ -30,6 +31,8 @@ type Environment struct {
 	Verbose           bool
 	NoCronUpdate      bool // NoCronUpdate replaces a CronJob update with a create+delete; k8s #35149 work around
 	Context           string
+	Loop              bool
+	LoopInterval      time.Duration
 
 	helmClient helm.Interface
 	kubeClient internalversion.CoreInterface

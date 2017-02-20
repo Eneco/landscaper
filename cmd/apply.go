@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/eneco/landscaper/pkg/landscaper"
@@ -33,25 +34,34 @@ var addCmd = &cobra.Command{
 		cp := landscaper.NewComponentProvider(env, sp)
 		executor := landscaper.NewExecutor(env, sp)
 
-		desired, err := cp.Desired()
-		if err != nil {
-			logrus.WithFields(logrus.Fields{"error": err}).Error("Loading desired state failed")
-			return err
-		}
+		for {
+			desired, err := cp.Desired()
+			if err != nil {
+				logrus.WithFields(logrus.Fields{"error": err}).Error("Loading desired state failed")
+				return err
+			}
 
-		current, err := cp.Current()
-		if err != nil {
-			logrus.WithFields(logrus.Fields{"error": err}).Error("Loading current state failed")
-			return err
-		}
+			current, err := cp.Current()
+			if err != nil {
+				logrus.WithFields(logrus.Fields{"error": err}).Error("Loading current state failed")
+				return err
+			}
 
-		if err = executor.Apply(desired, current); err != nil {
-			logrus.WithFields(logrus.Fields{"error": err}).Error("Applying desired state failed")
-			return err
-		}
+			if err = executor.Apply(desired, current); err != nil {
+				logrus.WithFields(logrus.Fields{"error": err}).Error("Applying desired state failed")
+				return err
+			}
 
-		if env.DryRun {
-			logrus.Warn("Since dry-run is enabled, no actual actions have been performed")
+			if env.DryRun {
+				logrus.Warn("Since dry-run is enabled, no actual actions have been performed")
+			}
+
+			if !env.Loop {
+				break
+			}
+
+			logrus.Debugf("Running in a loop. Sleeping for %s.", env.LoopInterval)
+			time.Sleep(env.LoopInterval)
 		}
 
 		return nil
@@ -84,6 +94,8 @@ func init() {
 	f.StringVar(&env.Namespace, "namespace", landscapeNamespace, "namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE")
 	f.StringVar(&env.ChartDir, "chart-dir", chartDir, "where the charts are stored")
 	f.BoolVar(&env.NoCronUpdate, "no-cronjob-update", false, "replaces CronJob updates with a create+delete; k8s #35149 work around")
+	f.BoolVar(&env.Loop, "loop", false, "keep landscape in sync forever")
+	f.DurationVar(&env.LoopInterval, "loop-interval", 5*time.Minute, "when running in a loop the interval between invocations")
 
 	rootCmd.AddCommand(addCmd)
 }
