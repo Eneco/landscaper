@@ -112,9 +112,8 @@ spec:
       containers:
       - name: landscaper
         image: eneco/landscaper:latest
-        command:
-        - /usr/bin/landscaper
         args:
+        - /usr/bin/landscaper
         - apply
         - --dir=/git/some-repo
         - --namespace=landscaper-test
