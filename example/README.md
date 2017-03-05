@@ -45,6 +45,19 @@ But wait! `hello-kubernetes` contained a typo! Change the message yourself by ed
 
     ./build/landscaper apply --dir example/landscape-fixed --namespace example
 
+Instead of manually invoking Landscaper you can also tell it to run in a loop and it will apply the modified landscape the next time it runs its synchronization loop.
+
+    ./build/landscaper apply --loop --loop-interval 1m --dir example/landscape-fixed --namespace example
+
+This time, modify the landscape in-place and see that landscaper will update your cluster after about a minute.
+
+Change the specification of one of the landscape files of [the second example](landscape-fixed/hello-world.yaml). E.g. change the desired message to "Hello, Looped world!".
+
+    -  message: Hello, Landscaped world!
+    +  message: Hello, Looped world!
+
+Save the file and wait for landscaper to apply it.
+
 ## Using Secrets
 
 Landscaper can manage secrets. For a component that has secrets, a companion Kubernetes Secret object is created, with the same name as the Helm release. The keys inside the secret object are specified in the `secrets` section of a landscape file. The values of the secret are obtained from the environment the landscaper runs in, looking for an environment variable name that is uppercase and hyphens are replaced with underscores.
@@ -75,3 +88,60 @@ Upon success, `kubectl get secret --namespace example` should contain a Secret o
 
     Tue Dec 20 08:34:10 UTC 2016 | my name is rumpelstiltskin and I am 42 years old
 
+## Using Loop mode with Git repository sync
+
+Loop mode is especially useful when watching a remote Git repository, so that whenever a PR got merged Landscaper will automatically apply the changes. We can use the Git repo sync image to constantly check out the latest commit of a branch and share this path with Landscaper running as a separate container in the same pod.
+
+Below is an example of a deployment that runs Landscaper as a container in a pod in loop mode. It is pointed to the local folder `/git/some-repo`. It shares this folder with a `git-sync` container which will populate the folder with the contents of the master branch of the Git repository at https://github.com/you/some-repo.git every minute.
+
+There's one gotcha, though: the very first Landscaper run after each pod creation will remove everything as the Git repo hasn't been synced yet. Use with caution until we find a way around that issue.
+
+```yaml
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: landscaper
+  labels:
+    app: landscaper
+spec:
+  template:
+    metadata:
+      labels:
+        app: landscaper
+    spec:
+      containers:
+      - name: landscaper
+        image: eneco/landscaper:latest
+        command:
+        - /usr/bin/landscaper
+        args:
+        - apply
+        - --dir=/git/some-repo
+        - --namespace=landscaper-test
+        - --loop
+        - --loop-interval=1m
+        - --verbose
+        volumeMounts:
+        - mountPath: /git
+          name: landscaper
+          readOnly: true
+      - name: git-sync
+        image: gcr.io/google-containers/git-sync:v2.0.4
+        args:
+        - --branch=master
+        - --repo=https://github.com/you/some-repo.git
+        - --root=/git
+        - --dest=some-repo
+        - --wait=60
+        - --username=you
+        - --password=yourtoken
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /git
+          name: landscaper
+      volumes:
+      - name: landscaper
+        emptyDir:
+          medium: Memory
+```

@@ -64,14 +64,17 @@ The `apply` command accepts the following arguments:
       landscaper apply [flags]
 
     Flags:
-          --chart-dir string    where the charts are stored (default "$HOME/.helm")
-          --dir string          path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR (default ".")
-          --dry-run             simulate the applying of the landscape. useful in merge requests
-          --namespace string    namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE (default "acceptance")
-          --no-cronjob-update   replaces CronJob updates with a create+delete; k8s #35149 work around
-          --no-prefix           disable prefixing release names
-          --prefix string       prefix release names with this string instead of <namespace>; overrides LANDSCAPE_PREFIX
-      -v, --verbose             be verbose
+          --chart-dir string         where the charts are stored (default "$HOME/.helm")
+          --context string           the kube context to use. defaults to the current context
+          --dir string               path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR (default ".")
+          --dry-run                  simulate the applying of the landscape. useful in merge requests
+          --loop                     keep landscape in sync forever
+          --loop-interval duration   when running in a loop the interval between invocations (default 5m0s)
+          --namespace string         namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE (default "default")
+          --no-cronjob-update        replaces CronJob updates with a create+delete; k8s #35149 work around
+          --no-prefix                disable prefixing release names
+          --prefix string            prefix release names with this string instead of <namespace>; overrides LANDSCAPE_PREFIX
+      -v, --verbose                  be verbose
 
 Instead of using arguments, environment variables can be used. When arguments are present, they override environment variables.
 `--namespace` is used to isolate landscapes through Kubernetes namespaces.
@@ -79,6 +82,8 @@ Unless otherwise specified, Helm releases are prefixed with the same namespace s
 
 Input desired state files are in YAML and contain the name that identifies the "component", a reference to a chart, configuration and optionally secrets.
 Currently, secrets are handled by specifying the name in the YAML, e.g. `my-secret`, and having a matching environment variable available with the secret, e.g. `export MY_SECRET=Rumpelstiltskin`
+
+Landscaper can also be run as a control loop that constantly watches the desired landscape and applies it to the cluster. With this you can deploy landscaper once in your cluster, pass it a reference to a landscape description and have Landscaper apply it whenever the landscape changes.
 
 ## Example
 
