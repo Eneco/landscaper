@@ -2,6 +2,7 @@ package landscaper
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -105,6 +106,12 @@ func (e *Environment) ReleaseName(componentName string) string {
 
 // setupConnection creates and returns tiller port forwarding tunnel
 func setupConnection(context string) (string, error) {
+	helmHost, helmHostExists := os.LookupEnv("HELM_HOST")
+	if helmHostExists {
+		logrus.WithFields(logrus.Fields{"helmHost": helmHost}).Debug("Using tiller address from HELM_HOST")
+		return helmHost, nil
+	}
+
 	logrus.WithFields(logrus.Fields{"tillerNamespace": tillerNamespace}).Debug("Create tiller tunnel")
 	tunnel, err := newTillerPortForwarder(tillerNamespace, context)
 	if err != nil {
