@@ -130,9 +130,14 @@ func (e *executor) CreateComponent(cmp *Component) error {
 		}
 	}
 
+	namespace := cmp.Namespace
+	if cmp.Namespace == "" {
+		namespace = e.env.Namespace
+	}
+
 	_, err = e.env.HelmClient().InstallRelease(
 		chartPath,
-		e.env.Namespace,
+		namespace,
 		helm.ValueOverrides([]byte(rawValues)),
 		helm.ReleaseName(cmp.Name),
 		helm.InstallDryRun(e.env.DryRun),
