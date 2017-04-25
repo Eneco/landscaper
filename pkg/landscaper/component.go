@@ -11,6 +11,7 @@ import (
 // Component contains information about the release, configuration and secrets of a component
 type Component struct {
 	Name          string        `json:"name" validate:"nonzero,max=51"`
+	Namespace     string        `json:"namespace"`
 	Release       *Release      `json:"release" validate:"nonzero"`
 	Configuration Configuration `json:"configuration"`
 	Secrets       Secrets       `json:"secrets"`
@@ -21,13 +22,14 @@ type Component struct {
 type Components map[string]*Component
 
 // NewComponent creates a Component and adds Name to the configuration
-func NewComponent(name string, release *Release, cfg Configuration, secrets Secrets) *Component {
+func NewComponent(name string, namespace string, release *Release, cfg Configuration, secrets Secrets) *Component {
 	cmp := &Component{
 		Name:          name,
 		Release:       release,
 		Configuration: cfg,
 		Secrets:       secrets,
 		SecretValues:  SecretValues{},
+		Namespace:     namespace,
 	}
 
 	if cmp.Configuration == nil {

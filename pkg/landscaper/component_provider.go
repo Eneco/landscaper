@@ -166,7 +166,7 @@ func newComponentFromYAML(content []byte) (*Component, error) {
 		return nil, err
 	}
 
-	return NewComponent(cmp.Name, cmp.Release, cmp.Configuration, cmp.Secrets), nil
+	return NewComponent(cmp.Name, cmp.Namespace, cmp.Release, cmp.Configuration, cmp.Secrets), nil
 }
 
 // coalesceComponent takes a component, loads the chart and coalesces the configuration with the default values
@@ -237,6 +237,7 @@ func newComponentFromHelmRelease(release *release.Release) (*Component, error) {
 
 	cmp := NewComponent(
 		release.Name,
+		release.Namespace,
 		&Release{
 			Chart:   fmt.Sprintf("%s:%s", release.Chart.Metadata.Name, release.Chart.Metadata.Version),
 			Version: m.ReleaseVersion,

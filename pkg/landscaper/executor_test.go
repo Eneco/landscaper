@@ -170,6 +170,7 @@ func TestIntegrateForcedUpdates(t *testing.T) {
 func newTestComponent() *Component {
 	cmp := NewComponent(
 		"create-test",
+		"default",
 		&Release{
 			Chart:   "connector-hdfs:0.1.0",
 			Version: "1.0.0",
