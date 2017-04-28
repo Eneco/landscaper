@@ -42,7 +42,7 @@ func TestExecutorCreate(t *testing.T) {
 	comp := newTestComponent()
 	env := newTestEnvironment()
 
-	env.Namespace = nameSpace
+	comp.Namespace = nameSpace
 	env.helmClient = &HelmclientMock{installRelease: func(chStr string, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error) {
 		t.Logf("installRelease %#v %#v %#v", chStr, namespace, opts)
 		require.Equal(t, chartPath, chStr)
@@ -55,7 +55,7 @@ func TestExecutorCreate(t *testing.T) {
 		return nil, chartPath, nil
 	})
 
-	err := NewExecutor(env, SecretsProviderMock{write: func(componentName string, values SecretValues) error {
+	err := NewExecutor(env, SecretsProviderMock{write: func(componentName, namespace string, values SecretValues) error {
 		require.Equal(t, comp.Name, componentName)
 		require.Equal(t, comp.SecretValues, values)
 		return nil
@@ -87,12 +87,12 @@ func TestExecutorUpdate(t *testing.T) {
 	})
 
 	err := NewExecutor(env, SecretsProviderMock{
-		write: func(componentName string, values SecretValues) error {
+		write: func(componentName, namespace string, values SecretValues) error {
 			require.Equal(t, comp.Name, componentName)
 			require.Equal(t, comp.SecretValues, values)
 			return nil
 		},
-		delete: func(componentName string) error {
+		delete: func(componentName, namespace string) error {
 			require.Equal(t, comp.Name, componentName)
 			return nil
 		},
@@ -122,7 +122,7 @@ func TestExecutorDelete(t *testing.T) {
 		return nil, chartPath, nil
 	})
 
-	err := NewExecutor(env, SecretsProviderMock{delete: func(componentName string) error {
+	err := NewExecutor(env, SecretsProviderMock{delete: func(componentName, namespace string) error {
 		require.Equal(t, comp.Name, componentName)
 		return nil
 	}}).DeleteComponent(comp)
@@ -170,7 +170,7 @@ func TestIntegrateForcedUpdates(t *testing.T) {
 func newTestComponent() *Component {
 	cmp := NewComponent(
 		"create-test",
-		"default",
+		"myNameSpace",
 		&Release{
 			Chart:   "connector-hdfs:0.1.0",
 			Version: "1.0.0",

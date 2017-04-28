@@ -53,19 +53,19 @@ type MockChartLoader func(chartRef string) (*chart.Chart, string, error)
 func (m MockChartLoader) Load(chartRef string) (*chart.Chart, string, error) { return m(chartRef) }
 
 type SecretsProviderMock struct {
-	write  func(releaseName string, values SecretValues) error
-	read   func(releaseName string) (SecretValues, error)
-	delete func(releaseName string) error
+	write  func(releaseName, namespace string, values SecretValues) error
+	read   func(releaseName, namespace string) (SecretValues, error)
+	delete func(releaseName, namespace string) error
 }
 
-func (m SecretsProviderMock) Write(releaseName string, values SecretValues) error {
-	return m.write(releaseName, values)
+func (m SecretsProviderMock) Write(releaseName, namespace string, values SecretValues) error {
+	return m.write(releaseName, namespace, values)
 }
 
-func (m SecretsProviderMock) Read(releaseName string) (SecretValues, error) {
-	return m.read(releaseName)
+func (m SecretsProviderMock) Read(releaseName, namespace string) (SecretValues, error) {
+	return m.read(releaseName, namespace)
 }
 
-func (m SecretsProviderMock) Delete(releaseName string) error {
-	return m.delete(releaseName)
+func (m SecretsProviderMock) Delete(releaseName, namespace string) error {
+	return m.delete(releaseName, namespace)
 }
