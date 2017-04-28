@@ -59,6 +59,12 @@ func (e *executor) Apply(desired, current Components) error {
 				needForcedUpdate[cmp.Name] = true
 			}
 		}
+		if curCmp := current[cmp.Name]; curCmp != nil {
+			logrus.Infof("%s differs in namespace; don't update but delete + create instead", cmp.Name)
+			if curCmp.Namespace != cmp.Namespace {
+				needForcedUpdate[cmp.Name] = true
+			}
+		}
 	}
 	// delete+create pairs will never work in dry run since the dry-run "deleted" component will exist in create
 	if !e.env.DryRun {
