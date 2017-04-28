@@ -95,4 +95,4 @@ We, at Eneco, have setup a git repository with the inputs to the landscaper. Dur
 
 ## Contributing
 
-We'd love to accept your contributions! Please use GitHub pull requests: fork the repo, develop and test your code, submit a pull request. Thanks!
+We'd love to accept your contributions! Please use GitHub pull requests: fork the repo, develop and test your code, semantically commit (as of April 2017) and submit a pull request. Thanks!
