@@ -65,7 +65,7 @@ func (cp *componentProvider) Current() (Components, error) {
 			return components, err
 		}
 
-		secretValues, err := cp.secretsProvider.Read(cmp.Name)
+		secretValues, err := cp.secretsProvider.Read(cmp.Name, release.Namespace)
 		if err != nil {
 			return components, err
 		}

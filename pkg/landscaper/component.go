@@ -87,6 +87,8 @@ func (c *Component) normalizeFromFile(env *Environment) error {
 
 	c.Configuration.SetMetadata(&Metadata{ChartRepository: ss[0], ReleaseVersion: c.Release.Version})
 
+	c.Namespace = env.getEffectiveNamespace(c)
+
 	return nil
 }
 

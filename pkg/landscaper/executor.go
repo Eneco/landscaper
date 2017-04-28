@@ -124,20 +124,15 @@ func (e *executor) CreateComponent(cmp *Component) error {
 	}).Debug("Create component")
 
 	if len(cmp.Secrets) > 0 && !e.env.DryRun {
-		err = e.secretsProvider.Write(cmp.Name, cmp.SecretValues)
+		err = e.secretsProvider.Write(cmp.Name, cmp.Namespace, cmp.SecretValues)
 		if err != nil {
 			return err
 		}
 	}
 
-	namespace := cmp.Namespace
-	if cmp.Namespace == "" {
-		namespace = e.env.Namespace
-	}
-
 	_, err = e.env.HelmClient().InstallRelease(
 		chartPath,
-		namespace,
+		cmp.Namespace,
 		helm.ValueOverrides([]byte(rawValues)),
 		helm.ReleaseName(cmp.Name),
 		helm.InstallDryRun(e.env.DryRun),
@@ -169,10 +164,10 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 	}
 
 	if !e.env.DryRun {
-		err = e.secretsProvider.Delete(cmp.Name)
+		err = e.secretsProvider.Delete(cmp.Name, cmp.Namespace)
 
 		if len(cmp.Secrets) > 0 {
-			err = e.secretsProvider.Write(cmp.Name, cmp.SecretValues)
+			err = e.secretsProvider.Write(cmp.Name, cmp.Namespace, cmp.SecretValues)
 			if err != nil {
 				return err
 			}
@@ -209,7 +204,7 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 	}).Debug("Delete component")
 
 	if len(cmp.Secrets) > 0 && !e.env.DryRun {
-		err := e.secretsProvider.Delete(cmp.Name)
+		err := e.secretsProvider.Delete(cmp.Name, cmp.Namespace)
 		if err != nil {
 			return err
 		}

@@ -69,6 +69,14 @@ func (e *Environment) HelmClient() helm.Interface {
 	return e.helmClient
 }
 
+// getEffectiveNamespace provides the namespace the component lives in. It defaults to Environment.Namespace, but any component can override it
+func (e *Environment) getEffectiveNamespace(cmp *Component) string {
+	if cmp.Namespace != "" {
+		return cmp.Namespace
+	}
+	return e.Namespace
+}
+
 // KubeClient makes sure the environment has a KubeClient initialized
 func (e *Environment) KubeClient() internalversion.CoreInterface {
 	if e.kubeClient == nil {
