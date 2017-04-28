@@ -16,7 +16,8 @@ script:
   - make test
 
 after_success:
-  - if [ "$TRAVIS_BRANCH" == "master" ]; then
+  - if [ -n "$TRAVIS_TAG" ]; then
     docker login -u="$DOCKER_USER" -p="$DOCKER_PASS";
     make publish_docker;
+    make publish_github;
     fi
