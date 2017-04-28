@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"sort"
 
 	"github.com/Sirupsen/logrus"
@@ -90,24 +89,19 @@ func (cp *componentProvider) Current() (Components, error) {
 func (cp *componentProvider) Desired() (Components, error) {
 	components := Components{}
 
-	logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir}).Info("Obtain desired state from directory")
+	logrus.WithFields(logrus.Fields{"files": cp.env.ComponentFiles}).Info("Obtain desired state from files")
 
-	files, err := filepath.Glob(filepath.Join(cp.env.LandscapeDir, "*.yaml"))
-	if err != nil {
-		return components, err
-	}
-
-	for _, filename := range files {
+	for _, filename := range cp.env.ComponentFiles {
 		fileInfo, err := os.Stat(filename)
 		if err != nil {
 			return components, err
 		}
 		if fileInfo.IsDir() {
-			logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir, "file": filename}).Debugf("Skip directory")
+			logrus.WithFields(logrus.Fields{"file": filename}).Debugf("Skip directory")
 			continue
 		}
 
-		logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir, "file": filename}).Debug("Read desired state from file")
+		logrus.WithFields(logrus.Fields{"file": filename}).Debug("Read desired state from file")
 		cmp, err := readComponentFromYAMLFilePath(filename)
 		if err != nil {
 			return components, fmt.Errorf("readComponentFromYAMLFilePath file `%s` failed: %s", filename, err)

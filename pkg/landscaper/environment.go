@@ -27,7 +27,8 @@ type Environment struct {
 	DryRun            bool
 	ChartLoader       ChartLoader
 	ReleaseNamePrefix string
-	LandscapeDir      string
+	ComponentFiles    []string
+	LandscapeDir      string // deprecated: ComponentFiles is leading; LandscapeDir merely fills it
 	Namespace         string
 	Verbose           bool
 	NoCronUpdate      bool // NoCronUpdate replaces a CronJob update with a create+delete; k8s #35149 work around

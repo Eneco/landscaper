@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -13,10 +14,12 @@ import (
 var prefixDisable bool
 
 var addCmd = &cobra.Command{
-	Use:   "apply",
+	Use:   "apply [files]...",
 	Short: "Makes the current landscape match the desired landscape",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// setup env
+		env.ComponentFiles = args
+
 		if prefixDisable {
 			env.ReleaseNamePrefix = ""
 		} else {
@@ -29,6 +32,16 @@ var addCmd = &cobra.Command{
 		v := landscaper.GetVersion()
 		logrus.WithFields(logrus.Fields{"tag": v.GitTag, "commit": v.GitCommit}).Infof("This is Landscaper v%s", v.SemVer)
 		logrus.WithFields(logrus.Fields{"namespace": env.Namespace, "releasePrefix": env.ReleaseNamePrefix, "dir": env.LandscapeDir, "dryRun": env.DryRun, "chartDir": env.ChartDir, "verbose": env.Verbose}).Info("Apply landscape desired state")
+
+		// deprecated: populate ComponentFiles by getting *.yaml from LandscapeDir
+		if len(args) == 0 && env.LandscapeDir != "" {
+			logrus.Warnf("LandscapeDir is deprecated; please provide files as program arguments instead")
+			files, err := filepath.Glob(filepath.Join(env.LandscapeDir, "*.yaml"))
+			if err != nil {
+				return err
+			}
+			env.ComponentFiles = files
+		}
 
 		sp := landscaper.NewSecretsProvider(env)
 		cp := landscaper.NewComponentProvider(env, sp)
@@ -74,9 +87,6 @@ func init() {
 	landscapePrefix := os.Getenv("LANDSCAPE_PREFIX")
 
 	landscapeDir := os.Getenv("LANDSCAPE_DIR")
-	if landscapeDir == "" {
-		landscapeDir = "."
-	}
 
 	landscapeNamespace := os.Getenv("LANDSCAPE_NAMESPACE")
 	if landscapeNamespace == "" {
@@ -90,7 +100,7 @@ func init() {
 	f.BoolVar(&prefixDisable, "no-prefix", false, "disable prefixing release names")
 	f.StringVar(&env.Context, "context", "", "the kube context to use. defaults to the current context")
 	f.StringVar(&env.ReleaseNamePrefix, "prefix", landscapePrefix, "prefix release names with this string instead of <namespace>; overrides LANDSCAPE_PREFIX")
-	f.StringVar(&env.LandscapeDir, "dir", landscapeDir, "path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR")
+	f.StringVar(&env.LandscapeDir, "dir", landscapeDir, "(deprecated) path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR")
 	f.StringVar(&env.Namespace, "namespace", landscapeNamespace, "namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE")
 	f.StringVar(&env.ChartDir, "chart-dir", chartDir, "where the charts are stored")
 	f.BoolVar(&env.NoCronUpdate, "no-cronjob-update", false, "replaces CronJob updates with a create+delete; k8s #35149 work around")
