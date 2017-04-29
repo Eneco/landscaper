@@ -105,6 +105,7 @@ func init() {
 	f.BoolVar(&env.NoCronUpdate, "no-cronjob-update", false, "replaces CronJob updates with a create+delete; k8s #35149 work around")
 	f.BoolVar(&env.Loop, "loop", false, "keep landscape in sync forever")
 	f.DurationVar(&env.LoopInterval, "loop-interval", 5*time.Minute, "when running in a loop the interval between invocations")
+	f.BoolVar(&env.RejectEmptyLandscape, "reject-empty-landscape", false, "when enabled, doesn't apply an empty desired landscape")
 
 	rootCmd.AddCommand(addCmd)
 }

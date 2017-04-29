@@ -22,18 +22,19 @@ var tillerNamespace = "kube-system"
 
 // Environment contains all the information about the k8s cluster and local configuration
 type Environment struct {
-	HelmHome          string        // Helm's home directory
-	DryRun            bool          // If true, don't modify anything
-	ChartLoader       ChartLoader   // ChartLoader loads charts
-	ReleaseNamePrefix string        // Prepend this string to release names
-	ComponentFiles    []string      // Landscaper component file names
-	LandscapeDir      string        // deprecated: ComponentFiles is leading; LandscapeDir merely fills it
-	Namespace         string        // Default namespace releases are put into; components can override it though
-	Verbose           bool          // Reduce log level
-	NoCronUpdate      bool          // NoCronUpdate replaces a CronJob update with a create+delete; k8s #35149 work around
-	Context           string        // Kubernetes context to use
-	Loop              bool          // Keep looping
-	LoopInterval      time.Duration // Loop every duration
+	HelmHome             string        // Helm's home directory
+	DryRun               bool          // If true, don't modify anything
+	ChartLoader          ChartLoader   // ChartLoader loads charts
+	ReleaseNamePrefix    string        // Prepend this string to release names
+	ComponentFiles       []string      // Landscaper component file names
+	LandscapeDir         string        // deprecated: ComponentFiles is leading; LandscapeDir merely fills it
+	Namespace            string        // Default namespace releases are put into; components can override it though
+	Verbose              bool          // Reduce log level
+	NoCronUpdate         bool          // NoCronUpdate replaces a CronJob update with a create+delete; k8s #35149 work around
+	Context              string        // Kubernetes context to use
+	Loop                 bool          // Keep looping
+	LoopInterval         time.Duration // Loop every duration
+	RejectEmptyLandscape bool          // Do not apply if desired landscape is empty
 
 	helmClient helm.Interface
 	kubeClient internalversion.CoreInterface

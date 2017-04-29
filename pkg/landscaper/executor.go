@@ -42,6 +42,11 @@ func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, kubeSecrets
 
 // Apply transforms the current state into the desired state
 func (e *executor) Apply(desired, current Components) error {
+	if len(desired) == 0 && e.env.RejectEmptyLandscape {
+		logrus.Infof("Skipped applying empty landscape")
+		return nil
+	}
+
 	create, update, delete := diff(desired, current)
 
 	// some to-be-updated components need a delete + create instead
