@@ -34,6 +34,8 @@ The Landscaper project is an ongoing project in an early stage, opened due to de
 
 ## Installation
 
+Binaries are available [here](https://github.com/Eneco/landscaper/releases/); Docker images [here](https://hub.docker.com/r/eneco/landscaper/).
+
 ### From source
 
 You must have a working Go environment with [glide](https://github.com/Masterminds/glide) and `Make` installed.
