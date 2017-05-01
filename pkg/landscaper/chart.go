@@ -8,9 +8,9 @@ import (
 
 	"github.com/Sirupsen/logrus"
 
-	"k8s.io/helm/cmd/helm/downloader"
-	"k8s.io/helm/cmd/helm/helmpath"
 	"k8s.io/helm/pkg/chartutil"
+	"k8s.io/helm/pkg/downloader"
+	"k8s.io/helm/pkg/helm/helmpath"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
 
@@ -65,7 +65,7 @@ func locateChartPath(homePath, chartRef string) (string, error) {
 	}
 
 	// ResolveChartVersion provides us through the repo index an url from which we can obtain the filename chart.tgz
-	url, err := dl.ResolveChartVersion(name, version)
+	url, _, err := dl.ResolveChartVersion(name, version)
 	if err != nil {
 		return "", fmt.Errorf("cannot resolve chartversion: %s", err)
 	}
