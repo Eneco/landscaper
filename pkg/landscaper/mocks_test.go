@@ -24,6 +24,10 @@ func (m *HelmclientMock) InstallRelease(chStr string, namespace string, opts ...
 	return m.installRelease(chStr, namespace, opts...)
 }
 
+func (m *HelmclientMock) InstallReleaseFromChart(chart *chart.Chart, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error) {
+	return nil, nil
+}
+
 func (m *HelmclientMock) ListReleases(opts ...helm.ReleaseListOption) (*services.ListReleasesResponse, error) {
 	return nil, nil
 }
@@ -46,6 +50,14 @@ func (m *HelmclientMock) RollbackRelease(rlsName string, opts ...helm.RollbackOp
 
 func (m *HelmclientMock) UpdateRelease(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
 	return m.updateRelease(rlsName, chStr, opts...)
+}
+
+func (m *HelmclientMock) UpdateReleaseFromChart(rlsName string, chart *chart.Chart, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
+	return nil, nil
+}
+
+func (m *HelmclientMock) RunReleaseTest(rlsName string, opts ...helm.ReleaseTestOption) (<-chan *services.TestReleaseResponse, <-chan error) {
+	return nil, nil
 }
 
 type MockChartLoader func(chartRef string) (*chart.Chart, string, error)
