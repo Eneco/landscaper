@@ -1,5 +1,5 @@
-hash: 27ca6f986aff3f12c3b6613ac6e4ddd8919ed851e0032547fa085339064ff09f
-updated: 2017-01-30T10:18:40.894362589+01:00
+hash: 7f2727f56db6428e38f70374bbdb94968d6d83dd9e7c3e7da925f76146e38a22
+updated: 2017-05-01T21:35:56.596294014+02:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -88,6 +88,8 @@ imports:
   version: 465937c80b3c07a7c7ad20cc934898646a91c1de
 - name: github.com/exponent-io/jsonpath
   version: d6023ce2651d8eafb5c75bb0c7167536102ec9f5
+- name: github.com/facebookgo/symwalk
+  version: 42004b9f322246749dd73ad71008b1f3160c0052
 - name: github.com/ghodss/yaml
   version: bea76d6a4713e18b7f5321a2b020738552def3ea
 - name: github.com/go-openapi/jsonpointer
@@ -167,11 +169,17 @@ imports:
   - jlexer
   - jwriter
 - name: github.com/Masterminds/semver
-  version: 59c29afe1a994eacb71c833025ca7acf874bb1da
+  version: 3f0ab6d4ab4bed1c61caf056b63a6e62190c7801
 - name: github.com/mgutz/ansi
   version: c286dcecd19ff979eeb73ea444e479b903f2cfcb
 - name: github.com/mitchellh/go-wordwrap
   version: ad45545899c7b13c020ea92b2072220eefad42b8
+- name: github.com/naoina/go-stringutil
+  version: 6b638e95a32d0c1131db0e7fe83775cbea4a0d0b
+- name: github.com/naoina/toml
+  version: 751171607256bb66e64c9f0220c00662420c38e9
+  subpackages:
+  - ast
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/pmezard/go-difflib
@@ -183,9 +191,9 @@ imports:
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/Sirupsen/logrus
-  version: d26492970760ca5d33129d2d799e34be5c4782eb
+  version: ba1b36c82c5e05c4f912a88eab0dcd91a171688f
 - name: github.com/spf13/cobra
-  version: 9495bc009a56819bdb0ddbc1a373e29c140bc674
+  version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - name: github.com/spf13/pflag
   version: 5ccb023bc27df288a957c5e994cd44fd19619465
 - name: github.com/ugorji/go
@@ -194,7 +202,7 @@ imports:
   - codec
   - codec/codecgen
 - name: github.com/x-cray/logrus-prefixed-formatter
-  version: 1d837bc239d1686e1ae281c4629495bd0e7da8d5
+  version: 54b7cd10b359d569484cc6b6ffd21d4649dcd148
 - name: golang.org/x/crypto
   version: 1f22c0103821b9390939b6776727195525381532
   subpackages:
@@ -279,13 +287,12 @@ imports:
 - name: gopkg.in/yaml.v2
   version: a5b47d31c556af34a302ce5d659e6fea44d90de0
 - name: k8s.io/helm
-  version: 5cbc48fb305ca4bf68c26eb8d2a7eb363227e973
+  version: 32562a3040bb5ca690339b9840b6f60f8ce25da4
   subpackages:
-  - cmd/helm/downloader
-  - cmd/helm/helmpath
-  - cmd/helm/resolver
   - pkg/chartutil
+  - pkg/downloader
   - pkg/helm
+  - pkg/helm/helmpath
   - pkg/ignore
   - pkg/kube
   - pkg/proto/hapi/chart
@@ -294,9 +301,12 @@ imports:
   - pkg/proto/hapi/version
   - pkg/provenance
   - pkg/repo
+  - pkg/resolver
+  - pkg/tlsutil
+  - pkg/urlutil
   - pkg/version
 - name: k8s.io/kubernetes
-  version: b5f9d56cab78ccaad2b726223ba8be5802026f0b
+  version: f07eea23494be1e7c11a8e2cf51bd96d1ec9fdf1
   subpackages:
   - federation/apis/federation
   - federation/apis/federation/install
