@@ -23,7 +23,7 @@ var tillerNamespace = "kube-system"
 
 // Environment contains all the information about the k8s cluster and local configuration
 type Environment struct {
-	ChartDir          string        // Helm's home directory
+	HelmHome          string        // Helm's home directory
 	DryRun            bool          // If true, don't modify anything
 	ChartLoader       ChartLoader   // ChartLoader loads charts
 	ReleaseNamePrefix string        // Prepend this string to release names
