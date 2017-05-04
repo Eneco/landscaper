@@ -71,7 +71,7 @@ func TestExecutorUpdate(t *testing.T) {
 	env := newTestEnvironment()
 
 	comp.Configuration["Name"] = comp.Name
-	comp.Name = env.ReleaseName(comp.Name)
+	comp.Name = env.ReleaseNamePrefix + comp.Name
 
 	env.Namespace = nameSpace
 	env.helmClient = &HelmclientMock{updateRelease: func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
@@ -108,7 +108,7 @@ func TestExecutorDelete(t *testing.T) {
 	env := newTestEnvironment()
 
 	comp.Configuration["Name"] = comp.Name
-	comp.Name = env.ReleaseName(comp.Name)
+	comp.Name = env.ReleaseNamePrefix + comp.Name
 
 	env.Namespace = nameSpace
 	env.helmClient = &HelmclientMock{deleteRelease: func(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {

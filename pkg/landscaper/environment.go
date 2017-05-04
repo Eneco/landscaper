@@ -3,7 +3,6 @@ package landscaper
 import (
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -70,14 +69,6 @@ func (e *Environment) HelmClient() helm.Interface {
 	return e.helmClient
 }
 
-// getEffectiveNamespace provides the namespace the component lives in. It defaults to Environment.Namespace, but any component can override it
-func (e *Environment) getEffectiveNamespace(cmp *Component) string {
-	if cmp.Namespace != "" {
-		return cmp.Namespace
-	}
-	return e.Namespace
-}
-
 // KubeClient makes sure the environment has a KubeClient initialized
 func (e *Environment) KubeClient() internalversion.CoreInterface {
 	if e.kubeClient == nil {
@@ -106,11 +97,6 @@ func (e *Environment) KubeClient() internalversion.CoreInterface {
 // Teardown closes the tunnel
 func (e *Environment) Teardown() {
 	teardown()
-}
-
-// ReleaseName takes a component name, and uses info in the environment to return a release name
-func (e *Environment) ReleaseName(componentName string) string {
-	return e.ReleaseNamePrefix + strings.ToLower(componentName)
 }
 
 // setupConnection creates and returns tiller port forwarding tunnel

@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -12,6 +11,7 @@ import (
 )
 
 var prefixDisable bool
+var env = &landscaper.Environment{}
 
 var addCmd = &cobra.Command{
 	Use:   "apply [files]...",
@@ -36,25 +36,22 @@ var addCmd = &cobra.Command{
 		// deprecated: populate ComponentFiles by getting *.yaml from LandscapeDir
 		if len(args) == 0 && env.LandscapeDir != "" {
 			logrus.Warnf("LandscapeDir is deprecated; please provide files as program arguments instead")
-			files, err := filepath.Glob(filepath.Join(env.LandscapeDir, "*.yaml"))
-			if err != nil {
-				return err
-			}
-			env.ComponentFiles = files
+			env.ComponentFiles = []string{env.LandscapeDir}
 		}
 
 		sp := landscaper.NewSecretsProvider(env)
-		cp := landscaper.NewComponentProvider(env, sp)
+		fileComponents := landscaper.NewFileComponentProvider(env.ComponentFiles, env.ChartLoader, env.ReleaseNamePrefix, env.Namespace)
+		helmComponents := landscaper.NewHelmComponentProvider(env.HelmClient(), sp, env.ReleaseNamePrefix)
 		executor := landscaper.NewExecutor(env, sp)
 
 		for {
-			desired, err := cp.Desired()
+			desired, err := fileComponents.Get()
 			if err != nil {
 				logrus.WithFields(logrus.Fields{"error": err}).Error("Loading desired state failed")
 				return err
 			}
 
-			current, err := cp.Current()
+			current, err := helmComponents.Get()
 			if err != nil {
 				logrus.WithFields(logrus.Fields{"error": err}).Error("Loading current state failed")
 				return err

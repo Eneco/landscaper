@@ -72,12 +72,12 @@ func validateComponents(cs Components) error {
 	return nil
 }
 
-func (c *Component) normalizeFromFile(env *Environment) error {
+func (c *Component) normalizeFromFile(releaseNamePrefix, namespace string) error {
 	c.Configuration["Name"] = c.Name
+	c.Name = releaseNamePrefix + strings.ToLower(c.Name)
 	if len(c.Secrets) > 0 {
-		c.Configuration["secretsRef"] = env.ReleaseName(c.Name)
+		c.Configuration["secretsRef"] = c.Name
 	}
-	c.Name = env.ReleaseName(c.Name)
 
 	ss := strings.Split(c.Release.Chart, "/")
 	if len(ss) != 2 {
@@ -87,7 +87,9 @@ func (c *Component) normalizeFromFile(env *Environment) error {
 
 	c.Configuration.SetMetadata(&Metadata{ChartRepository: ss[0], ReleaseVersion: c.Release.Version})
 
-	c.Namespace = env.getEffectiveNamespace(c)
+	if c.Namespace == "" {
+		c.Namespace = namespace
+	}
 
 	return nil
 }
