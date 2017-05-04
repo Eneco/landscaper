@@ -94,32 +94,6 @@ func (c *Component) normalizeFromFile(releaseNamePrefix, namespace string) error
 	return nil
 }
 
-// HasMetadata returns true if the config contains a landscaper metadata structure
-func (cfg Configuration) HasMetadata() bool {
-	_, ok := cfg[metadataKey]
-	return ok
-}
-
-// GetMetadata returns a Metadata if present
-func (cfg Configuration) GetMetadata() (*Metadata, error) {
-	val, ok := cfg[metadataKey]
-	if !ok {
-		return nil, fmt.Errorf("configuration has no metadata")
-	}
-
-	metadata := val.(map[string]interface{})
-
-	return &Metadata{ReleaseVersion: metadata[metaReleaseVersion].(string), ChartRepository: metadata[metaChartRepo].(string)}, nil
-}
-
-// SetMetadata sets the provided Metadata
-func (cfg Configuration) SetMetadata(m *Metadata) {
-	cfg[metadataKey] = map[string]interface{}{
-		metaReleaseVersion: m.ReleaseVersion,
-		metaChartRepo:      m.ChartRepository,
-	}
-}
-
 // FullChartRef provides a chart references like "myRepo/chartName"
 func (c *Component) FullChartRef() (string, error) {
 	m, err := c.Configuration.GetMetadata()
