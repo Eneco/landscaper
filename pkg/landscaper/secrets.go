@@ -133,8 +133,8 @@ func (sp *secretsProvider) ensureNamespace(namespace string) error {
 	return err
 }
 
-// readSecretValues obtains secrets from environment variables
-func readSecretValues(cmp *Component) {
+// readSecretValuesFromEnvironment obtains secrets from environment variables
+func readSecretValuesFromEnvironment(cmp *Component) {
 	for _, key := range cmp.Secrets {
 		envName := strings.Replace(strings.ToUpper(key), "-", "_", -1)
 

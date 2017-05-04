@@ -135,8 +135,8 @@ func (cp *fileComponentProvider) get(files []string) (Components, error) {
 		}
 
 		if len(cmp.Secrets) > 0 {
-			sort.Strings(cmp.Secrets) // enforce a consistent ordering for proper diffing / deepEqualing
-			readSecretValues(cmp)
+			sort.Strings(cmp.Secrets)            // enforce a consistent ordering for proper diffing / deepEqualing
+			readSecretValuesFromEnvironment(cmp) // TODO: remove coupling; make secrets source pluggable
 		}
 
 		if err := cmp.Validate(); err != nil {
