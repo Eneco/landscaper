@@ -39,7 +39,7 @@ var addCmd = &cobra.Command{
 			env.ComponentFiles = []string{env.LandscapeDir}
 		}
 
-		sp := landscaper.NewSecretsProvider(env)
+		sp := landscaper.NewSecretsProvider(env.KubeClient())
 		fileComponents := landscaper.NewFileComponentProvider(env.ComponentFiles, env.ChartLoader, env.ReleaseNamePrefix, env.Namespace)
 		helmComponents := landscaper.NewHelmComponentProvider(env.HelmClient(), sp, env.ReleaseNamePrefix)
 		executor := landscaper.NewExecutor(env, sp)
