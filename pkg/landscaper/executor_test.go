@@ -55,11 +55,11 @@ func TestExecutorCreate(t *testing.T) {
 		return nil, chartPath, nil
 	})
 
-	err := NewExecutor(env, SecretsProviderMock{write: func(componentName, namespace string, values SecretValues) error {
+	err := NewExecutor(env.HelmClient(), env.ChartLoader, SecretsProviderMock{write: func(componentName, namespace string, values SecretValues) error {
 		require.Equal(t, comp.Name, componentName)
 		require.Equal(t, comp.SecretValues, values)
 		return nil
-	}}).CreateComponent(comp)
+	}}, false, false).CreateComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -86,7 +86,7 @@ func TestExecutorUpdate(t *testing.T) {
 		return nil, chartPath, nil
 	})
 
-	err := NewExecutor(env, SecretsProviderMock{
+	err := NewExecutor(env.HelmClient(), env.ChartLoader, SecretsProviderMock{
 		write: func(componentName, namespace string, values SecretValues) error {
 			require.Equal(t, comp.Name, componentName)
 			require.Equal(t, comp.SecretValues, values)
@@ -96,7 +96,7 @@ func TestExecutorUpdate(t *testing.T) {
 			require.Equal(t, comp.Name, componentName)
 			return nil
 		},
-	}).UpdateComponent(comp)
+	}, false, false).UpdateComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -122,10 +122,10 @@ func TestExecutorDelete(t *testing.T) {
 		return nil, chartPath, nil
 	})
 
-	err := NewExecutor(env, SecretsProviderMock{delete: func(componentName, namespace string) error {
+	err := NewExecutor(env.HelmClient(), env.ChartLoader, SecretsProviderMock{delete: func(componentName, namespace string) error {
 		require.Equal(t, comp.Name, componentName)
 		return nil
-	}}).DeleteComponent(comp)
+	}}, false, false).DeleteComponent(comp)
 	require.NoError(t, err)
 }
 
