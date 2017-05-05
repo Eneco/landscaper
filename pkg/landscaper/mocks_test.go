@@ -10,6 +10,7 @@ type HelmclientMock struct {
 	deleteRelease  func(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error)
 	installRelease func(chStr string, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error)
 	updateRelease  func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error)
+	listReleases   func(opts ...helm.ReleaseListOption) (*services.ListReleasesResponse, error)
 }
 
 func (m *HelmclientMock) DeleteRelease(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
@@ -29,7 +30,7 @@ func (m *HelmclientMock) InstallReleaseFromChart(chart *chart.Chart, namespace s
 }
 
 func (m *HelmclientMock) ListReleases(opts ...helm.ReleaseListOption) (*services.ListReleasesResponse, error) {
-	return nil, nil
+	return m.listReleases(opts...)
 }
 
 func (m *HelmclientMock) ReleaseContent(rlsName string, opts ...helm.ContentOption) (*services.GetReleaseContentResponse, error) {

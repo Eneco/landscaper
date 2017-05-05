@@ -7,6 +7,8 @@ import (
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/proto/hapi/services"
 
+	"fmt"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -101,6 +103,7 @@ func TestExecutorCreate(t *testing.T) {
 		return nil, chartPath, nil
 	})
 	secretsMock := SecretsProviderMock{write: func(componentName, namespace string, values SecretValues) error {
+		t.Logf("secretsMock write %#v %#v %#v", componentName, namespace, values)
 		require.Equal(t, comp.Name, componentName)
 		require.Equal(t, comp.SecretValues, values)
 		return nil
@@ -170,6 +173,43 @@ func TestExecutorDelete(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestIsCronJob(t *testing.T) {
+	type rig struct {
+		data   string
+		result bool
+		err    error
+	}
+	rigs := []rig{
+		rig{"no i am no cron", false, nil},
+		rig{"type: ScheduledJob", true, nil},
+		rig{"disaster", true, fmt.Errorf("broken")},
+	}
+
+	for _, r := range rigs {
+		comp := newTestComponent("x")
+		helmMock := &HelmclientMock{}
+		chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
+			t.Logf("MockChartLoader %#v", chartRef)
+			c := &chart.Chart{
+				Templates: []*chart.Template{&chart.Template{
+					Data: []byte(r.data),
+				},
+				},
+			}
+			return c, "", r.err
+		})
+		secretsMock := SecretsProviderMock{}
+		e := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false)
+		isCron, err := e.(*executor).isCronJob(comp)
+		if err != nil {
+			require.Equal(t, err, r.err)
+			continue
+		}
+		require.Equal(t, isCron, r.result)
+	}
+
+}
+
 func TestIsOnlySecretValueDiff(t *testing.T) {
 	a := *newTestComponent("a")
 	require.False(t, isOnlySecretValueDiff(a, a), "Identical components")
@@ -221,7 +261,7 @@ func newTestComponent(name string) *Component {
 			"FlushSize":                  3,
 			"FilenameOffsetZeroPadWidth": 1,
 		},
-		Secrets{},
+		Secrets{"TestSecret1", "TestSecret2"},
 	)
 
 	cmp.SecretValues = SecretValues{
