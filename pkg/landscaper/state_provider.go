@@ -233,17 +233,6 @@ func (cp *helmStateProvider) listHelmReleases() ([]*release.Release, error) {
 	return res.Releases, nil
 }
 
-// getHelmRelease gets a Release
-func (cp *helmStateProvider) getHelmRelease(releaseName string) (*release.Release, error) {
-	logrus.WithFields(logrus.Fields{"releaseName": releaseName}).Debug("getHelmRelease")
-	res, err := cp.helmClient.ReleaseContent(releaseName)
-	if err != nil {
-		return nil, err
-	}
-
-	return res.Release, nil
-}
-
 // newComponentFromHelmRelease creates a Component from a Release
 func newComponentFromHelmRelease(release *release.Release) (*Component, error) {
 	cfg, err := getReleaseConfiguration(release)
