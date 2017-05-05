@@ -1,6 +1,9 @@
 # Landscaper
 
 [![Build Status](https://travis-ci.org/Eneco/landscaper.svg?branch=master)](https://travis-ci.org/Eneco/landscaper)
+[![Go Report Card](https://goreportcard.com/badge/github.com/eneco/landscaper)](https://goreportcard.com/report/github.com/eneco/landscaper)
+[![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/Eneco/landscaper/pkg/landscaper)
+[![Say Thanks!](https://img.shields.io/badge/Say%20Thanks-!-1EAEDB.svg)](https://saythanks.io/to/eneco)
 
 Landscaper takes a set of Helm Chart references with values (a desired state), and realizes this in a Kubernetes cluster. The intended use case is to have this desired state under version control, and let Landscaper first test and then apply the state as part of the CI/CD stages.
 
