@@ -4,13 +4,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/eneco/landscaper/pkg/landscaper"
 	"github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
-
-var env = &landscaper.Environment{}
 
 var (
 	dryRun = false

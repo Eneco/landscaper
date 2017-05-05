@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -12,6 +11,7 @@ import (
 )
 
 var prefixDisable bool
+var env = &landscaper.Environment{}
 
 var addCmd = &cobra.Command{
 	Use:   "apply [files]...",
@@ -27,34 +27,31 @@ var addCmd = &cobra.Command{
 				env.ReleaseNamePrefix = fmt.Sprintf("%s-", env.Namespace) // prefix not overridden; default to '<namespace>-'
 			}
 		}
-		env.ChartLoader = landscaper.NewLocalCharts(env.ChartDir)
+		env.ChartLoader = landscaper.NewLocalCharts(env.HelmHome)
 
 		v := landscaper.GetVersion()
 		logrus.WithFields(logrus.Fields{"tag": v.GitTag, "commit": v.GitCommit}).Infof("This is Landscaper v%s", v.SemVer)
-		logrus.WithFields(logrus.Fields{"namespace": env.Namespace, "releasePrefix": env.ReleaseNamePrefix, "dir": env.LandscapeDir, "dryRun": env.DryRun, "chartDir": env.ChartDir, "verbose": env.Verbose}).Info("Apply landscape desired state")
+		logrus.WithFields(logrus.Fields{"namespace": env.Namespace, "releasePrefix": env.ReleaseNamePrefix, "dir": env.LandscapeDir, "dryRun": env.DryRun, "helmHome": env.HelmHome, "verbose": env.Verbose}).Info("Apply landscape desired state")
 
 		// deprecated: populate ComponentFiles by getting *.yaml from LandscapeDir
 		if len(args) == 0 && env.LandscapeDir != "" {
 			logrus.Warnf("LandscapeDir is deprecated; please provide files as program arguments instead")
-			files, err := filepath.Glob(filepath.Join(env.LandscapeDir, "*.yaml"))
-			if err != nil {
-				return err
-			}
-			env.ComponentFiles = files
+			env.ComponentFiles = []string{env.LandscapeDir}
 		}
 
-		sp := landscaper.NewSecretsProvider(env)
-		cp := landscaper.NewComponentProvider(env, sp)
-		executor := landscaper.NewExecutor(env, sp)
+		sp := landscaper.NewSecretsProvider(env.KubeClient())
+		fileState := landscaper.NewFileStateProvider(env.ComponentFiles, env.ChartLoader, env.ReleaseNamePrefix, env.Namespace)
+		helmState := landscaper.NewHelmStateProvider(env.HelmClient(), sp, env.ReleaseNamePrefix)
+		executor := landscaper.NewExecutor(env.HelmClient(), env.ChartLoader, sp, env.NoCronUpdate, env.DryRun)
 
 		for {
-			desired, err := cp.Desired()
+			desired, err := fileState.Components()
 			if err != nil {
 				logrus.WithFields(logrus.Fields{"error": err}).Error("Loading desired state failed")
 				return err
 			}
 
-			current, err := cp.Current()
+			current, err := helmState.Components()
 			if err != nil {
 				logrus.WithFields(logrus.Fields{"error": err}).Error("Loading current state failed")
 				return err
@@ -93,7 +90,7 @@ func init() {
 		landscapeNamespace = "default"
 	}
 
-	chartDir := os.ExpandEnv("$HOME/.helm")
+	helmHome := os.ExpandEnv("$HOME/.helm")
 
 	f.BoolVar(&env.DryRun, "dry-run", false, "simulate the applying of the landscape. useful in merge requests")
 	f.BoolVarP(&env.Verbose, "verbose", "v", false, "be verbose")
@@ -102,7 +99,8 @@ func init() {
 	f.StringVar(&env.ReleaseNamePrefix, "prefix", landscapePrefix, "prefix release names with this string instead of <namespace>; overrides LANDSCAPE_PREFIX")
 	f.StringVar(&env.LandscapeDir, "dir", landscapeDir, "(deprecated) path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR")
 	f.StringVar(&env.Namespace, "namespace", landscapeNamespace, "namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE")
-	f.StringVar(&env.ChartDir, "chart-dir", chartDir, "where the charts are stored")
+	f.StringVar(&env.HelmHome, "chart-dir", helmHome, "(deprecated; use --helm-home) Helm home directory")
+	f.StringVar(&env.HelmHome, "helm-home", helmHome, "Helm home directory")
 	f.BoolVar(&env.NoCronUpdate, "no-cronjob-update", false, "replaces CronJob updates with a create+delete; k8s #35149 work around")
 	f.BoolVar(&env.Loop, "loop", false, "keep landscape in sync forever")
 	f.DurationVar(&env.LoopInterval, "loop-interval", 5*time.Minute, "when running in a loop the interval between invocations")

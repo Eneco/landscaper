@@ -35,58 +35,100 @@ func TestExecutorDiff(t *testing.T) {
 	assert.Equal(t, expectedD, actualD)
 }
 
+func TestExecutorApply(t *testing.T) {
+	chartPath := "/opt/store/whatever/path/"
+
+	nu := newTestComponent("new-one")
+	nu.Namespace = "recognizable-new-one"
+	rem := newTestComponent("busted-one")
+	up := newTestComponent("updated-one")
+	updiff := newTestComponent("updated-one")
+	updiff.Configuration["FlushSize"] = 4
+
+	des := Components{nu.Name: nu, updiff.Name: updiff}
+	cur := Components{rem.Name: rem, up.Name: up}
+
+	helmMock := &HelmclientMock{
+		installRelease: func(chStr string, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error) {
+			t.Logf("installRelease %#v %#v %#v", chStr, namespace, opts)
+			require.Equal(t, namespace, "recognizable-new-one") // the name is hidden in the opts we cannot inspect
+			return nil, nil
+		},
+		deleteRelease: func(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
+			t.Logf("deleteRelease %#v", rlsName)
+			require.Equal(t, rlsName, "busted-one")
+			return nil, nil
+		},
+		updateRelease: func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
+			t.Logf("updateRelease %#v %#v %#v", rlsName, chStr, opts)
+			require.Equal(t, rlsName, "updated-one")
+			return nil, nil
+		}}
+	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
+		t.Logf("MockChartLoader %#v", chartRef)
+		return nil, chartPath, nil
+	})
+	secretsMock := SecretsProviderMock{
+		write: func(componentName, namespace string, values SecretValues) error {
+			return nil
+		},
+		delete: func(componentName, namespace string) error {
+			return nil
+		},
+	}
+
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false).Apply(des, cur)
+	require.NoError(t, err)
+
+}
+
 func TestExecutorCreate(t *testing.T) {
 	chartPath := "/opt/store/whatever/path/"
 	nameSpace := "spacename"
 
-	comp := newTestComponent()
-	env := newTestEnvironment()
+	comp := newTestComponent("z")
 
 	comp.Namespace = nameSpace
-	env.helmClient = &HelmclientMock{installRelease: func(chStr string, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error) {
+	helmMock := &HelmclientMock{installRelease: func(chStr string, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error) {
 		t.Logf("installRelease %#v %#v %#v", chStr, namespace, opts)
 		require.Equal(t, chartPath, chStr)
 		require.Equal(t, nameSpace, namespace)
 		return nil, nil
 	}}
-	env.ChartLoader = MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
+	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
 		t.Logf("MockChartLoader %#v", chartRef)
 		require.Equal(t, "repo/"+comp.Release.Chart, chartRef)
 		return nil, chartPath, nil
 	})
-
-	err := NewExecutor(env, SecretsProviderMock{write: func(componentName, namespace string, values SecretValues) error {
+	secretsMock := SecretsProviderMock{write: func(componentName, namespace string, values SecretValues) error {
 		require.Equal(t, comp.Name, componentName)
 		require.Equal(t, comp.SecretValues, values)
 		return nil
-	}}).CreateComponent(comp)
+	}}
+
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false).CreateComponent(comp)
 	require.NoError(t, err)
 }
 
 func TestExecutorUpdate(t *testing.T) {
 	chartPath := "/opt/store/whatever/path/"
-	nameSpace := "spacename"
 
-	comp := newTestComponent()
-	env := newTestEnvironment()
+	comp := newTestComponent("y")
 
 	comp.Configuration["Name"] = comp.Name
-	comp.Name = env.ReleaseName(comp.Name)
 
-	env.Namespace = nameSpace
-	env.helmClient = &HelmclientMock{updateRelease: func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
+	helmMock := &HelmclientMock{updateRelease: func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
 		t.Logf("updateRelease %#v %#v %#v", rlsName, chStr, opts)
 		require.Equal(t, comp.Name, rlsName)
 		require.Equal(t, chartPath, chStr)
 		return nil, nil
 	}}
-	env.ChartLoader = MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
+	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
 		t.Logf("MockChartLoader %#v", chartRef)
 		require.Equal(t, "repo/"+comp.Release.Chart, chartRef)
 		return nil, chartPath, nil
 	})
-
-	err := NewExecutor(env, SecretsProviderMock{
+	secretsMock := SecretsProviderMock{
 		write: func(componentName, namespace string, values SecretValues) error {
 			require.Equal(t, comp.Name, componentName)
 			require.Equal(t, comp.SecretValues, values)
@@ -96,61 +138,56 @@ func TestExecutorUpdate(t *testing.T) {
 			require.Equal(t, comp.Name, componentName)
 			return nil
 		},
-	}).UpdateComponent(comp)
+	}
+
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false).UpdateComponent(comp)
 	require.NoError(t, err)
 }
 
 func TestExecutorDelete(t *testing.T) {
 	chartPath := "/opt/store/whatever/path/"
-	nameSpace := "spacename"
 
-	comp := newTestComponent()
-	env := newTestEnvironment()
+	comp := newTestComponent("x")
 
 	comp.Configuration["Name"] = comp.Name
-	comp.Name = env.ReleaseName(comp.Name)
 
-	env.Namespace = nameSpace
-	env.helmClient = &HelmclientMock{deleteRelease: func(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
+	helmMock := &HelmclientMock{deleteRelease: func(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
 		t.Logf("deleteRelease %#v", rlsName)
 		require.Equal(t, comp.Name, rlsName)
 		return nil, nil
 	}}
-	env.ChartLoader = MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
+	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
 		t.Logf("MockChartLoader %#v", chartRef)
 		require.Equal(t, comp.Release.Chart, chartRef)
 		return nil, chartPath, nil
 	})
-
-	err := NewExecutor(env, SecretsProviderMock{delete: func(componentName, namespace string) error {
+	secretsMock := SecretsProviderMock{delete: func(componentName, namespace string) error {
 		require.Equal(t, comp.Name, componentName)
 		return nil
-	}}).DeleteComponent(comp)
+	}}
+
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false).DeleteComponent(comp)
 	require.NoError(t, err)
 }
 
 func TestIsOnlySecretValueDiff(t *testing.T) {
-	a := *newTestComponent()
+	a := *newTestComponent("a")
 	require.False(t, isOnlySecretValueDiff(a, a), "Identical components")
 
-	b := *newTestComponent()
+	b := *newTestComponent("a")
 	b.Name = b.Name + "X"
 	require.False(t, isOnlySecretValueDiff(a, b), "Components different on non-secretvals")
 
-	c := *newTestComponent()
+	c := *newTestComponent("a")
 	c.SecretValues["x"] = []byte("y")
 	require.True(t, isOnlySecretValueDiff(a, c), "Components different only on secretvals")
 }
 
 func TestIntegrateForcedUpdates(t *testing.T) {
-	c := newTestComponent()
-	u := newTestComponent()
-	d := newTestComponent()
-	f := newTestComponent()
-	c.Name = "C"
-	u.Name = "U"
-	d.Name = "D"
-	f.Name = "F"
+	c := newTestComponent("C")
+	u := newTestComponent("U")
+	d := newTestComponent("D")
+	f := newTestComponent("F")
 
 	current := Components{u.Name: u, f.Name: f, d.Name: d}
 
@@ -167,9 +204,9 @@ func TestIntegrateForcedUpdates(t *testing.T) {
 	require.Equal(t, Components{d.Name: d, f.Name: f}, delete)
 }
 
-func newTestComponent() *Component {
+func newTestComponent(name string) *Component {
 	cmp := NewComponent(
-		"create-test",
+		name,
 		"myNameSpace",
 		&Release{
 			Chart:   "connector-hdfs:0.1.0",
@@ -195,12 +232,4 @@ func newTestComponent() *Component {
 	cmp.Configuration.SetMetadata(&Metadata{ChartRepository: "repo", ReleaseVersion: "1.0.0"})
 
 	return cmp
-}
-
-func newTestEnvironment() *Environment {
-	return &Environment{
-		Namespace:         "landscaper-testing",
-		ReleaseNamePrefix: "testing",
-		LandscapeDir:      "../../test",
-	}
 }

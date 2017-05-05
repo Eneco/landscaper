@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sort"
 
 	"github.com/Sirupsen/logrus"
@@ -24,27 +25,36 @@ var (
 	ErrInvalidLandscapeMetadata = errors.New("release contains invalid landscaper metadata")
 )
 
-// ComponentProvider can be used to interact with components locally, as well as on the cluster
-type ComponentProvider interface {
-	Current() (Components, error)
-	Desired() (Components, error)
+// StateProvider can be used to obtain a state, actual (from Helm) or desired (e.g. from files)
+type StateProvider interface {
+	Components() (Components, error)
 }
 
-type componentProvider struct {
-	env             *Environment
-	secretsProvider SecretsProvider
+type fileStateProvider struct {
+	fileNames         []string
+	chartLoader       ChartLoader
+	releaseNamePrefix string
+	namespace         string
 }
 
-// NewComponentProvider is a factory method to create a new ComponentProvider
-func NewComponentProvider(env *Environment, secretsProvider SecretsProvider) ComponentProvider {
-	return &componentProvider{
-		env:             env,
-		secretsProvider: secretsProvider,
-	}
+type helmStateProvider struct {
+	helmClient        helm.Interface
+	secretsProvider   SecretsProvider
+	releaseNamePrefix string
 }
 
-// Current returns all Components in the cluster
-func (cp *componentProvider) Current() (Components, error) {
+// NewFileStateProvider creates a StateProvider that sources Files
+func NewFileStateProvider(fileNames []string, chartLoader ChartLoader, releaseNamePrefix, namespace string) StateProvider {
+	return &fileStateProvider{fileNames, chartLoader, releaseNamePrefix, namespace}
+}
+
+// NewHelmStateProvider creates a StateProvider that sources Helm (actual state)
+func NewHelmStateProvider(helmClient helm.Interface, secretsProvider SecretsProvider, releaseNamePrefix string) StateProvider {
+	return &helmStateProvider{helmClient, secretsProvider, releaseNamePrefix}
+}
+
+// Components returns all Components in the cluster
+func (cp *helmStateProvider) Components() (Components, error) {
 	components := Components{}
 
 	logrus.Info("Obtain current state Helm Releases (Components) from Tiller")
@@ -85,19 +95,30 @@ func (cp *componentProvider) Current() (Components, error) {
 	return components, nil
 }
 
-// Desired returns all desired components according to their descriptions
-func (cp *componentProvider) Desired() (Components, error) {
+// get loads the provided files. If the argument is a directory, *.yaml in it is loaded.
+func (cp *fileStateProvider) get(files []string) (Components, error) {
 	components := Components{}
 
-	logrus.WithFields(logrus.Fields{"files": cp.env.ComponentFiles}).Info("Obtain desired state from files")
+	logrus.WithFields(logrus.Fields{"files": files}).Info("Obtain desired state from files")
 
-	for _, filename := range cp.env.ComponentFiles {
+	for _, filename := range files {
 		fileInfo, err := os.Stat(filename)
 		if err != nil {
 			return components, err
 		}
 		if fileInfo.IsDir() {
-			logrus.WithFields(logrus.Fields{"file": filename}).Debugf("Skip directory")
+			logrus.WithFields(logrus.Fields{"file": filename}).Debugf("Crawl directory for *.yaml")
+			files, err := filepath.Glob(filepath.Join(filename, "*.yaml"))
+			if err != nil {
+				return nil, err
+			}
+			subComp, err := cp.get(files)
+			if err != nil {
+				return nil, err
+			}
+			for k, v := range subComp { // TODO: check for duplicate names
+				components[k] = v
+			}
 			continue
 		}
 
@@ -106,7 +127,7 @@ func (cp *componentProvider) Desired() (Components, error) {
 		if err != nil {
 			return components, fmt.Errorf("readComponentFromYAMLFilePath file `%s` failed: %s", filename, err)
 		}
-		cmp.normalizeFromFile(cp.env)
+		cmp.normalizeFromFile(cp.releaseNamePrefix, cp.namespace)
 
 		err = cp.coalesceComponent(cmp)
 		if err != nil {
@@ -114,8 +135,8 @@ func (cp *componentProvider) Desired() (Components, error) {
 		}
 
 		if len(cmp.Secrets) > 0 {
-			sort.Strings(cmp.Secrets) // enforce a consistent ordering for proper diffing / deepEqualing
-			readSecretValues(cmp)
+			sort.Strings(cmp.Secrets)            // enforce a consistent ordering for proper diffing / deepEqualing
+			readSecretValuesFromEnvironment(cmp) // TODO: remove coupling; make secrets source pluggable
 		}
 
 		if err := cmp.Validate(); err != nil {
@@ -136,9 +157,14 @@ func (cp *componentProvider) Desired() (Components, error) {
 		return components, err
 	}
 
-	logrus.WithFields(logrus.Fields{"directory": cp.env.LandscapeDir, "components": len(components)}).Debug("Desired state has been read")
+	logrus.WithFields(logrus.Fields{"n_components": len(components)}).Debug("Desired state has been read")
 
 	return components, nil
+}
+
+// Get returns all desired components according to their descriptions
+func (cp *fileStateProvider) Components() (Components, error) {
+	return cp.get(cp.fileNames)
 }
 
 // newComponentFromYAML parses a byteslice into a Component instance
@@ -164,13 +190,13 @@ func newComponentFromYAML(content []byte) (*Component, error) {
 }
 
 // coalesceComponent takes a component, loads the chart and coalesces the configuration with the default values
-func (cp *componentProvider) coalesceComponent(cmp *Component) error {
+func (cp *fileStateProvider) coalesceComponent(cmp *Component) error {
 	logrus.WithFields(logrus.Fields{"chart": cmp.Release.Chart}).Debug("coalesceComponent")
 	chartRef, err := cmp.FullChartRef()
 	if err != nil {
 		return err
 	}
-	ch, _, err := cp.env.ChartLoader.Load(chartRef)
+	ch, _, err := cp.chartLoader.Load(chartRef)
 	if err != nil {
 		return err
 	}
@@ -190,11 +216,11 @@ func (cp *componentProvider) coalesceComponent(cmp *Component) error {
 	return nil
 }
 
-// listHelmReleases lists all releases that are prefixed with env.LandscapeName
-func (cp *componentProvider) listHelmReleases() ([]*release.Release, error) {
+// listHelmReleases lists all releases that are prefixed with releaseNamePrefix
+func (cp *helmStateProvider) listHelmReleases() ([]*release.Release, error) {
 	logrus.Debug("listHelmReleases")
-	filter := helm.ReleaseListFilter(fmt.Sprintf("^%s.+", cp.env.ReleaseNamePrefix))
-	res, err := cp.env.HelmClient().ListReleases(filter)
+	filter := helm.ReleaseListFilter(fmt.Sprintf("^%s.+", cp.releaseNamePrefix))
+	res, err := cp.helmClient.ListReleases(filter)
 	if err != nil {
 		return nil, err
 	}
@@ -203,9 +229,9 @@ func (cp *componentProvider) listHelmReleases() ([]*release.Release, error) {
 }
 
 // getHelmRelease gets a Release
-func (cp *componentProvider) getHelmRelease(releaseName string) (*release.Release, error) {
+func (cp *helmStateProvider) getHelmRelease(releaseName string) (*release.Release, error) {
 	logrus.WithFields(logrus.Fields{"releaseName": releaseName}).Debug("getHelmRelease")
-	res, err := cp.env.HelmClient().ReleaseContent(releaseName)
+	res, err := cp.helmClient.ReleaseContent(releaseName)
 	if err != nil {
 		return nil, err
 	}

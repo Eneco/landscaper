@@ -72,12 +72,12 @@ func validateComponents(cs Components) error {
 	return nil
 }
 
-func (c *Component) normalizeFromFile(env *Environment) error {
+func (c *Component) normalizeFromFile(releaseNamePrefix, namespace string) error {
 	c.Configuration["Name"] = c.Name
+	c.Name = releaseNamePrefix + strings.ToLower(c.Name)
 	if len(c.Secrets) > 0 {
-		c.Configuration["secretsRef"] = env.ReleaseName(c.Name)
+		c.Configuration["secretsRef"] = c.Name
 	}
-	c.Name = env.ReleaseName(c.Name)
 
 	ss := strings.Split(c.Release.Chart, "/")
 	if len(ss) != 2 {
@@ -87,35 +87,11 @@ func (c *Component) normalizeFromFile(env *Environment) error {
 
 	c.Configuration.SetMetadata(&Metadata{ChartRepository: ss[0], ReleaseVersion: c.Release.Version})
 
-	c.Namespace = env.getEffectiveNamespace(c)
+	if c.Namespace == "" {
+		c.Namespace = namespace
+	}
 
 	return nil
-}
-
-// HasMetadata returns true if the config contains a landscaper metadata structure
-func (cfg Configuration) HasMetadata() bool {
-	_, ok := cfg[metadataKey]
-	return ok
-}
-
-// GetMetadata returns a Metadata if present
-func (cfg Configuration) GetMetadata() (*Metadata, error) {
-	val, ok := cfg[metadataKey]
-	if !ok {
-		return nil, fmt.Errorf("configuration has no metadata")
-	}
-
-	metadata := val.(map[string]interface{})
-
-	return &Metadata{ReleaseVersion: metadata[metaReleaseVersion].(string), ChartRepository: metadata[metaChartRepo].(string)}, nil
-}
-
-// SetMetadata sets the provided Metadata
-func (cfg Configuration) SetMetadata(m *Metadata) {
-	cfg[metadataKey] = map[string]interface{}{
-		metaReleaseVersion: m.ReleaseVersion,
-		metaChartRepo:      m.ChartRepository,
-	}
 }
 
 // FullChartRef provides a chart references like "myRepo/chartName"

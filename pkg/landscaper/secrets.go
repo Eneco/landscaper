@@ -7,6 +7,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/errors"
+	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/internalversion"
 )
 
 // Secrets is currently a slice of secret names that should be applied to a component
@@ -24,12 +25,12 @@ type SecretsProvider interface {
 }
 
 type secretsProvider struct {
-	env *Environment
+	kubeClient internalversion.CoreInterface
 }
 
 // NewSecretsProvider is a factory method to create a new SecretsProvider
-func NewSecretsProvider(env *Environment) SecretsProvider {
-	return &secretsProvider{env: env}
+func NewSecretsProvider(kubeClient internalversion.CoreInterface) SecretsProvider {
+	return &secretsProvider{kubeClient: kubeClient}
 }
 
 func (sp *secretsProvider) Read(componentName, namespace string) (SecretValues, error) {
@@ -37,7 +38,7 @@ func (sp *secretsProvider) Read(componentName, namespace string) (SecretValues, 
 
 	secrets := SecretValues{}
 
-	secret, err := sp.env.KubeClient().Secrets(namespace).Get(componentName)
+	secret, err := sp.kubeClient.Secrets(namespace).Get(componentName)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			logrus.WithFields(logrus.Fields{"component": componentName, "namespace": namespace}).Debug("No secrets found for component")
@@ -74,7 +75,7 @@ func (sp *secretsProvider) Write(componentName, namespace string, secrets Secret
 		return err
 	}
 
-	_, err = sp.env.KubeClient().Secrets(namespace).Create(&api.Secret{
+	_, err = sp.kubeClient.Secrets(namespace).Create(&api.Secret{
 		ObjectMeta: api.ObjectMeta{
 			Name: componentName,
 		},
@@ -98,7 +99,7 @@ func (sp *secretsProvider) Delete(componentName, namespace string) error {
 	logrus.WithFields(logrus.Fields{"component": componentName, "namespace": namespace}).Info("Deleting existing secrets for component")
 
 	// We first completely delete the current secrets
-	err := sp.env.KubeClient().Secrets(namespace).Delete(componentName, nil)
+	err := sp.kubeClient.Secrets(namespace).Delete(componentName, nil)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			logrus.WithFields(logrus.Fields{"component": componentName, "namespace": namespace}).Info("No secrets found for component")
@@ -118,7 +119,7 @@ func (sp *secretsProvider) Delete(componentName, namespace string) error {
 
 // ensureNamespace trigger namespace creation and filter errors, only already-exists type of error won't be returned.
 func (sp *secretsProvider) ensureNamespace(namespace string) error {
-	_, err := sp.env.KubeClient().Namespaces().Create(
+	_, err := sp.kubeClient.Namespaces().Create(
 		&api.Namespace{
 			ObjectMeta: api.ObjectMeta{
 				Name: namespace,
@@ -133,8 +134,8 @@ func (sp *secretsProvider) ensureNamespace(namespace string) error {
 	return err
 }
 
-// readSecretValues obtains secrets from environment variables
-func readSecretValues(cmp *Component) {
+// readSecretValuesFromEnvironment obtains secrets from environment variables
+func readSecretValuesFromEnvironment(cmp *Component) {
 	for _, key := range cmp.Secrets {
 		envName := strings.Replace(strings.ToUpper(key), "-", "_", -1)
 

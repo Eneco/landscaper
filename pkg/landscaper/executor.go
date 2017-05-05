@@ -22,15 +22,21 @@ type Executor interface {
 }
 
 type executor struct {
-	env             *Environment
+	helmClient      helm.Interface
+	chartLoader     ChartLoader
 	secretsProvider SecretsProvider
+	noCronUpdate    bool
+	dryRun          bool
 }
 
 // NewExecutor is a factory method to create a new Executor
-func NewExecutor(env *Environment, secretsProvider SecretsProvider) Executor {
+func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, secretsProvider SecretsProvider, noCronUpdate, dryRun bool) Executor {
 	return &executor{
-		env:             env,
+		helmClient:      helmClient,
+		chartLoader:     chartLoader,
 		secretsProvider: secretsProvider,
+		noCronUpdate:    noCronUpdate,
+		dryRun:          dryRun,
 	}
 }
 
@@ -42,8 +48,8 @@ func (e *executor) Apply(desired, current Components) error {
 	needForcedUpdate := map[string]bool{}
 	for _, cmp := range update {
 		// to work around k8s #35149, cronJobs need a force update
-		if e.env.NoCronUpdate {
-			cronJob, err := isCronJob(e.env, cmp)
+		if e.noCronUpdate {
+			cronJob, err := e.isCronJob(cmp)
 			if err != nil {
 				return err
 			}
@@ -67,7 +73,7 @@ func (e *executor) Apply(desired, current Components) error {
 		}
 	}
 	// delete+create pairs will never work in dry run since the dry-run "deleted" component will exist in create
-	if !e.env.DryRun {
+	if !e.dryRun {
 		create, update, delete = integrateForcedUpdates(current, create, update, delete, needForcedUpdate)
 	}
 
@@ -110,7 +116,7 @@ func (e *executor) CreateComponent(cmp *Component) error {
 	if err != nil {
 		return err
 	}
-	_, chartPath, err := e.env.ChartLoader.Load(chartRef)
+	_, chartPath, err := e.chartLoader.Load(chartRef)
 	if err != nil {
 		return err
 	}
@@ -126,22 +132,22 @@ func (e *executor) CreateComponent(cmp *Component) error {
 		"chartPath": chartPath,
 		"rawValues": rawValues,
 		"values":    cmp.Configuration,
-		"dryrun":    e.env.DryRun,
+		"dryrun":    e.dryRun,
 	}).Debug("Create component")
 
-	if len(cmp.Secrets) > 0 && !e.env.DryRun {
+	if len(cmp.Secrets) > 0 && !e.dryRun {
 		err = e.secretsProvider.Write(cmp.Name, cmp.Namespace, cmp.SecretValues)
 		if err != nil {
 			return err
 		}
 	}
 
-	_, err = e.env.HelmClient().InstallRelease(
+	_, err = e.helmClient.InstallRelease(
 		chartPath,
 		cmp.Namespace,
 		helm.ValueOverrides([]byte(rawValues)),
 		helm.ReleaseName(cmp.Name),
-		helm.InstallDryRun(e.env.DryRun),
+		helm.InstallDryRun(e.dryRun),
 		helm.InstallReuseName(true),
 	)
 	if err != nil {
@@ -159,7 +165,7 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 	if err != nil {
 		return err
 	}
-	_, chartPath, err := e.env.ChartLoader.Load(chartRef)
+	_, chartPath, err := e.chartLoader.Load(chartRef)
 	if err != nil {
 		return err
 	}
@@ -169,7 +175,7 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 		return err
 	}
 
-	if !e.env.DryRun {
+	if !e.dryRun {
 		err = e.secretsProvider.Delete(cmp.Name, cmp.Namespace)
 
 		if len(cmp.Secrets) > 0 {
@@ -185,14 +191,14 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 		"chart":     cmp.Release.Chart,
 		"chartPath": chartPath,
 		"values":    cmp.Configuration,
-		"dryrun":    e.env.DryRun,
+		"dryrun":    e.dryRun,
 	}).Debug("Update component")
 
-	_, err = e.env.HelmClient().UpdateRelease(
+	_, err = e.helmClient.UpdateRelease(
 		cmp.Name,
 		chartPath,
 		helm.UpdateValueOverrides([]byte(rawValues)),
-		helm.UpgradeDryRun(e.env.DryRun),
+		helm.UpgradeDryRun(e.dryRun),
 	)
 	if err != nil {
 		return errors.New(grpc.ErrorDesc(err))
@@ -206,21 +212,21 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 	logrus.WithFields(logrus.Fields{
 		"release": cmp.Name,
 		"values":  cmp.Configuration,
-		"dryrun":  e.env.DryRun,
+		"dryrun":  e.dryRun,
 	}).Debug("Delete component")
 
-	if len(cmp.Secrets) > 0 && !e.env.DryRun {
+	if len(cmp.Secrets) > 0 && !e.dryRun {
 		err := e.secretsProvider.Delete(cmp.Name, cmp.Namespace)
 		if err != nil {
 			return err
 		}
 	}
 
-	if !e.env.DryRun {
-		_, err := e.env.HelmClient().DeleteRelease(
+	if !e.dryRun {
+		_, err := e.helmClient.DeleteRelease(
 			cmp.Name,
 			helm.DeletePurge(true),
-			helm.DeleteDryRun(e.env.DryRun),
+			helm.DeleteDryRun(e.dryRun),
 		)
 		if err != nil {
 			return errors.New(grpc.ErrorDesc(err))
@@ -349,12 +355,12 @@ func isOnlySecretValueDiff(a, b Component) bool {
 // isCronJob tells if the chart template contains the word "CronJob" or "ScheduledJob"
 // TODO. hacky. ugly. needed to work around https://github.com/kubernetes/kubernetes/issues/35149
 // get rid of it when fixed.
-func isCronJob(env *Environment, cmp *Component) (bool, error) {
+func (e *executor) isCronJob(cmp *Component) (bool, error) {
 	chartRef, err := cmp.FullChartRef()
 	if err != nil {
 		return false, err
 	}
-	ch, _, err := env.ChartLoader.Load(chartRef)
+	ch, _, err := e.chartLoader.Load(chartRef)
 	if err != nil {
 		return false, err
 	}

@@ -3,7 +3,6 @@ package landscaper
 import (
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -23,18 +22,18 @@ var tillerNamespace = "kube-system"
 
 // Environment contains all the information about the k8s cluster and local configuration
 type Environment struct {
-	ChartDir          string
-	DryRun            bool
-	ChartLoader       ChartLoader
-	ReleaseNamePrefix string
-	ComponentFiles    []string
-	LandscapeDir      string // deprecated: ComponentFiles is leading; LandscapeDir merely fills it
-	Namespace         string
-	Verbose           bool
-	NoCronUpdate      bool // NoCronUpdate replaces a CronJob update with a create+delete; k8s #35149 work around
-	Context           string
-	Loop              bool
-	LoopInterval      time.Duration
+	HelmHome          string        // Helm's home directory
+	DryRun            bool          // If true, don't modify anything
+	ChartLoader       ChartLoader   // ChartLoader loads charts
+	ReleaseNamePrefix string        // Prepend this string to release names
+	ComponentFiles    []string      // Landscaper component file names
+	LandscapeDir      string        // deprecated: ComponentFiles is leading; LandscapeDir merely fills it
+	Namespace         string        // Default namespace releases are put into; components can override it though
+	Verbose           bool          // Reduce log level
+	NoCronUpdate      bool          // NoCronUpdate replaces a CronJob update with a create+delete; k8s #35149 work around
+	Context           string        // Kubernetes context to use
+	Loop              bool          // Keep looping
+	LoopInterval      time.Duration // Loop every duration
 
 	helmClient helm.Interface
 	kubeClient internalversion.CoreInterface
@@ -70,14 +69,6 @@ func (e *Environment) HelmClient() helm.Interface {
 	return e.helmClient
 }
 
-// getEffectiveNamespace provides the namespace the component lives in. It defaults to Environment.Namespace, but any component can override it
-func (e *Environment) getEffectiveNamespace(cmp *Component) string {
-	if cmp.Namespace != "" {
-		return cmp.Namespace
-	}
-	return e.Namespace
-}
-
 // KubeClient makes sure the environment has a KubeClient initialized
 func (e *Environment) KubeClient() internalversion.CoreInterface {
 	if e.kubeClient == nil {
@@ -106,11 +97,6 @@ func (e *Environment) KubeClient() internalversion.CoreInterface {
 // Teardown closes the tunnel
 func (e *Environment) Teardown() {
 	teardown()
-}
-
-// ReleaseName takes a component name, and uses info in the environment to return a release name
-func (e *Environment) ReleaseName(componentName string) string {
-	return e.ReleaseNamePrefix + strings.ToLower(componentName)
 }
 
 // setupConnection creates and returns tiller port forwarding tunnel
