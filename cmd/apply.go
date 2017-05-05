@@ -39,10 +39,11 @@ var addCmd = &cobra.Command{
 			env.ComponentFiles = []string{env.LandscapeDir}
 		}
 
-		sp := landscaper.NewSecretsProvider(env.KubeClient())
-		fileState := landscaper.NewFileStateProvider(env.ComponentFiles, env.ChartLoader, env.ReleaseNamePrefix, env.Namespace)
-		helmState := landscaper.NewHelmStateProvider(env.HelmClient(), sp, env.ReleaseNamePrefix)
-		executor := landscaper.NewExecutor(env.HelmClient(), env.ChartLoader, sp, env.NoCronUpdate, env.DryRun)
+		kubeSecrets := landscaper.NewKubeSecretsReadWriteDeleter(env.KubeClient())
+		envSecrets := landscaper.NewEnvironmentSecretsReader()
+		fileState := landscaper.NewFileStateProvider(env.ComponentFiles, envSecrets, env.ChartLoader, env.ReleaseNamePrefix, env.Namespace)
+		helmState := landscaper.NewHelmStateProvider(env.HelmClient(), kubeSecrets, env.ReleaseNamePrefix)
+		executor := landscaper.NewExecutor(env.HelmClient(), env.ChartLoader, kubeSecrets, env.NoCronUpdate, env.DryRun)
 
 		for {
 			desired, err := fileState.Components()

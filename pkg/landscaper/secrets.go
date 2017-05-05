@@ -17,23 +17,41 @@ type Secrets []string
 // to kubernetes or anywhere else persistent!
 type SecretValues map[string][]byte
 
-// SecretsProvider reads secrets for a release from both the desired state as well as the current state
-type SecretsProvider interface {
-	Read(componentName, namespace string) (SecretValues, error)
+// SecretsReader allows reading secrets
+type SecretsReader interface {
+	Read(componentName, namespace string, secretNames []string) (SecretValues, error)
+}
+
+// SecretsWriteDeleter allows writing and deleting secrets
+type SecretsWriteDeleter interface {
 	Write(componentName, namespace string, secretValues SecretValues) error
 	Delete(componentName, namespace string) error
 }
 
-type secretsProvider struct {
+// SecretsReadWriteDeleter allows reading, writing and deleting secrets
+type SecretsReadWriteDeleter interface {
+	SecretsReader
+	SecretsWriteDeleter
+}
+
+type kubeSecretsProvider struct {
 	kubeClient internalversion.CoreInterface
 }
 
-// NewSecretsProvider is a factory method to create a new SecretsProvider
-func NewSecretsProvider(kubeClient internalversion.CoreInterface) SecretsProvider {
-	return &secretsProvider{kubeClient: kubeClient}
+type environmentSecrets struct{}
+
+// NewKubeSecretsReadWriteDeleter create a new SecretsReadWriteDeleter for kubernetes secrets
+func NewKubeSecretsReadWriteDeleter(kubeClient internalversion.CoreInterface) SecretsReadWriteDeleter {
+	return &kubeSecretsProvider{kubeClient: kubeClient}
 }
 
-func (sp *secretsProvider) Read(componentName, namespace string) (SecretValues, error) {
+// NewEnvironmentSecretsReader creates a SecretsReader for secrets provided via environment variables
+func NewEnvironmentSecretsReader() SecretsReader {
+	return &environmentSecrets{}
+}
+
+// Read reads all secrets in the k8s secret object. It ignores secretNames.
+func (sp *kubeSecretsProvider) Read(componentName, namespace string, secretNames []string) (SecretValues, error) {
 	logrus.WithFields(logrus.Fields{"component": componentName, "namespace": namespace}).Debug("Reading secrets for component")
 
 	secrets := SecretValues{}
@@ -62,7 +80,7 @@ func (sp *secretsProvider) Read(componentName, namespace string) (SecretValues, 
 	return secrets, nil
 }
 
-func (sp *secretsProvider) Write(componentName, namespace string, secrets SecretValues) error {
+func (sp *kubeSecretsProvider) Write(componentName, namespace string, secrets SecretValues) error {
 	logrus.WithFields(logrus.Fields{"component": componentName, "namespace": namespace}).Info("Writing secrets for component")
 
 	err := sp.ensureNamespace(namespace)
@@ -95,7 +113,7 @@ func (sp *secretsProvider) Write(componentName, namespace string, secrets Secret
 	return nil
 }
 
-func (sp *secretsProvider) Delete(componentName, namespace string) error {
+func (sp *kubeSecretsProvider) Delete(componentName, namespace string) error {
 	logrus.WithFields(logrus.Fields{"component": componentName, "namespace": namespace}).Info("Deleting existing secrets for component")
 
 	// We first completely delete the current secrets
@@ -118,7 +136,7 @@ func (sp *secretsProvider) Delete(componentName, namespace string) error {
 }
 
 // ensureNamespace trigger namespace creation and filter errors, only already-exists type of error won't be returned.
-func (sp *secretsProvider) ensureNamespace(namespace string) error {
+func (sp *kubeSecretsProvider) ensureNamespace(namespace string) error {
 	_, err := sp.kubeClient.Namespaces().Create(
 		&api.Namespace{
 			ObjectMeta: api.ObjectMeta{
@@ -134,9 +152,10 @@ func (sp *secretsProvider) ensureNamespace(namespace string) error {
 	return err
 }
 
-// readSecretValuesFromEnvironment obtains secrets from environment variables
-func readSecretValuesFromEnvironment(cmp *Component) {
-	for _, key := range cmp.Secrets {
+// Read reads the given secretNames from the environment, by uppercasing the name and converting - into _. componentName and namespace are ignored
+func (env *environmentSecrets) Read(componentName, namespace string, secretNames []string) (SecretValues, error) {
+	secs := SecretValues{}
+	for _, key := range secretNames {
 		envName := strings.Replace(strings.ToUpper(key), "-", "_", -1)
 
 		secretValue := os.Getenv(envName)
@@ -144,6 +163,7 @@ func readSecretValuesFromEnvironment(cmp *Component) {
 			logrus.WithFields(logrus.Fields{"secret": key, "envName": envName}).Warn("Secret not found in environment")
 		}
 
-		cmp.SecretValues[key] = []byte(secretValue)
+		secs[key] = []byte(secretValue)
 	}
+	return secs, nil
 }
