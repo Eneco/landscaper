@@ -25,36 +25,36 @@ var (
 	ErrInvalidLandscapeMetadata = errors.New("release contains invalid landscaper metadata")
 )
 
-// ComponentProvider can be used to interact with components locally, as well as on the cluster
-type ComponentProvider interface {
-	Get() (Components, error)
+// StateProvider can be used to obtain a state, actual (from Helm) or desired (e.g. from files)
+type StateProvider interface {
+	Components() (Components, error)
 }
 
-type fileComponentProvider struct {
+type fileStateProvider struct {
 	fileNames         []string
 	chartLoader       ChartLoader
 	releaseNamePrefix string
 	namespace         string
 }
 
-type helmComponentProvider struct {
+type helmStateProvider struct {
 	helmClient        helm.Interface
 	secretsProvider   SecretsProvider
 	releaseNamePrefix string
 }
 
-// NewFileComponentProvider creates a ComponentProvider that sources Files
-func NewFileComponentProvider(fileNames []string, chartLoader ChartLoader, releaseNamePrefix, namespace string) ComponentProvider {
-	return &fileComponentProvider{fileNames, chartLoader, releaseNamePrefix, namespace}
+// NewFileStateProvider creates a StateProvider that sources Files
+func NewFileStateProvider(fileNames []string, chartLoader ChartLoader, releaseNamePrefix, namespace string) StateProvider {
+	return &fileStateProvider{fileNames, chartLoader, releaseNamePrefix, namespace}
 }
 
-// NewHelmComponentProvider creates a ComponentProvider that sources Helm (actual state)
-func NewHelmComponentProvider(helmClient helm.Interface, secretsProvider SecretsProvider, releaseNamePrefix string) ComponentProvider {
-	return &helmComponentProvider{helmClient, secretsProvider, releaseNamePrefix}
+// NewHelmStateProvider creates a StateProvider that sources Helm (actual state)
+func NewHelmStateProvider(helmClient helm.Interface, secretsProvider SecretsProvider, releaseNamePrefix string) StateProvider {
+	return &helmStateProvider{helmClient, secretsProvider, releaseNamePrefix}
 }
 
-// Get returns all Components in the cluster
-func (cp *helmComponentProvider) Get() (Components, error) {
+// Components returns all Components in the cluster
+func (cp *helmStateProvider) Components() (Components, error) {
 	components := Components{}
 
 	logrus.Info("Obtain current state Helm Releases (Components) from Tiller")
@@ -96,7 +96,7 @@ func (cp *helmComponentProvider) Get() (Components, error) {
 }
 
 // get loads the provided files. If the argument is a directory, *.yaml in it is loaded.
-func (cp *fileComponentProvider) get(files []string) (Components, error) {
+func (cp *fileStateProvider) get(files []string) (Components, error) {
 	components := Components{}
 
 	logrus.WithFields(logrus.Fields{"files": files}).Info("Obtain desired state from files")
@@ -163,7 +163,7 @@ func (cp *fileComponentProvider) get(files []string) (Components, error) {
 }
 
 // Get returns all desired components according to their descriptions
-func (cp *fileComponentProvider) Get() (Components, error) {
+func (cp *fileStateProvider) Components() (Components, error) {
 	return cp.get(cp.fileNames)
 }
 
@@ -190,7 +190,7 @@ func newComponentFromYAML(content []byte) (*Component, error) {
 }
 
 // coalesceComponent takes a component, loads the chart and coalesces the configuration with the default values
-func (cp *fileComponentProvider) coalesceComponent(cmp *Component) error {
+func (cp *fileStateProvider) coalesceComponent(cmp *Component) error {
 	logrus.WithFields(logrus.Fields{"chart": cmp.Release.Chart}).Debug("coalesceComponent")
 	chartRef, err := cmp.FullChartRef()
 	if err != nil {
@@ -217,7 +217,7 @@ func (cp *fileComponentProvider) coalesceComponent(cmp *Component) error {
 }
 
 // listHelmReleases lists all releases that are prefixed with releaseNamePrefix
-func (cp *helmComponentProvider) listHelmReleases() ([]*release.Release, error) {
+func (cp *helmStateProvider) listHelmReleases() ([]*release.Release, error) {
 	logrus.Debug("listHelmReleases")
 	filter := helm.ReleaseListFilter(fmt.Sprintf("^%s.+", cp.releaseNamePrefix))
 	res, err := cp.helmClient.ListReleases(filter)
@@ -229,7 +229,7 @@ func (cp *helmComponentProvider) listHelmReleases() ([]*release.Release, error) 
 }
 
 // getHelmRelease gets a Release
-func (cp *helmComponentProvider) getHelmRelease(releaseName string) (*release.Release, error) {
+func (cp *helmStateProvider) getHelmRelease(releaseName string) (*release.Release, error) {
 	logrus.WithFields(logrus.Fields{"releaseName": releaseName}).Debug("getHelmRelease")
 	res, err := cp.helmClient.ReleaseContent(releaseName)
 	if err != nil {

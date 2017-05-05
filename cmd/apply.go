@@ -40,18 +40,18 @@ var addCmd = &cobra.Command{
 		}
 
 		sp := landscaper.NewSecretsProvider(env.KubeClient())
-		fileComponents := landscaper.NewFileComponentProvider(env.ComponentFiles, env.ChartLoader, env.ReleaseNamePrefix, env.Namespace)
-		helmComponents := landscaper.NewHelmComponentProvider(env.HelmClient(), sp, env.ReleaseNamePrefix)
+		fileState := landscaper.NewFileStateProvider(env.ComponentFiles, env.ChartLoader, env.ReleaseNamePrefix, env.Namespace)
+		helmState := landscaper.NewHelmStateProvider(env.HelmClient(), sp, env.ReleaseNamePrefix)
 		executor := landscaper.NewExecutor(env.HelmClient(), env.ChartLoader, sp, env.NoCronUpdate, env.DryRun)
 
 		for {
-			desired, err := fileComponents.Get()
+			desired, err := fileState.Components()
 			if err != nil {
 				logrus.WithFields(logrus.Fields{"error": err}).Error("Loading desired state failed")
 				return err
 			}
 
-			current, err := helmComponents.Get()
+			current, err := helmState.Components()
 			if err != nil {
 				logrus.WithFields(logrus.Fields{"error": err}).Error("Loading current state failed")
 				return err
