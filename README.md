@@ -1,6 +1,9 @@
 # Landscaper
 
 [![Build Status](https://travis-ci.org/Eneco/landscaper.svg?branch=master)](https://travis-ci.org/Eneco/landscaper)
+[![Go Report Card](https://goreportcard.com/badge/github.com/eneco/landscaper)](https://goreportcard.com/report/github.com/eneco/landscaper)
+[![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/Eneco/landscaper/pkg/landscaper)
+[![Say Thanks!](https://img.shields.io/badge/Say%20Thanks-!-1EAEDB.svg)](https://saythanks.io/to/eneco)
 
 Landscaper takes a set of Helm Chart references with values (a desired state), and realizes this in a Kubernetes cluster. The intended use case is to have this desired state under version control, and let Landscaper first test and then apply the state as part of the CI/CD stages.
 
@@ -63,13 +66,14 @@ The CLI uses a command structure in the spirit of `git` et al. The main command 
 The `apply` command accepts the following arguments:
 
     Usage:
-      landscaper apply [flags]
+      landscaper apply [files]... [flags]
 
     Flags:
-          --chart-dir string         where the charts are stored (default "$HOME/.helm")
+          --chart-dir string         (deprecated; use --helm-home) Helm home directory (default "$HOME/.helm")
           --context string           the kube context to use. defaults to the current context
-          --dir string               path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR (default ".")
+          --dir string               (deprecated) path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR
           --dry-run                  simulate the applying of the landscape. useful in merge requests
+          --helm-home string         Helm home directory (default "$HOME/.helm")
           --loop                     keep landscape in sync forever
           --loop-interval duration   when running in a loop the interval between invocations (default 5m0s)
           --namespace string         namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE (default "default")
@@ -81,11 +85,14 @@ The `apply` command accepts the following arguments:
 Instead of using arguments, environment variables can be used. When arguments are present, they override environment variables.
 `--namespace` is used to isolate landscapes through Kubernetes namespaces.
 Unless otherwise specified, Helm releases are prefixed with the same namespace string to avoid collisions, since Helm release names aren't namespaced.
+As of version 1.0.3, components can specify their namespace. This will override any provided global namespace.
 
 Input desired state files are in YAML and contain the name that identifies the "component", a reference to a chart, configuration and optionally secrets.
 Currently, secrets are handled by specifying the name in the YAML, e.g. `my-secret`, and having a matching environment variable available with the secret, e.g. `export MY_SECRET=Rumpelstiltskin`
 
 Landscaper can also be run as a control loop that constantly watches the desired landscape and applies it to the cluster. With this you can deploy landscaper once in your cluster, pass it a reference to a landscape description and have Landscaper apply it whenever the landscape changes.
+
+Connection to Tiller is made by setting up a port-forward to it's pod. However, when `$HELM_HOST` is defined with a "host:port" in it, a direct connection is made to that host and port instead.
 
 ## Example
 
