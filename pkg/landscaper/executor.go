@@ -22,21 +22,21 @@ type Executor interface {
 }
 
 type executor struct {
-	helmClient      helm.Interface
-	chartLoader     ChartLoader
-	secretsProvider SecretsProvider
-	noCronUpdate    bool
-	dryRun          bool
+	helmClient   helm.Interface
+	chartLoader  ChartLoader
+	kubeSecrets  SecretsWriteDeleter
+	noCronUpdate bool
+	dryRun       bool
 }
 
 // NewExecutor is a factory method to create a new Executor
-func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, secretsProvider SecretsProvider, noCronUpdate, dryRun bool) Executor {
+func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, kubeSecrets SecretsWriteDeleter, noCronUpdate, dryRun bool) Executor {
 	return &executor{
-		helmClient:      helmClient,
-		chartLoader:     chartLoader,
-		secretsProvider: secretsProvider,
-		noCronUpdate:    noCronUpdate,
-		dryRun:          dryRun,
+		helmClient:   helmClient,
+		chartLoader:  chartLoader,
+		kubeSecrets:  kubeSecrets,
+		noCronUpdate: noCronUpdate,
+		dryRun:       dryRun,
 	}
 }
 
@@ -136,7 +136,7 @@ func (e *executor) CreateComponent(cmp *Component) error {
 	}).Debug("Create component")
 
 	if len(cmp.Secrets) > 0 && !e.dryRun {
-		err = e.secretsProvider.Write(cmp.Name, cmp.Namespace, cmp.SecretValues)
+		err = e.kubeSecrets.Write(cmp.Name, cmp.Namespace, cmp.SecretValues)
 		if err != nil {
 			return err
 		}
@@ -176,10 +176,10 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 	}
 
 	if !e.dryRun {
-		err = e.secretsProvider.Delete(cmp.Name, cmp.Namespace)
+		err = e.kubeSecrets.Delete(cmp.Name, cmp.Namespace)
 
 		if len(cmp.Secrets) > 0 {
-			err = e.secretsProvider.Write(cmp.Name, cmp.Namespace, cmp.SecretValues)
+			err = e.kubeSecrets.Write(cmp.Name, cmp.Namespace, cmp.SecretValues)
 			if err != nil {
 				return err
 			}
@@ -216,7 +216,7 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 	}).Debug("Delete component")
 
 	if len(cmp.Secrets) > 0 && !e.dryRun {
-		err := e.secretsProvider.Delete(cmp.Name, cmp.Namespace)
+		err := e.kubeSecrets.Delete(cmp.Name, cmp.Namespace)
 		if err != nil {
 			return err
 		}

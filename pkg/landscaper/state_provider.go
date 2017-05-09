@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	// ErrNonLandscapeComponent is an error to indicate release is not controlled by landscaper
+	// ErrNonLandscapeComponent is an error to indicate a release is not controlled by landscaper
 	ErrNonLandscapeComponent = errors.New("release is not controlled by landscaper")
 
 	// ErrInvalidLandscapeMetadata is an error to indicate a release contains invalid landscaper metadata
@@ -32,6 +32,7 @@ type StateProvider interface {
 
 type fileStateProvider struct {
 	fileNames         []string
+	secrets           SecretsReader
 	chartLoader       ChartLoader
 	releaseNamePrefix string
 	namespace         string
@@ -39,18 +40,18 @@ type fileStateProvider struct {
 
 type helmStateProvider struct {
 	helmClient        helm.Interface
-	secretsProvider   SecretsProvider
+	secrets           SecretsReader
 	releaseNamePrefix string
 }
 
 // NewFileStateProvider creates a StateProvider that sources Files
-func NewFileStateProvider(fileNames []string, chartLoader ChartLoader, releaseNamePrefix, namespace string) StateProvider {
-	return &fileStateProvider{fileNames, chartLoader, releaseNamePrefix, namespace}
+func NewFileStateProvider(fileNames []string, secrets SecretsReader, chartLoader ChartLoader, releaseNamePrefix, namespace string) StateProvider {
+	return &fileStateProvider{fileNames, secrets, chartLoader, releaseNamePrefix, namespace}
 }
 
 // NewHelmStateProvider creates a StateProvider that sources Helm (actual state)
-func NewHelmStateProvider(helmClient helm.Interface, secretsProvider SecretsProvider, releaseNamePrefix string) StateProvider {
-	return &helmStateProvider{helmClient, secretsProvider, releaseNamePrefix}
+func NewHelmStateProvider(helmClient helm.Interface, secrets SecretsReader, releaseNamePrefix string) StateProvider {
+	return &helmStateProvider{helmClient, secrets, releaseNamePrefix}
 }
 
 // Components returns all Components in the cluster
@@ -74,7 +75,7 @@ func (cp *helmStateProvider) Components() (Components, error) {
 			return components, err
 		}
 
-		secretValues, err := cp.secretsProvider.Read(cmp.Name, release.Namespace)
+		secretValues, err := cp.secrets.Read(cmp.Name, release.Namespace, nil)
 		if err != nil {
 			return components, err
 		}
@@ -104,7 +105,7 @@ func (cp *fileStateProvider) get(files []string) (Components, error) {
 	for _, filename := range files {
 		fileInfo, err := os.Stat(filename)
 		if err != nil {
-			return components, err
+			return nil, err
 		}
 		if fileInfo.IsDir() {
 			logrus.WithFields(logrus.Fields{"file": filename}).Debugf("Crawl directory for *.yaml")
@@ -125,27 +126,31 @@ func (cp *fileStateProvider) get(files []string) (Components, error) {
 		logrus.WithFields(logrus.Fields{"file": filename}).Debug("Read desired state from file")
 		cmp, err := readComponentFromYAMLFilePath(filename)
 		if err != nil {
-			return components, fmt.Errorf("readComponentFromYAMLFilePath file `%s` failed: %s", filename, err)
+			return nil, fmt.Errorf("readComponentFromYAMLFilePath file `%s` failed: %s", filename, err)
 		}
 		cmp.normalizeFromFile(cp.releaseNamePrefix, cp.namespace)
 
 		err = cp.coalesceComponent(cmp)
 		if err != nil {
-			return components, err
+			return nil, err
 		}
 
 		if len(cmp.Secrets) > 0 {
-			sort.Strings(cmp.Secrets)            // enforce a consistent ordering for proper diffing / deepEqualing
-			readSecretValuesFromEnvironment(cmp) // TODO: remove coupling; make secrets source pluggable
+			sort.Strings(cmp.Secrets) // enforce a consistent ordering for proper diffing / deepEqualing
+			secr, err := cp.secrets.Read(cmp.Name, cmp.Namespace, []string(cmp.Secrets))
+			if err != nil {
+				return nil, err
+			}
+			cmp.SecretValues = secr
 		}
 
 		if err := cmp.Validate(); err != nil {
-			return components, fmt.Errorf("failed to validate `%s`: %s", filename, err)
+			return nil, fmt.Errorf("failed to validate `%s`: %s", filename, err)
 		}
 
 		// make sure there are no duplicate names
 		if _, ok := components[cmp.Name]; ok {
-			return components, fmt.Errorf("duplicate component name `%s`", cmp.Name)
+			return nil, fmt.Errorf("duplicate component name `%s`", cmp.Name)
 		}
 
 		logrus.Debugf("desired %#v", *cmp)
@@ -226,17 +231,6 @@ func (cp *helmStateProvider) listHelmReleases() ([]*release.Release, error) {
 	}
 
 	return res.Releases, nil
-}
-
-// getHelmRelease gets a Release
-func (cp *helmStateProvider) getHelmRelease(releaseName string) (*release.Release, error) {
-	logrus.WithFields(logrus.Fields{"releaseName": releaseName}).Debug("getHelmRelease")
-	res, err := cp.helmClient.ReleaseContent(releaseName)
-	if err != nil {
-		return nil, err
-	}
-
-	return res.Release, nil
 }
 
 // newComponentFromHelmRelease creates a Component from a Release

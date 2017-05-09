@@ -10,6 +10,7 @@ type HelmclientMock struct {
 	deleteRelease  func(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error)
 	installRelease func(chStr string, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error)
 	updateRelease  func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error)
+	listReleases   func(opts ...helm.ReleaseListOption) (*services.ListReleasesResponse, error)
 }
 
 func (m *HelmclientMock) DeleteRelease(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
@@ -29,7 +30,7 @@ func (m *HelmclientMock) InstallReleaseFromChart(chart *chart.Chart, namespace s
 }
 
 func (m *HelmclientMock) ListReleases(opts ...helm.ReleaseListOption) (*services.ListReleasesResponse, error) {
-	return nil, nil
+	return m.listReleases(opts...)
 }
 
 func (m *HelmclientMock) ReleaseContent(rlsName string, opts ...helm.ContentOption) (*services.GetReleaseContentResponse, error) {
@@ -66,7 +67,7 @@ func (m MockChartLoader) Load(chartRef string) (*chart.Chart, string, error) { r
 
 type SecretsProviderMock struct {
 	write  func(releaseName, namespace string, values SecretValues) error
-	read   func(releaseName, namespace string) (SecretValues, error)
+	read   func(releaseName, namespace string, secretNames []string) (SecretValues, error)
 	delete func(releaseName, namespace string) error
 }
 
@@ -74,8 +75,8 @@ func (m SecretsProviderMock) Write(releaseName, namespace string, values SecretV
 	return m.write(releaseName, namespace, values)
 }
 
-func (m SecretsProviderMock) Read(releaseName, namespace string) (SecretValues, error) {
-	return m.read(releaseName, namespace)
+func (m SecretsProviderMock) Read(releaseName, namespace string, secretNames []string) (SecretValues, error) {
+	return m.read(releaseName, namespace, secretNames)
 }
 
 func (m SecretsProviderMock) Delete(releaseName, namespace string) error {
