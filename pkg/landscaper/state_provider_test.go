@@ -18,7 +18,7 @@ func TestFileStateProviderComponents(t *testing.T) {
 			t.Logf("secretsMock read %#v %#v %#v", componentName, namespace, secretNames)
 			vs := SecretValues{}
 			for _, s := range secretNames {
-				vs[s] = []byte(strings.Replace(s, "e", "3", -1))
+				vs[s] = []byte(componentName + namespace + strings.Replace(s, "e", "3", -1))
 			}
 			return vs, nil
 		},
@@ -31,16 +31,16 @@ func TestFileStateProviderComponents(t *testing.T) {
 				Name:    "chart-name",
 				Version: "1.3.37",
 			},
-			Values: &chart.Config{Raw: `
+			Values: &chart.Config{Raw: fmt.Sprintf(`
 message: xxx
-`},
+ref: %s
+`, chartRef)}, //inject whatever chartRef is into the config for later inspection
 		}
 
 		return c, "", nil
 	})
 
 	rigsDir := "../../test/landscapes/multi-namespace/"
-
 	// covers both the dir/*.yaml function as explicit files
 	for _, ps := range [][]string{[]string{rigsDir}, []string{rigsDir + "hello-world.yaml", rigsDir + "secretive2.yaml", rigsDir + "secretive.yaml"}} {
 
@@ -68,13 +68,16 @@ message: xxx
 
 		require.Equal(t, "Hello, Landscaped world!", c0.Configuration["message"]) //overridden
 		require.Equal(t, "xxx", c1.Configuration["message"])                      //chart default
+		require.Equal(t, "local/hello-world:0.1.0", c0.Configuration["ref"])
+		require.Equal(t, "local/hello-secret:0.1.0", c1.Configuration["ref"])
+		require.Equal(t, "local/hello-secret:0.1.0", c2.Configuration["ref"])
 
 		require.Len(t, c1.Secrets, 2)
 		require.Contains(t, c1.Secrets, "hello-name")
 		require.Contains(t, c1.Secrets, "hello-age")
 
 		require.Len(t, c1.SecretValues, 2)
-		require.Equal(t, []byte("h3llo-nam3"), c1.SecretValues["hello-name"])
+		require.Equal(t, []byte("pfx-secretivenewnamh3llo-nam3"), c1.SecretValues["hello-name"])
 	}
 }
 
