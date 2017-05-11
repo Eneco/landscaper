@@ -69,7 +69,7 @@ ref: %s
 		require.Equal(t, "Hello, Landscaped world!", c0.Configuration["message"]) //overridden
 		require.Equal(t, "xxx", c1.Configuration["message"])                      //chart default
 		require.Equal(t, "local/hello-world:0.1.0", c0.Configuration["ref"])
-		require.Equal(t, "local/hello-secret:0.1.0", c1.Configuration["ref"])
+		require.Equal(t, "local/hello-secret:1.3.37", c1.Configuration["ref"]) //unspecified in file, obtained from chart
 		require.Equal(t, "local/hello-secret:0.1.0", c2.Configuration["ref"])
 
 		require.Len(t, c1.Secrets, 2)
