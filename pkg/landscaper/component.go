@@ -3,7 +3,6 @@ package landscaper
 import (
 	"fmt"
 	"reflect"
-	"strings"
 
 	"gopkg.in/validator.v2"
 )
@@ -67,28 +66,6 @@ func validateComponents(cs Components) error {
 		if err := c.Validate(); err != nil {
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (c *Component) normalizeFromFile(releaseNamePrefix, namespace string) error {
-	c.Configuration["Name"] = c.Name
-	c.Name = releaseNamePrefix + strings.ToLower(c.Name)
-	if len(c.Secrets) > 0 {
-		c.Configuration["secretsRef"] = c.Name
-	}
-
-	ss := strings.Split(c.Release.Chart, "/")
-	if len(ss) != 2 {
-		return fmt.Errorf("bad release.chart: `%s`, expecting `some_repo/some_name`", c.Release.Chart)
-	}
-	c.Release.Chart = ss[1]
-
-	c.Configuration.SetMetadata(&Metadata{ChartRepository: ss[0], ReleaseVersion: c.Release.Version})
-
-	if c.Namespace == "" {
-		c.Namespace = namespace
 	}
 
 	return nil
