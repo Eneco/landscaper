@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	validator "gopkg.in/validator.v2"
@@ -128,7 +129,7 @@ func (cp *fileStateProvider) get(files []string) (Components, error) {
 		if err != nil {
 			return nil, fmt.Errorf("readComponentFromYAMLFilePath file `%s` failed: %s", filename, err)
 		}
-		cmp.normalizeFromFile(cp.releaseNamePrefix, cp.namespace)
+		cp.normalizeFromFile(cmp)
 
 		err = cp.coalesceComponent(cmp)
 		if err != nil {
@@ -165,6 +166,44 @@ func (cp *fileStateProvider) get(files []string) (Components, error) {
 	logrus.WithFields(logrus.Fields{"n_components": len(components)}).Debug("Desired state has been read")
 
 	return components, nil
+}
+
+// normalizeFromFile makes a Component look identical to a Component reconstructed from Helm
+func (cp *fileStateProvider) normalizeFromFile(c *Component) error {
+	c.Configuration["Name"] = c.Name
+	c.Name = cp.releaseNamePrefix + strings.ToLower(c.Name)
+	if len(c.Secrets) > 0 {
+		c.Configuration["secretsRef"] = c.Name
+	}
+
+	ss := strings.Split(c.Release.Chart, "/")
+	if len(ss) != 2 {
+		return fmt.Errorf("bad release.chart: `%s`, expecting `some_repo/some_name`", c.Release.Chart)
+	}
+	c.Release.Chart = ss[1]
+
+	c.Configuration.SetMetadata(&Metadata{ChartRepository: ss[0], ReleaseVersion: c.Release.Version})
+
+	if c.Namespace == "" {
+		c.Namespace = cp.namespace
+	}
+
+	// when the chart ref is versioned, we're done
+	if strings.Contains(c.Release.Chart, ":") {
+		return nil
+	}
+
+	// when the chart ref is not versioned, set it to the latest chart
+	chartRef, err := c.FullChartRef()
+	if err != nil {
+		return err
+	}
+	ch, _, err := cp.chartLoader.Load(chartRef)
+	if err != nil {
+		return err
+	}
+	c.Release.Chart = fmt.Sprintf("%s:%s", c.Release.Chart, ch.Metadata.Version)
+	return nil
 }
 
 // Get returns all desired components according to their descriptions
