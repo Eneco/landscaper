@@ -94,7 +94,7 @@ Loop mode is especially useful when watching a remote Git repository, so that wh
 
 Below is an example of a deployment that runs Landscaper as a container in a pod in loop mode. It is pointed to the local folder `/git/some-repo`. It shares this folder with a `git-sync` container which will populate the folder with the contents of the master branch of the Git repository at https://github.com/you/some-repo.git every minute.
 
-There's one gotcha, though: the very first Landscaper run after each pod creation will remove everything as the Git repo hasn't been synced yet. Use with caution until we find a way around that issue.
+There's one gotcha, though: the very first Landscaper run after each pod creation will remove everything as the Git repo hasn't been synced yet. This can be avoided by running landscaper with the `--reject-empty-landscape` flag.
 
 ```yaml
 apiVersion: extensions/v1beta1
@@ -119,6 +119,7 @@ spec:
         - --namespace=landscaper-test
         - --loop
         - --loop-interval=1m
+        - --reject-empty-landscape
         - --verbose
         volumeMounts:
         - mountPath: /git
