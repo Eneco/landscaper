@@ -66,8 +66,8 @@ func (e *executor) Apply(desired, current Components) error {
 			}
 		}
 		if curCmp := current[cmp.Name]; curCmp != nil {
-			logrus.Infof("%s differs in namespace; don't update but delete + create instead", cmp.Name)
 			if curCmp.Namespace != cmp.Namespace {
+				logrus.Infof("%s differs in namespace; don't update but delete + create instead", cmp.Name)
 				needForcedUpdate[cmp.Name] = true
 			}
 		}
