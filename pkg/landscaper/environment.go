@@ -6,14 +6,15 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/kube"
 	helmversion "k8s.io/helm/pkg/version"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/internalversion"
-	"k8s.io/kubernetes/pkg/client/restclient"
-	"k8s.io/kubernetes/pkg/labels"
 )
 
 // TODO refactor out this global var
@@ -170,7 +171,7 @@ func getTillerPodName(client internalversion.PodsGetter, namespace string) (stri
 }
 
 func getFirstRunningPod(client internalversion.PodsGetter, namespace string, selector labels.Selector) (*api.Pod, error) {
-	options := api.ListOptions{LabelSelector: selector}
+	options := metav1.ListOptions{LabelSelector: selector.String()}
 	pods, err := client.Pods(namespace).List(options)
 	if err != nil {
 		return nil, err
