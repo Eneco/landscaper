@@ -19,6 +19,7 @@ default: build
 
 bootstrap:
 	glide install -v
+	./scripts/setup-apimachinery.sh
 
 clean:
 	rm -rf $(BUILD_DIR)

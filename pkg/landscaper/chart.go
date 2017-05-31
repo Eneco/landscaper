@@ -10,6 +10,8 @@ import (
 
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/downloader"
+	"k8s.io/helm/pkg/getter"
+	"k8s.io/helm/pkg/helm/environment"
 	"k8s.io/helm/pkg/helm/helmpath"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
@@ -62,6 +64,7 @@ func locateChartPath(homePath, chartRef string) (string, error) {
 	dl := downloader.ChartDownloader{
 		HelmHome: helmpath.Home(homePath),
 		Out:      os.Stdout,
+		Getters:  getter.All(environment.EnvSettings{}),
 	}
 
 	// ResolveChartVersion provides us through the repo index an url from which we can obtain the filename chart.tgz

@@ -9,11 +9,17 @@ import:
 - package: github.com/x-cray/logrus-prefixed-formatter
   version: =0.4.0
 - package: google.golang.org/grpc
-  version: 1.0.3
+  version: 1.2.1
 - package: gopkg.in/validator.v2
 - package: gopkg.in/yaml.v2
+- package: github.com/golang/protobuf
+  version: 2bba0603135d7d7f5cb73b2125beeda19c09f4ef
+  subpackages:
+  - proto
+  - ptypes/any
+  - ptypes/timestamp
 - package: k8s.io/helm
-  version: =2.3.1
+  version: ~2.4.0
   subpackages:
   - pkg/chartutil
   - pkg/helm
@@ -21,13 +27,10 @@ import:
   - pkg/proto/hapi/chart
   - pkg/proto/hapi/release
   - pkg/version
+- package: k8s.io/apimachinery
+- package: k8s.io/client-go/rest
 - package: k8s.io/kubernetes
-  version: ~1.5.0
-  subpackages:
-  - pkg/api
-  - pkg/client/restclient
-  - pkg/client/unversioned
-  - pkg/labels
+  version: ~1.6.0
 testImport:
 - package: github.com/stretchr/testify
   version: ^1.1.4
