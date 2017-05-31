@@ -40,18 +40,17 @@ func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, kubeSecrets
 	}
 }
 
-// Apply transforms the current state into the desired state
-func (e *executor) Apply(desired, current Components) error {
-	create, update, delete := diff(desired, current)
-
-	// some to-be-updated components need a delete + create instead
+// gatherForcedUpdates returns a map that for each to-be-updated component indicates if it needs a forced update.
+// there may be several reasons to do so: work around k8s #35149; or releases releases that differ only in secret values are forced so that pods will restart with the new values.
+func (e *executor) gatherForcedUpdates(current, update Components) (map[string]bool, error) {
 	needForcedUpdate := map[string]bool{}
+
 	for _, cmp := range update {
 		// to work around k8s #35149, cronJobs need a force update
 		if e.noCronUpdate {
 			cronJob, err := e.isCronJob(cmp)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if cronJob {
 				logrus.Infof("%s is CronJob; work around k8s #35149: don't update but delete + create instead", cmp.Name)
@@ -72,6 +71,20 @@ func (e *executor) Apply(desired, current Components) error {
 			}
 		}
 	}
+
+	return needForcedUpdate, nil
+}
+
+// Apply transforms the current state into the desired state
+func (e *executor) Apply(desired, current Components) error {
+	create, update, delete := diff(desired, current)
+
+	// some to-be-updated components need a delete + create instead
+	needForcedUpdate, err := e.gatherForcedUpdates(current, update)
+	if err != nil {
+		return err
+	}
+
 	// delete+create pairs will never work in dry run since the dry-run "deleted" component will exist in create
 	if !e.dryRun {
 		create, update, delete = integrateForcedUpdates(current, create, update, delete, needForcedUpdate)
