@@ -7,8 +7,6 @@ import (
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/proto/hapi/services"
 
-	"fmt"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -79,7 +77,7 @@ func TestExecutorApply(t *testing.T) {
 		},
 	}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false).Apply(des, cur)
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false).Apply(des, cur)
 	require.NoError(t, err)
 
 }
@@ -109,7 +107,7 @@ func TestExecutorCreate(t *testing.T) {
 		return nil
 	}}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false).CreateComponent(comp)
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false).CreateComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -143,7 +141,7 @@ func TestExecutorUpdate(t *testing.T) {
 		},
 	}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false).UpdateComponent(comp)
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false).UpdateComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -169,45 +167,8 @@ func TestExecutorDelete(t *testing.T) {
 		return nil
 	}}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false).DeleteComponent(comp)
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false).DeleteComponent(comp)
 	require.NoError(t, err)
-}
-
-func TestIsCronJob(t *testing.T) {
-	type rig struct {
-		data   string
-		result bool
-		err    error
-	}
-	rigs := []rig{
-		rig{"no i am no cron", false, nil},
-		rig{"type: ScheduledJob", true, nil},
-		rig{"disaster", true, fmt.Errorf("broken")},
-	}
-
-	for _, r := range rigs {
-		comp := newTestComponent("x")
-		helmMock := &HelmclientMock{}
-		chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
-			t.Logf("MockChartLoader %#v", chartRef)
-			c := &chart.Chart{
-				Templates: []*chart.Template{&chart.Template{
-					Data: []byte(r.data),
-				},
-				},
-			}
-			return c, "", r.err
-		})
-		secretsMock := SecretsProviderMock{}
-		e := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false)
-		isCron, err := e.(*executor).isCronJob(comp)
-		if err != nil {
-			require.Equal(t, err, r.err)
-			continue
-		}
-		require.Equal(t, isCron, r.result)
-	}
-
 }
 
 func TestIsOnlySecretValueDiff(t *testing.T) {
