@@ -4,6 +4,8 @@ import (
 	"os"
 	"strings"
 
+	"fmt"
+
 	"github.com/Sirupsen/logrus"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/errors"
@@ -160,7 +162,8 @@ func (env *environmentSecrets) Read(componentName, namespace string, secretNames
 
 		secretValue := os.Getenv(envName)
 		if len(secretValue) == 0 {
-			logrus.WithFields(logrus.Fields{"secret": key, "envName": envName}).Warn("Secret not found in environment")
+			logrus.WithFields(logrus.Fields{"secret": key, "envName": envName}).Error("Secret not found in environment")
+			return nil, fmt.Errorf("environment variable `%s` for secret `%s` empty", envName, key)
 		}
 
 		secs[key] = []byte(secretValue)
