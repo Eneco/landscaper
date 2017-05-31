@@ -117,7 +117,7 @@ func (e *executor) Apply(desired, current Components) error {
 		}
 	}
 
-	logrus.WithFields(logrus.Fields{"created": len(create), "updated": len(update), "deleted": len(delete)}).Info("Applied desired state sucessfully")
+	logrus.WithFields(logrus.Fields{"created": len(create), "updated": len(update), "deleted": len(delete)}).Info("Applied desired state successfully")
 	return nil
 }
 
