@@ -92,7 +92,7 @@ func locateChartPath(homePath, chartRef string) (string, error) {
 	}
 
 	logrus.WithFields(logrus.Fields{"name": name, "version": version, "repoDir": repoDir}).Debug("Download")
-	chartFile, _, err = dl.DownloadTo(name, version, repoDir)
+	_, _, err = dl.DownloadTo(name, version, repoDir)
 	if err != nil {
 		return "", fmt.Errorf("failed to download `%s`: %s", chartRef, err)
 	}
