@@ -4,7 +4,6 @@ cat >/root/.kube/config <<EOF
 apiVersion: v1
 clusters:
 - cluster:
-    insecure-skip-tls-verify: true
     server: ${K8S_MASTER_URL}
   name: engd
 contexts:
