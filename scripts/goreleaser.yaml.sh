@@ -3,6 +3,8 @@ cat <<EOF
 build:
   main: ./cmd/
   ldflags: "$1"
+  env:
+   - CGO_ENABLED=0
   goos:
     - linux
     - darwin
