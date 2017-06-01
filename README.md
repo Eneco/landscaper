@@ -77,7 +77,6 @@ The `apply` command accepts the following arguments:
           --loop                     keep landscape in sync forever
           --loop-interval duration   when running in a loop the interval between invocations (default 5m0s)
           --namespace string         namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE (default "default")
-          --no-cronjob-update        replaces CronJob updates with a create+delete; k8s #35149 work around
           --no-prefix                disable prefixing release names
           --prefix string            prefix release names with this string instead of <namespace>; overrides LANDSCAPE_PREFIX
       -v, --verbose                  be verbose

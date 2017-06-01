@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
-	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/pmezard/go-difflib/difflib"
@@ -22,42 +21,28 @@ type Executor interface {
 }
 
 type executor struct {
-	helmClient   helm.Interface
-	chartLoader  ChartLoader
-	kubeSecrets  SecretsWriteDeleter
-	noCronUpdate bool
-	dryRun       bool
+	helmClient  helm.Interface
+	chartLoader ChartLoader
+	kubeSecrets SecretsWriteDeleter
+	dryRun      bool
 }
 
 // NewExecutor is a factory method to create a new Executor
-func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, kubeSecrets SecretsWriteDeleter, noCronUpdate, dryRun bool) Executor {
+func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, kubeSecrets SecretsWriteDeleter, dryRun bool) Executor {
 	return &executor{
-		helmClient:   helmClient,
-		chartLoader:  chartLoader,
-		kubeSecrets:  kubeSecrets,
-		noCronUpdate: noCronUpdate,
-		dryRun:       dryRun,
+		helmClient:  helmClient,
+		chartLoader: chartLoader,
+		kubeSecrets: kubeSecrets,
+		dryRun:      dryRun,
 	}
 }
 
-// Apply transforms the current state into the desired state
-func (e *executor) Apply(desired, current Components) error {
-	create, update, delete := diff(desired, current)
-
-	// some to-be-updated components need a delete + create instead
+// gatherForcedUpdates returns a map that for each to-be-updated component indicates if it needs a forced update.
+// there may be several reasons to do so: releases that differ only in secret values are forced so that pods will restart with the new values; releases that differ in namespace cannot be updated
+func (e *executor) gatherForcedUpdates(current, update Components) (map[string]bool, error) {
 	needForcedUpdate := map[string]bool{}
+
 	for _, cmp := range update {
-		// to work around k8s #35149, cronJobs need a force update
-		if e.noCronUpdate {
-			cronJob, err := e.isCronJob(cmp)
-			if err != nil {
-				return err
-			}
-			if cronJob {
-				logrus.Infof("%s is CronJob; work around k8s #35149: don't update but delete + create instead", cmp.Name)
-				needForcedUpdate[cmp.Name] = true
-			}
-		}
 		// releases that differ only in secret values are forced so that pods will restart with the new values
 		for _, curCmp := range current {
 			if curCmp.Name == cmp.Name && isOnlySecretValueDiff(*curCmp, *cmp) {
@@ -72,6 +57,20 @@ func (e *executor) Apply(desired, current Components) error {
 			}
 		}
 	}
+
+	return needForcedUpdate, nil
+}
+
+// Apply transforms the current state into the desired state
+func (e *executor) Apply(desired, current Components) error {
+	create, update, delete := diff(desired, current)
+
+	// some to-be-updated components need a delete + create instead
+	needForcedUpdate, err := e.gatherForcedUpdates(current, update)
+	if err != nil {
+		return err
+	}
+
 	// delete+create pairs will never work in dry run since the dry-run "deleted" component will exist in create
 	if !e.dryRun {
 		create, update, delete = integrateForcedUpdates(current, create, update, delete, needForcedUpdate)
@@ -104,7 +103,7 @@ func (e *executor) Apply(desired, current Components) error {
 		}
 	}
 
-	logrus.WithFields(logrus.Fields{"created": len(create), "updated": len(update), "deleted": len(delete)}).Info("Applied desired state sucessfully")
+	logrus.WithFields(logrus.Fields{"created": len(create), "updated": len(update), "deleted": len(delete)}).Info("Applied desired state successfully")
 	return nil
 }
 
@@ -350,25 +349,4 @@ func isOnlySecretValueDiff(a, b Component) bool {
 	a.SecretValues = SecretValues{}
 	b.SecretValues = SecretValues{}
 	return !secValsEqual && reflect.DeepEqual(a, b)
-}
-
-// isCronJob tells if the chart template contains the word "CronJob" or "ScheduledJob"
-// TODO. hacky. ugly. needed to work around https://github.com/kubernetes/kubernetes/issues/35149
-// get rid of it when fixed.
-func (e *executor) isCronJob(cmp *Component) (bool, error) {
-	chartRef, err := cmp.FullChartRef()
-	if err != nil {
-		return false, err
-	}
-	ch, _, err := e.chartLoader.Load(chartRef)
-	if err != nil {
-		return false, err
-	}
-	for _, t := range ch.Templates {
-		if strings.Contains(string(t.Data), "CronJob") || strings.Contains(string(t.Data), "ScheduledJob") {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }

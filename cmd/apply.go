@@ -43,7 +43,7 @@ var addCmd = &cobra.Command{
 		envSecrets := landscaper.NewEnvironmentSecretsReader()
 		fileState := landscaper.NewFileStateProvider(env.ComponentFiles, envSecrets, env.ChartLoader, env.ReleaseNamePrefix, env.Namespace)
 		helmState := landscaper.NewHelmStateProvider(env.HelmClient(), kubeSecrets, env.ReleaseNamePrefix)
-		executor := landscaper.NewExecutor(env.HelmClient(), env.ChartLoader, kubeSecrets, env.NoCronUpdate, env.DryRun)
+		executor := landscaper.NewExecutor(env.HelmClient(), env.ChartLoader, kubeSecrets, env.DryRun)
 
 		for {
 			desired, err := fileState.Components()
@@ -102,7 +102,6 @@ func init() {
 	f.StringVar(&env.Namespace, "namespace", landscapeNamespace, "namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE")
 	f.StringVar(&env.HelmHome, "chart-dir", helmHome, "(deprecated; use --helm-home) Helm home directory")
 	f.StringVar(&env.HelmHome, "helm-home", helmHome, "Helm home directory")
-	f.BoolVar(&env.NoCronUpdate, "no-cronjob-update", false, "replaces CronJob updates with a create+delete; k8s #35149 work around")
 	f.BoolVar(&env.Loop, "loop", false, "keep landscape in sync forever")
 	f.DurationVar(&env.LoopInterval, "loop-interval", 5*time.Minute, "when running in a loop the interval between invocations")
 
