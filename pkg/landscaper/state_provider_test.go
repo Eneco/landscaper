@@ -81,6 +81,42 @@ ref: %s
 	}
 }
 
+func TestOptionalVersion(t *testing.T) {
+	secretsMock := SecretsProviderMock{
+		read: func(componentName, namespace string, secretNames []string) (SecretValues, error) {
+			t.Logf("secretsMock read %#v %#v %#v", componentName, namespace, secretNames)
+			vs := SecretValues{}
+			for _, s := range secretNames {
+				vs[s] = []byte(componentName + namespace + strings.Replace(s, "e", "3", -1))
+			}
+			return vs, nil
+		},
+	}
+
+	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
+		t.Logf("MockChartLoader %#v", chartRef)
+		c := &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    "chart-name",
+				Version: "1.3.37",
+			},
+			Values: &chart.Config{Raw: fmt.Sprintf(`
+message: xxx
+ref: %s
+`, chartRef)}, //inject whatever chartRef is into the config for later inspection
+		}
+
+		return c, "", nil
+	})
+
+	fs := NewFileStateProvider([]string{"../../test/landscapes/no-version/hello-world.yaml"}, secretsMock, chartLoadMock, "pfx-", "spa")
+	cs, err := fs.Components()
+	require.NoError(t, err)
+	c0 := cs["pfx-hello-world"]
+
+	require.Equal(t, "", c0.Release.Version)
+}
+
 func TestHelmStateProviderComponents(t *testing.T) {
 	helmMock := &HelmclientMock{
 		listReleases: func(opts ...helm.ReleaseListOption) (*services.ListReleasesResponse, error) {
