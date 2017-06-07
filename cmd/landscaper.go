@@ -33,6 +33,7 @@ func init() {
 		FullTimestamp:   true,
 	}
 	logrus.SetFormatter(p)
+	logrus.SetOutput(os.Stdout)
 }
 
 func main() {
