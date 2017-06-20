@@ -101,6 +101,20 @@ An example is provided [here](./example).
 
 We, at Eneco, have setup a git repository with the inputs to the landscaper. During CI, non-master branches are Landscaped `--dry-run` to validate the inputs. After a pull request is reviewed, the changes are merged into `master` after which the Landscaper applies the new desired state.
 
+## Compatibility
+
+Landscaper uses both Helm and Kubernetes. The following Landscaper releases are built against the following versions:
+
+| Landscaper | Helm  | Kubernetes |
+|------------|-------|------------|
+| 1.0.6      | 2.4.2 | 1.6        |
+| 1.0.5      | 2.4.2 | 1.6        |
+| 1.0.4      | 2.3.1 | 1.5        |
+| 1.0.3      | 2.1.3 | 1.5        |
+| 1.0.2      | 2.1.3 | 1.5        |
+| 1.0.1      | 2.1.3 | 1.5        |
+| 1.0.0      | 2.1.3 | 1.5        |
+
 ## Contributing
 
-We'd love to accept your contributions! Please use GitHub pull requests: fork the repo, develop and test your code, semantically commit (as of April 2017) and submit a pull request. Thanks!
+We'd love to accept your contributions! Please use GitHub pull requests: fork the repo, develop and test your code, [semantically commit](http://karma-runner.github.io/1.0/dev/git-commit-msg.html) (as of April 2017) and submit a pull request. Thanks!
