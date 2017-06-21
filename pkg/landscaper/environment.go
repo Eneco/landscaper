@@ -19,7 +19,6 @@ import (
 
 // TODO refactor out this global var
 var tillerTunnel *kube.Tunnel
-var tillerNamespace = "kube-system"
 
 // Environment contains all the information about the k8s cluster and local configuration
 type Environment struct {
@@ -34,17 +33,17 @@ type Environment struct {
 	Context           string        // Kubernetes context to use
 	Loop              bool          // Keep looping
 	LoopInterval      time.Duration // Loop every duration
-
-	helmClient helm.Interface
-	kubeClient internalversion.CoreInterface
+	TillerNamespace   string        // where to install / use tiller
+	helmClient        helm.Interface
+	kubeClient        internalversion.CoreInterface
 }
 
 // HelmClient makes sure the environment has a HelmClient initialized and returns it
 func (e *Environment) HelmClient() helm.Interface {
 	if e.helmClient == nil {
-		logrus.WithFields(logrus.Fields{"helmClientVersion": helmversion.Version}).Debug("Setup Helm Client")
+		logrus.WithFields(logrus.Fields{"helmClientVersion": helmversion.Version, "tillerNamespace": e.TillerNamespace}).Debug("Setup Helm Client")
 
-		tillerHost, err := setupConnection(e.Context)
+		tillerHost, err := setupConnection(e.Context, e.TillerNamespace)
 		if err != nil {
 			logrus.WithField("error", err).Fatalf("Could not set up connection to helm")
 			return nil
@@ -100,7 +99,7 @@ func (e *Environment) Teardown() {
 }
 
 // setupConnection creates and returns tiller port forwarding tunnel
-func setupConnection(context string) (string, error) {
+func setupConnection(context string, tillerNamespace string) (string, error) {
 	helmHost, helmHostExists := os.LookupEnv("HELM_HOST")
 	if helmHostExists {
 		logrus.WithFields(logrus.Fields{"helmHost": helmHost}).Debug("Using tiller address from HELM_HOST")
