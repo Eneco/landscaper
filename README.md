@@ -79,6 +79,7 @@ The `apply` command accepts the following arguments:
           --namespace string         namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE (default "default")
           --no-prefix                disable prefixing release names
           --prefix string            prefix release names with this string instead of <namespace>; overrides LANDSCAPE_PREFIX
+          --tiller-namespace string  Tiller namespace for Helm (default "kube-system")
       -v, --verbose                  be verbose
 
 Instead of using arguments, environment variables can be used. When arguments are present, they override environment variables.
