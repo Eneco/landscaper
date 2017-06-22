@@ -92,6 +92,10 @@ func init() {
 	}
 
 	helmHome := os.ExpandEnv("$HOME/.helm")
+	tillerNamespace := os.Getenv("TILLER_NAMESPACE")
+	if tillerNamespace == "" {
+		tillerNamespace = "kube-system"
+	}
 
 	f.BoolVar(&env.DryRun, "dry-run", false, "simulate the applying of the landscape. useful in merge requests")
 	f.BoolVarP(&env.Verbose, "verbose", "v", false, "be verbose")
@@ -102,6 +106,8 @@ func init() {
 	f.StringVar(&env.Namespace, "namespace", landscapeNamespace, "namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE")
 	f.StringVar(&env.HelmHome, "chart-dir", helmHome, "(deprecated; use --helm-home) Helm home directory")
 	f.StringVar(&env.HelmHome, "helm-home", helmHome, "Helm home directory")
+	f.StringVar(&env.TillerNamespace, "tiller-namespace", tillerNamespace, "Tiller namespace for Helm")
+
 	f.BoolVar(&env.Loop, "loop", false, "keep landscape in sync forever")
 	f.DurationVar(&env.LoopInterval, "loop-interval", 5*time.Minute, "when running in a loop the interval between invocations")
 
