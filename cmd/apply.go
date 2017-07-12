@@ -31,7 +31,7 @@ var addCmd = &cobra.Command{
 
 		v := landscaper.GetVersion()
 		logrus.WithFields(logrus.Fields{"tag": v.GitTag, "commit": v.GitCommit}).Infof("This is Landscaper v%s", v.SemVer)
-		logrus.WithFields(logrus.Fields{"namespace": env.Namespace, "releasePrefix": env.ReleaseNamePrefix, "dir": env.LandscapeDir, "dryRun": env.DryRun, "helmHome": env.HelmHome, "verbose": env.Verbose}).Info("Apply landscape desired state")
+		logrus.WithFields(logrus.Fields{"namespace": env.Namespace, "releasePrefix": env.ReleaseNamePrefix, "dir": env.LandscapeDir, "dryRun": env.DryRun, "wait": env.Wait, "waitTimeout": env.WaitTimeout, "helmHome": env.HelmHome, "verbose": env.Verbose}).Info("Apply landscape desired state")
 
 		// deprecated: populate ComponentFiles by getting *.yaml from LandscapeDir
 		if len(args) == 0 && env.LandscapeDir != "" {
@@ -43,7 +43,7 @@ var addCmd = &cobra.Command{
 		envSecrets := landscaper.NewEnvironmentSecretsReader()
 		fileState := landscaper.NewFileStateProvider(env.ComponentFiles, envSecrets, env.ChartLoader, env.ReleaseNamePrefix, env.Namespace)
 		helmState := landscaper.NewHelmStateProvider(env.HelmClient(), kubeSecrets, env.ReleaseNamePrefix)
-		executor := landscaper.NewExecutor(env.HelmClient(), env.ChartLoader, kubeSecrets, env.DryRun)
+		executor := landscaper.NewExecutor(env.HelmClient(), env.ChartLoader, kubeSecrets, env.DryRun, env.Wait, int64(env.WaitTimeout/time.Second))
 
 		for {
 			desired, err := fileState.Components()
@@ -98,6 +98,8 @@ func init() {
 	}
 
 	f.BoolVar(&env.DryRun, "dry-run", false, "simulate the applying of the landscape. useful in merge requests")
+	f.BoolVar(&env.Wait, "wait", false, "wait for all resources to be ready")
+	f.DurationVar(&env.WaitTimeout, "wait-timeout", 5*time.Minute, "interval to wait for all resources to be ready")
 	f.BoolVarP(&env.Verbose, "verbose", "v", false, "be verbose")
 	f.BoolVar(&prefixDisable, "no-prefix", false, "disable prefixing release names")
 	f.StringVar(&env.Context, "context", "", "the kube context to use. defaults to the current context")
