@@ -42,7 +42,7 @@ ref: %s
 
 	rigsDir := "../../test/landscapes/multi-namespace/"
 	// covers both the dir/*.yaml function as explicit files
-	for _, ps := range [][]string{[]string{rigsDir}, []string{rigsDir + "hello-world.yaml", rigsDir + "secretive2.yaml", rigsDir + "secretive.yaml"}} {
+	for _, ps := range [][]string{{rigsDir}, {rigsDir + "hello-world.yaml", rigsDir + "secretive2.yaml", rigsDir + "secretive.yaml"}} {
 
 		fs := NewFileStateProvider(ps, secretsMock, chartLoadMock, "pfx-", "spa")
 		cs, err := fs.Components()
@@ -123,7 +123,7 @@ func TestHelmStateProviderComponents(t *testing.T) {
 			t.Logf("listReleases %#v", opts)
 			rels := &services.ListReleasesResponse{
 				Releases: []*release.Release{
-					&release.Release{
+					{
 						Name:      "my-release",
 						Namespace: "my-namespace",
 						Chart: &chart.Chart{
