@@ -24,6 +24,8 @@ var tillerTunnel *kube.Tunnel
 type Environment struct {
 	HelmHome          string        // Helm's home directory
 	DryRun            bool          // If true, don't modify anything
+	Wait              bool          // Wait until all resources become ready
+	WaitTimeout       time.Duration // Wait for helm
 	ChartLoader       ChartLoader   // ChartLoader loads charts
 	ReleaseNamePrefix string        // Prepend this string to release names
 	ComponentFiles    []string      // Landscaper component file names

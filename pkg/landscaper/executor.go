@@ -25,15 +25,19 @@ type executor struct {
 	chartLoader ChartLoader
 	kubeSecrets SecretsWriteDeleter
 	dryRun      bool
+	wait        bool
+	waitTimeout int64
 }
 
 // NewExecutor is a factory method to create a new Executor
-func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, kubeSecrets SecretsWriteDeleter, dryRun bool) Executor {
+func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, kubeSecrets SecretsWriteDeleter, dryRun bool, wait bool, waitTimeout int64) Executor {
 	return &executor{
 		helmClient:  helmClient,
 		chartLoader: chartLoader,
 		kubeSecrets: kubeSecrets,
 		dryRun:      dryRun,
+		wait:        wait,
+		waitTimeout: waitTimeout,
 	}
 }
 
@@ -148,6 +152,8 @@ func (e *executor) CreateComponent(cmp *Component) error {
 		helm.ReleaseName(cmp.Name),
 		helm.InstallDryRun(e.dryRun),
 		helm.InstallReuseName(true),
+		helm.InstallWait(e.wait),
+		helm.InstallTimeout(e.waitTimeout),
 	)
 	if err != nil {
 		return errors.New(grpc.ErrorDesc(err))
@@ -198,6 +204,8 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 		chartPath,
 		helm.UpdateValueOverrides([]byte(rawValues)),
 		helm.UpgradeDryRun(e.dryRun),
+		helm.UpgradeWait(e.wait),
+		helm.UpgradeTimeout(e.waitTimeout),
 	)
 	if err != nil {
 		return errors.New(grpc.ErrorDesc(err))

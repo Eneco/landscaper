@@ -81,6 +81,8 @@ The `apply` command accepts the following arguments:
           --prefix string            prefix release names with this string instead of <namespace>; overrides LANDSCAPE_PREFIX
           --tiller-namespace string  Tiller namespace for Helm (default "kube-system")
       -v, --verbose                  be verbose
+          --wait                     wait for all resources to be ready
+          --wait-timeout duration    interval to wait for all resources to be ready (default 5m0s)
 
 Instead of using arguments, environment variables can be used. When arguments are present, they override environment variables.
 `--namespace` is used to isolate landscapes through Kubernetes namespaces.

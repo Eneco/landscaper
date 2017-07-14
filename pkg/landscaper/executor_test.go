@@ -11,6 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	waitTimeout = 60
+)
+
 func TestExecutorDiff(t *testing.T) {
 	current := Components{
 		"cmpA": &Component{Name: "cmpA"},
@@ -77,7 +81,7 @@ func TestExecutorApply(t *testing.T) {
 		},
 	}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false).Apply(des, cur)
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout).Apply(des, cur)
 	require.NoError(t, err)
 
 }
@@ -107,7 +111,7 @@ func TestExecutorCreate(t *testing.T) {
 		return nil
 	}}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false).CreateComponent(comp)
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout).CreateComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -141,7 +145,7 @@ func TestExecutorUpdate(t *testing.T) {
 		},
 	}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false).UpdateComponent(comp)
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout).UpdateComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -167,7 +171,7 @@ func TestExecutorDelete(t *testing.T) {
 		return nil
 	}}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false).DeleteComponent(comp)
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout).DeleteComponent(comp)
 	require.NoError(t, err)
 }
 
