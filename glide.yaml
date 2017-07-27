@@ -5,7 +5,12 @@ import:
 - package: github.com/pmezard/go-difflib
   subpackages:
   - difflib
+- package: github.com/emicklei/go-restful
+  version: 09691a3b6378b740595c1002f40c34dd5f218a22
 - package: github.com/spf13/cobra
+  version: f62e98d28ab7ad31d707ba837a966378465c7b57
+- package: github.com/spf13/pflag
+  version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - package: github.com/x-cray/logrus-prefixed-formatter
   version: =0.4.0
 - package: google.golang.org/grpc
@@ -19,7 +24,7 @@ import:
   - ptypes/any
   - ptypes/timestamp
 - package: k8s.io/helm
-  version: ~2.4.0
+  version: =2.5.1
   subpackages:
   - pkg/chartutil
   - pkg/helm
@@ -28,7 +33,10 @@ import:
   - pkg/proto/hapi/release
   - pkg/version
 - package: k8s.io/apimachinery
+- package: k8s.io/client-go
+  version: =3.0.0
 - package: k8s.io/client-go/rest
+  version: =3.0.0
 - package: k8s.io/kubernetes
   version: ~1.6.0
 testImport:
