@@ -250,6 +250,11 @@ func (cp *fileStateProvider) coalesceComponent(cmp *Component) error {
 		return err
 	}
 
+	err = chartutil.ProcessRequirementsEnabled(ch, &chart.Config{Raw: raw})
+	if err != nil {
+		return err
+	}
+
 	helmValues, err := chartutil.CoalesceValues(ch, &chart.Config{Raw: raw})
 	if err != nil {
 		return err
