@@ -76,6 +76,12 @@ func (cp *helmStateProvider) Components() (Components, error) {
 			return components, err
 		}
 
+		// checking if component belongs to target namespace, otherwise skip
+		if cmp.Namespace != release.Namespace {
+			logrus.WithFields(logrus.Fields{"cmp.Namespace": cmp.Namespace, "release.Namespace": release.Namespace}).Debug("Skipping component, it's on target namespace.")
+			continue
+		}
+
 		secretValues, err := cp.secrets.Read(cmp.Name, release.Namespace, nil)
 		if err != nil {
 			return components, err
