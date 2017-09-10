@@ -9,10 +9,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"errors"
 )
 
 const (
 	waitTimeout = 60
+)
+
+var (
+	disabledStages = make([]string, 0)
 )
 
 func TestExecutorDiff(t *testing.T) {
@@ -81,7 +86,7 @@ func TestExecutorApply(t *testing.T) {
 		},
 	}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout).Apply(des, cur)
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages).Apply(des, cur)
 	require.NoError(t, err)
 
 }
@@ -101,7 +106,7 @@ func TestExecutorCreate(t *testing.T) {
 	}}
 	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
 		t.Logf("MockChartLoader %#v", chartRef)
-		require.Equal(t, "repo/"+comp.Release.Chart, chartRef)
+		require.Equal(t, "repo/" + comp.Release.Chart, chartRef)
 		return nil, chartPath, nil
 	})
 	secretsMock := SecretsProviderMock{write: func(componentName, namespace string, values SecretValues) error {
@@ -111,7 +116,7 @@ func TestExecutorCreate(t *testing.T) {
 		return nil
 	}}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout).CreateComponent(comp)
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages).CreateComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -130,7 +135,7 @@ func TestExecutorUpdate(t *testing.T) {
 	}}
 	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
 		t.Logf("MockChartLoader %#v", chartRef)
-		require.Equal(t, "repo/"+comp.Release.Chart, chartRef)
+		require.Equal(t, "repo/" + comp.Release.Chart, chartRef)
 		return nil, chartPath, nil
 	})
 	secretsMock := SecretsProviderMock{
@@ -145,7 +150,7 @@ func TestExecutorUpdate(t *testing.T) {
 		},
 	}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout).UpdateComponent(comp)
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages).UpdateComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -171,7 +176,7 @@ func TestExecutorDelete(t *testing.T) {
 		return nil
 	}}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout).DeleteComponent(comp)
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages).DeleteComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -207,6 +212,52 @@ func TestIntegrateForcedUpdates(t *testing.T) {
 	require.Equal(t, Components{c.Name: c, f.Name: f}, create)
 	require.Equal(t, Components{u.Name: u}, update)
 	require.Equal(t, Components{d.Name: d, f.Name: f}, delete)
+}
+
+func TestExecutorApplyWithDisabledStages(t *testing.T) {
+	chartPath := "/opt/store/whatever/path/"
+
+	nu := newTestComponent("new-one")
+	nu.Namespace = "recognizable-new-one"
+	rem := newTestComponent("busted-one")
+	up := newTestComponent("updated-one")
+	updiff := newTestComponent("updated-one")
+	updiff.Configuration["FlushSize"] = 4
+
+	des := Components{nu.Name: nu, updiff.Name: updiff}
+	cur := Components{rem.Name: rem, up.Name: up}
+
+	helmMock := &HelmclientMock{
+		installRelease: func(chStr string, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error) {
+			t.Logf("installRelease %#v %#v %#v", chStr, namespace, opts)
+			require.Equal(t, namespace, "recognizable-new-one") // the name is hidden in the opts we cannot inspect
+			return nil, errors.New("Shouldn't be called here")
+		},
+		deleteRelease: func(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
+			t.Logf("deleteRelease %#v", rlsName)
+			require.Equal(t, rlsName, "busted-one")
+			return nil, errors.New("Shouldn't be called here")
+		},
+		updateRelease: func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
+			t.Logf("updateRelease %#v %#v %#v", rlsName, chStr, opts)
+			require.Equal(t, rlsName, "updated-one")
+			return nil, errors.New("Shouldn't be called here")
+		}}
+	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
+		t.Logf("MockChartLoader %#v", chartRef)
+		return nil, chartPath, nil
+	})
+	secretsMock := SecretsProviderMock{
+		write: func(componentName, namespace string, values SecretValues) error {
+			return nil
+		},
+		delete: func(componentName, namespace string) error {
+			return nil
+		},
+	}
+
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, []string{"delete", "create", "update"}).Apply(des, cur)
+	require.NoError(t, err)
 }
 
 func newTestComponent(name string) *Component {

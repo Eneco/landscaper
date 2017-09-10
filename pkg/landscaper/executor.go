@@ -21,16 +21,17 @@ type Executor interface {
 }
 
 type executor struct {
-	helmClient  helm.Interface
-	chartLoader ChartLoader
-	kubeSecrets SecretsWriteDeleter
-	dryRun      bool
-	wait        bool
-	waitTimeout int64
+	helmClient     helm.Interface
+	chartLoader    ChartLoader
+	kubeSecrets    SecretsWriteDeleter
+	dryRun         bool
+	wait           bool
+	waitTimeout    int64
+	disabledStages []string
 }
 
 // NewExecutor is a factory method to create a new Executor
-func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, kubeSecrets SecretsWriteDeleter, dryRun bool, wait bool, waitTimeout int64) Executor {
+func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, kubeSecrets SecretsWriteDeleter, dryRun bool, wait bool, waitTimeout int64, disabledStages []string) Executor {
 	return &executor{
 		helmClient:  helmClient,
 		chartLoader: chartLoader,
@@ -38,6 +39,7 @@ func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, kubeSecrets
 		dryRun:      dryRun,
 		wait:        wait,
 		waitTimeout: waitTimeout,
+		disabledStages: disabledStages,
 	}
 }
 
@@ -86,29 +88,44 @@ func (e *executor) Apply(desired, current Components) error {
 		return err
 	}
 
-	for _, cmp := range delete {
-		if err := e.DeleteComponent(cmp); err != nil {
-			logrus.WithFields(logrus.Fields{"error": err}).Error("DeleteComponent failed")
-			return err
+	if e.stageEnabled("delete") {
+		for _, cmp := range delete {
+			if err := e.DeleteComponent(cmp); err != nil {
+				logrus.WithFields(logrus.Fields{"error": err}).Error("DeleteComponent failed")
+				return err
+			}
 		}
 	}
 
-	for _, cmp := range update {
-		if err := e.UpdateComponent(cmp); err != nil {
-			logrus.WithFields(logrus.Fields{"error": err}).Error("UpdateComponent failed")
-			return err
+	if e.stageEnabled("update") {
+		for _, cmp := range update {
+			if err := e.UpdateComponent(cmp); err != nil {
+				logrus.WithFields(logrus.Fields{"error": err}).Error("UpdateComponent failed")
+				return err
+			}
 		}
 	}
 
-	for _, cmp := range create {
-		if err := e.CreateComponent(cmp); err != nil {
-			logrus.WithFields(logrus.Fields{"error": err}).Error("CreateComponent failed")
-			return err
+	if e.stageEnabled("create") {
+		for _, cmp := range create {
+			if err := e.CreateComponent(cmp); err != nil {
+				logrus.WithFields(logrus.Fields{"error": err}).Error("CreateComponent failed")
+				return err
+			}
 		}
 	}
 
 	logrus.WithFields(logrus.Fields{"created": len(create), "updated": len(update), "deleted": len(delete)}).Info("Applied desired state successfully")
 	return nil
+}
+
+func (e *executor) stageEnabled(stage string) bool {
+	for _, stageDisabled := range e.disabledStages {
+		if stageDisabled == stage {
+			return false
+		}
+	}
+	return true
 }
 
 // CreateComponent creates the given Component
@@ -320,14 +337,14 @@ func logDifferences(current, creates, updates, deletes Components, logf func(for
 	}
 
 	for _, d := range creates {
-		if err := log("Create: "+d.Name, nil, d); err != nil {
+		if err := log("Create: " + d.Name, nil, d); err != nil {
 			return err
 		}
 	}
 
 	for _, d := range updates {
 		c := current[d.Name]
-		if err := log("Update: "+d.Name, c, d); err != nil {
+		if err := log("Update: " + d.Name, c, d); err != nil {
 			return err
 		}
 	}
