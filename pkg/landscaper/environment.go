@@ -45,7 +45,7 @@ type Environment struct {
 type stringSlice []string
 
 func (stringSlice *stringSlice) String() string {
-	return "String slice"
+	return ""
 }
 
 func (stringSlice *stringSlice) Set(value string) error {
