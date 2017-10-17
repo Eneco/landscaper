@@ -38,6 +38,23 @@ type Environment struct {
 	TillerNamespace   string        // where to install / use tiller
 	helmClient        helm.Interface
 	kubeClient        internalversion.CoreInterface
+	DisabledStages    stringSlice    // stages to disable during landscaper apply
+}
+
+
+type stringSlice []string
+
+func (stringSlice *stringSlice) String() string {
+	return ""
+}
+
+func (stringSlice *stringSlice) Set(value string) error {
+	*stringSlice = append(*stringSlice, value)
+	return nil
+}
+
+func (stringSlice *stringSlice) Type() string {
+	return "stringSlice"
 }
 
 // HelmClient makes sure the environment has a HelmClient initialized and returns it
