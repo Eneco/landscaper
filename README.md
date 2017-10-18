@@ -38,6 +38,7 @@ The Landscaper project is an ongoing project in an early stage, opened due to de
 ## Installation
 
 Binaries are available [here](https://github.com/Eneco/landscaper/releases/); Docker images [here](https://hub.docker.com/r/eneco/landscaper/).
+On macOS using Homebrew, a `brew install landscaper` should do.
 
 ### From source
 
