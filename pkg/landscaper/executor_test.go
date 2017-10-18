@@ -7,9 +7,9 @@ import (
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/proto/hapi/services"
 
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"errors"
 )
 
 const (
@@ -106,7 +106,7 @@ func TestExecutorCreate(t *testing.T) {
 	}}
 	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
 		t.Logf("MockChartLoader %#v", chartRef)
-		require.Equal(t, "repo/" + comp.Release.Chart, chartRef)
+		require.Equal(t, "repo/"+comp.Release.Chart, chartRef)
 		return nil, chartPath, nil
 	})
 	secretsMock := SecretsProviderMock{write: func(componentName, namespace string, values SecretValues) error {
@@ -135,7 +135,7 @@ func TestExecutorUpdate(t *testing.T) {
 	}}
 	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
 		t.Logf("MockChartLoader %#v", chartRef)
-		require.Equal(t, "repo/" + comp.Release.Chart, chartRef)
+		require.Equal(t, "repo/"+comp.Release.Chart, chartRef)
 		return nil, chartPath, nil
 	})
 	secretsMock := SecretsProviderMock{

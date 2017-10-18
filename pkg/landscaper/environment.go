@@ -38,9 +38,8 @@ type Environment struct {
 	TillerNamespace   string        // where to install / use tiller
 	helmClient        helm.Interface
 	kubeClient        internalversion.CoreInterface
-	DisabledStages    stringSlice    // stages to disable during landscaper apply
+	DisabledStages    stringSlice // stages to disable during landscaper apply
 }
-
 
 type stringSlice []string
 

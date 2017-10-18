@@ -33,12 +33,12 @@ type executor struct {
 // NewExecutor is a factory method to create a new Executor
 func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, kubeSecrets SecretsWriteDeleter, dryRun bool, wait bool, waitTimeout int64, disabledStages []string) Executor {
 	return &executor{
-		helmClient:  helmClient,
-		chartLoader: chartLoader,
-		kubeSecrets: kubeSecrets,
-		dryRun:      dryRun,
-		wait:        wait,
-		waitTimeout: waitTimeout,
+		helmClient:     helmClient,
+		chartLoader:    chartLoader,
+		kubeSecrets:    kubeSecrets,
+		dryRun:         dryRun,
+		wait:           wait,
+		waitTimeout:    waitTimeout,
 		disabledStages: disabledStages,
 	}
 }
@@ -337,14 +337,14 @@ func logDifferences(current, creates, updates, deletes Components, logf func(for
 	}
 
 	for _, d := range creates {
-		if err := log("Create: " + d.Name, nil, d); err != nil {
+		if err := log("Create: "+d.Name, nil, d); err != nil {
 			return err
 		}
 	}
 
 	for _, d := range updates {
 		c := current[d.Name]
-		if err := log("Update: " + d.Name, c, d); err != nil {
+		if err := log("Update: "+d.Name, c, d); err != nil {
 			return err
 		}
 	}
