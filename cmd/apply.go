@@ -40,8 +40,16 @@ var addCmd = &cobra.Command{
 		}
 
 		kubeSecrets := landscaper.NewKubeSecretsReadWriteDeleter(env.KubeClient())
-		envSecrets := landscaper.NewEnvironmentSecretsReader()
-		fileState := landscaper.NewFileStateProvider(env.ComponentFiles, envSecrets, env.ChartLoader, env.ReleaseNamePrefix, env.Namespace)
+		secretsReader := landscaper.NewEnvironmentSecretsReader()
+		if env.AzureKeyVault != "" {
+			azureSecretsReader, err := landscaper.NewAzureSecretsReader(env.AzureKeyVault)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{"error": err}).Error("Failed to create an azure secrets reader")
+				return err
+			}
+			secretsReader = azureSecretsReader
+		}
+		fileState := landscaper.NewFileStateProvider(env.ComponentFiles, secretsReader, env.ChartLoader, env.ReleaseNamePrefix, env.Namespace)
 		helmState := landscaper.NewHelmStateProvider(env.HelmClient(), kubeSecrets, env.ReleaseNamePrefix)
 		executor := landscaper.NewExecutor(env.HelmClient(), env.ChartLoader, kubeSecrets, env.DryRun, env.Wait, int64(env.WaitTimeout/time.Second), env.DisabledStages)
 
@@ -114,5 +122,6 @@ func init() {
 	f.BoolVar(&env.Loop, "loop", false, "keep landscape in sync forever")
 	f.DurationVar(&env.LoopInterval, "loop-interval", 5*time.Minute, "when running in a loop the interval between invocations")
 
+	f.StringVar(&env.AzureKeyVault, "azure-keyvault", "", "azure keyvault for fetching secrets. Azure credentials must be provided in the environment.")
 	rootCmd.AddCommand(addCmd)
 }
