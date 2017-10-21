@@ -54,13 +54,13 @@ var addCmd = &cobra.Command{
 		executor := landscaper.NewExecutor(env.HelmClient(), env.ChartLoader, kubeSecrets, env.DryRun, env.Wait, int64(env.WaitTimeout/time.Second), env.DisabledStages)
 
 		for {
-			desired, err := fileState.Components()
+			desired, err := fileState.Components(env.Environment)
 			if err != nil {
 				logrus.WithFields(logrus.Fields{"error": err}).Error("Loading desired state failed")
 				return err
 			}
 
-			current, err := helmState.Components()
+			current, err := helmState.Components(env.Environment)
 			if err != nil {
 				logrus.WithFields(logrus.Fields{"error": err}).Error("Loading current state failed")
 				return err
@@ -123,5 +123,7 @@ func init() {
 	f.DurationVar(&env.LoopInterval, "loop-interval", 5*time.Minute, "when running in a loop the interval between invocations")
 
 	f.StringVar(&env.AzureKeyVault, "azure-keyvault", "", "azure keyvault for fetching secrets. Azure credentials must be provided in the environment.")
+	f.StringVar(&env.Environment, "env", "", "environment specifier. selects value overrides by environment.")
+    
 	rootCmd.AddCommand(addCmd)
 }

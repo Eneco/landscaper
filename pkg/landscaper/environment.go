@@ -37,6 +37,7 @@ type Environment struct {
 	LoopInterval      time.Duration // Loop every duration
 	TillerNamespace   string        // where to install / use tiller
 	AzureKeyVault     string        // Azure keyvault to use for secrets if provided
+	Environment       string        // Environment selections
 	helmClient        helm.Interface
 	kubeClient        internalversion.CoreInterface
 	DisabledStages    stringSlice // stages to disable during landscaper apply

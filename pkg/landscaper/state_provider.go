@@ -11,7 +11,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	validator "gopkg.in/validator.v2"
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -28,7 +28,7 @@ var (
 
 // StateProvider can be used to obtain a state, actual (from Helm) or desired (e.g. from files)
 type StateProvider interface {
-	Components() (Components, error)
+	Components(env string) (Components, error)
 }
 
 type fileStateProvider struct {
@@ -56,7 +56,7 @@ func NewHelmStateProvider(helmClient helm.Interface, secrets SecretsReader, rele
 }
 
 // Components returns all Components in the cluster
-func (cp *helmStateProvider) Components() (Components, error) {
+func (cp *helmStateProvider) Components(env string) (Components, error) {
 	components := Components{}
 
 	logrus.Info("Obtain current state Helm Releases (Components) from Tiller")
@@ -104,7 +104,7 @@ func (cp *helmStateProvider) Components() (Components, error) {
 }
 
 // get loads the provided files. If the argument is a directory, *.yaml in it is loaded.
-func (cp *fileStateProvider) get(files []string) (Components, error) {
+func (cp *fileStateProvider) get(files []string, env string) (Components, error) {
 	components := Components{}
 
 	logrus.WithFields(logrus.Fields{"files": files}).Info("Obtain desired state from files")
@@ -120,7 +120,7 @@ func (cp *fileStateProvider) get(files []string) (Components, error) {
 			if err != nil {
 				return nil, err
 			}
-			subComp, err := cp.get(files)
+			subComp, err := cp.get(files, env)
 			if err != nil {
 				return nil, err
 			}
@@ -137,7 +137,7 @@ func (cp *fileStateProvider) get(files []string) (Components, error) {
 		}
 		cp.normalizeFromFile(cmp)
 
-		err = cp.coalesceComponent(cmp)
+		err = cp.coalesceComponent(cmp, env)
 		if err != nil {
 			return nil, err
 		}
@@ -213,8 +213,8 @@ func (cp *fileStateProvider) normalizeFromFile(c *Component) error {
 }
 
 // Get returns all desired components according to their descriptions
-func (cp *fileStateProvider) Components() (Components, error) {
-	return cp.get(cp.fileNames)
+func (cp *fileStateProvider) Components(env string) (Components, error) {
+	return cp.get(cp.fileNames, env)
 }
 
 // newComponentFromYAML parses a byteslice into a Component instance
@@ -236,11 +236,11 @@ func newComponentFromYAML(content []byte) (*Component, error) {
 		return nil, err
 	}
 
-	return NewComponent(cmp.Name, cmp.Namespace, cmp.Release, cmp.Configuration, cmp.Secrets), nil
+	return NewComponent(cmp.Name, cmp.Namespace, cmp.Release, cmp.Configuration, cmp.Environments, cmp.Secrets), nil
 }
 
 // coalesceComponent takes a component, loads the chart and coalesces the configuration with the default values
-func (cp *fileStateProvider) coalesceComponent(cmp *Component) error {
+func (cp *fileStateProvider) coalesceComponent(cmp *Component, env string) error {
 	logrus.WithFields(logrus.Fields{"chart": cmp.Release.Chart}).Debug("coalesceComponent")
 	chartRef, err := cmp.FullChartRef()
 	if err != nil {
@@ -251,7 +251,16 @@ func (cp *fileStateProvider) coalesceComponent(cmp *Component) error {
 		return err
 	}
 
-	raw, err := cmp.Configuration.YAML()
+	cfg := cmp.Configuration
+
+	// apply environment specific overrides and remove so they aren't used in the diff
+	envCfg := cmp.Environments[env]
+	if envCfg != nil {
+		cfg = cfg.Merge(envCfg)
+	}
+	cmp.Environments = Configurations{}
+
+	raw, err := cfg.YAML()
 	if err != nil {
 		return err
 	}
@@ -307,6 +316,7 @@ func newComponentFromHelmRelease(release *release.Release) (*Component, error) {
 			Version: m.ReleaseVersion,
 		},
 		cfg,
+		Configurations{},
 		Secrets{},
 	)
 

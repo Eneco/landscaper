@@ -1,0 +1,12 @@
+name: hello-world
+release:
+  chart: local/hello-world:0.1.0
+  version: 0.1.0
+configuration:
+  message: Hello, Landscaped world!
+environments:
+  env1:
+    message: env1 overwrite
+    extra: env1 extra
+  env2:
+    message: env2 overwrite
