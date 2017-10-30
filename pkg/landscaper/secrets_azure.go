@@ -9,11 +9,13 @@ import (
 	"github.com/Azure/azure-sdk-for-go/arm/examples/helpers"
 	"github.com/Azure/azure-sdk-for-go/dataplane/keyvault"
 	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/go-autorest/autorest/azure"
 )
 
 type AzureSecretsReader struct{
 	kvClient keyvault.ManagementClient
 	kvName string
+	kvURL string
 }
 
 func NewAzureSecretsReader(keyVault string) (SecretsReader, error) {
@@ -29,8 +31,13 @@ func NewAzureSecretsReader(keyVault string) (SecretsReader, error) {
 			return nil, fmt.Errorf("azure client environment variable `%s` is empty", varName)
 		}
 	}
+
+	kvDNSSuffix := os.Getenv("AZURE_KEYVAULT_DNS_SUFFIX")
+	if kvDNSSuffix == "" {
+		kvDNSSuffix = azure.PublicCloud.KeyVaultDNSSuffix
+	}
 	
-	resource := "https://vault.azure.net"
+	resource := fmt.Sprintf("https://%s", kvDNSSuffix)
 	spt, err := helpers.NewServicePrincipalTokenFromCredentials(envVars, resource)
 	if err != nil {
 		logrus.WithField("error", err).Fatalf("Failed to get service principle token")
@@ -40,7 +47,9 @@ func NewAzureSecretsReader(keyVault string) (SecretsReader, error) {
 	kv := keyvault.New()
 	kv.Authorizer = autorest.NewBearerAuthorizer(spt)
 
-	return &AzureSecretsReader{kvClient: kv, kvName: keyVault}, nil
+	baseURL := fmt.Sprintf("https://%s.%s/", keyVault, kvDNSSuffix)
+
+	return &AzureSecretsReader{kvClient: kv, kvName: keyVault, kvURL: baseURL}, nil
 }
 
 // Reads the secret from the Azure key vault
@@ -49,18 +58,17 @@ func (asp *AzureSecretsReader) Read(componentName, namespace string, secretNames
 	
 	secrets := SecretValues{}
 
-	baseURL := fmt.Sprintf("https://%s.vault.azure.net/", asp.kvName)
-
 	for _, secret := range secretNames {
-		value, err := asp.kvClient.GetSecret(baseURL, secret, "")
+		value, err := asp.kvClient.GetSecret(asp.kvURL, secret, "")
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
 				"component": componentName, 
 				"namespace": namespace,
-				"keyvault": asp.kvName, 
+				"keyvault": asp.kvURL, 
 				"secret": secret, 
-			}).Error("Secret not found in keyvault")
-			return secrets, fmt.Errorf("secret `%s` was not found in keyvault `%s`", secret, asp.kvName)
+				"error": err,
+			}).Error("Failed to get secret from keyvault",)
+			return secrets, fmt.Errorf("failed to get secret `%s` from keyvault `%s`", secret, asp.kvURL)
 		}
 		secrets[secret] = []byte(*value.Value)
 	}

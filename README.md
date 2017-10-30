@@ -106,6 +106,8 @@ When using the `--azure-keyvault` argument, Azure Service Principal credentials 
   - `AZURE_CLIENT_SECRET`
   - `AZURE_TENANT_ID`
 
+The key vault DNS suffix defaults to the public cloud, `vault.azure.net`, but can be overridden with `AZURE_KEYVAULT_DNS_SUFFIX`.
+
 ## Example
 
 An example is provided [here](./example).
