@@ -1,15 +1,29 @@
-hash: 26c05446ae9d01bac9d252748e3d425e4cd677f857d70551dc89fba109d774f8
-updated: 2017-07-27T10:49:00.046279409+02:00
+hash: 9504621c9a11511266a2a84e10c679847a43967879c9b603ee36e96d15548b00
+updated: 2017-10-03T22:44:35.974263229+02:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
   subpackages:
   - compute/metadata
   - internal
+- name: github.com/Azure/azure-sdk-for-go
+  version: 2592daf71ab6b95dcfc7f7437ecc1afb9ddb7360
+  subpackages:
+  - arm/examples/helpers
+  - dataplane/keyvault
 - name: github.com/Azure/go-ansiterm
   version: 70b2c90b260171e829f1ebd7c17f600c11858dbe
   subpackages:
   - winterm
+- name: github.com/Azure/go-autorest
+  version: f6be1abbb5abd0517522f850dd785990d373da7e
+  subpackages:
+  - autorest
+  - autorest/adal
+  - autorest/azure
+  - autorest/date
+  - autorest/to
+  - autorest/validation
 - name: github.com/BurntSushi/toml
   version: b26d9c308763d68093482582cea63d69be07a0f0
 - name: github.com/coreos/go-oidc
@@ -178,7 +192,9 @@ imports:
 - name: github.com/x-cray/logrus-prefixed-formatter
   version: 54b7cd10b359d569484cc6b6ffd21d4649dcd148
 - name: golang.org/x/crypto
-  version: d172538b2cfce0c13cee31e647d0367aa8cd2486
+  version: 9419663f5a44be8b34ca85f08abc5fe1be11f8a3
+  repo: https://github.com/golang/crypto.git
+  vcs: git
   subpackages:
   - cast5
   - openpgp
@@ -188,10 +204,14 @@ imports:
   - openpgp/errors
   - openpgp/packet
   - openpgp/s2k
+  - pkcs12
   - ssh/terminal
 - name: golang.org/x/net
-  version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
+  version: 0a9397675ba34b2845f758fe3cd68828369c6517
+  repo: https://github.com/golang/net.git
+  vcs: git
   subpackages:
+  - .
   - context
   - context/ctxhttp
   - http2
@@ -209,17 +229,22 @@ imports:
   - jws
   - jwt
 - name: golang.org/x/sys
-  version: 02a66801d979d706a4b445e24e03916eeaa2a404
+  version: 8f0908ab3b2457e2e15403d3697c9ef5cb4b57a9
   subpackages:
   - unix
+  - windows
 - name: golang.org/x/text
-  version: 2910a502d2bf9e43193af9d68ca516529614eed3
+  version: 1cbadb444a806fd9430d14ad08967ed91da4fa0a
+  repo: https://github.com/golang/text.git
+  vcs: git
   subpackages:
+  - .
   - cases
   - encoding
   - encoding/internal
   - encoding/internal/identifier
   - encoding/unicode
+  - internal
   - internal/tag
   - internal/utf8internal
   - language
@@ -440,7 +465,7 @@ imports:
   - pkg/urlutil
   - pkg/version
 - name: k8s.io/kubernetes
-  version: 313fd317f96265658831a576fafdd6ed85aaf428
+  version: 2f830d21be89a077189f60a2d0b8379b7e2ba533
   subpackages:
   - federation/apis/federation
   - federation/apis/federation/install

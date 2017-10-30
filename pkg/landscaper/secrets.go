@@ -49,7 +49,7 @@ func NewKubeSecretsReadWriteDeleter(kubeClient internalversion.CoreInterface) Se
 }
 
 // NewEnvironmentSecretsReader creates a SecretsReader for secrets provided via environment variables
-func NewEnvironmentSecretsReader() SecretsReader {
+func NewEnvironmentSecretsReader() (SecretsReader) {
 	return &environmentSecrets{}
 }
 

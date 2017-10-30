@@ -70,12 +70,13 @@ The `apply` command accepts the following arguments:
       landscaper apply [files]... [flags]
     
     Flags:
-          --chart-dir string          (deprecated; use --helm-home) Helm home directory (default "/Users/zainmalik/.helm")
+          --azure-keyvault string     azure keyvault for fetching secrets. Azure credentials must be provided in the environment.
+          --chart-dir string          (deprecated; use --helm-home) Helm home directory (default "$HOME/.helm")
           --context string            the kube context to use. defaults to the current context
           --dir string                (deprecated) path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR
           --disable stringSlice       Stages to be disabled. Available stages are create/update/delete.
           --dry-run                   simulate the applying of the landscape. useful in merge requests
-          --helm-home string          Helm home directory (default "/Users/zainmalik/.helm")
+          --helm-home string          Helm home directory (default "$HOME/.helm")
           --loop                      keep landscape in sync forever
           --loop-interval duration    when running in a loop the interval between invocations (default 5m0s)
           --namespace string          namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE (default "default")
@@ -97,6 +98,15 @@ Currently, secrets are handled by specifying the name in the YAML, e.g. `my-secr
 Landscaper can also be run as a control loop that constantly watches the desired landscape and applies it to the cluster. With this you can deploy landscaper once in your cluster, pass it a reference to a landscape description and have Landscaper apply it whenever the landscape changes.
 
 Connection to Tiller is made by setting up a port-forward to it's pod. However, when `$HELM_HOST` is defined with a "host:port" in it, a direct connection is made to that host and port instead.
+
+### Azure Credentials
+When using the `--azure-keyvault` argument, Azure Service Principal credentials must be available in the environment:
+
+  - `AZURE_CLIENT_ID`
+  - `AZURE_CLIENT_SECRET`
+  - `AZURE_TENANT_ID`
+
+The key vault DNS suffix defaults to the public cloud, `vault.azure.net`, but can be overridden with `AZURE_KEYVAULT_DNS_SUFFIX`.
 
 ## Example
 
