@@ -1,14 +1,20 @@
 package landscaper
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"reflect"
+	"text/template"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/pmezard/go-difflib/difflib"
 	"google.golang.org/grpc"
+	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/helm"
+	"k8s.io/helm/pkg/proto/hapi/release"
+	"k8s.io/helm/pkg/timeconv"
 )
 
 // Executor is responsible for applying a desired landscape to the actual landscape
@@ -162,7 +168,7 @@ func (e *executor) CreateComponent(cmp *Component) error {
 		}
 	}
 
-	_, err = e.helmClient.InstallRelease(
+	resp, err := e.helmClient.InstallRelease(
 		chartPath,
 		cmp.Namespace,
 		helm.ValueOverrides([]byte(rawValues)),
@@ -172,9 +178,12 @@ func (e *executor) CreateComponent(cmp *Component) error {
 		helm.InstallWait(e.wait),
 		helm.InstallTimeout(e.waitTimeout),
 	)
+
 	if err != nil {
 		return errors.New(grpc.ErrorDesc(err))
 	}
+
+	logRelease(resp.Release)
 
 	return nil
 }
@@ -216,7 +225,7 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 		"dryrun":    e.dryRun,
 	}).Debug("Update component")
 
-	_, err = e.helmClient.UpdateRelease(
+	resp, err := e.helmClient.UpdateRelease(
 		cmp.Name,
 		chartPath,
 		helm.UpdateValueOverrides([]byte(rawValues)),
@@ -227,6 +236,8 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 	if err != nil {
 		return errors.New(grpc.ErrorDesc(err))
 	}
+
+	logRelease(resp.Release)
 
 	return nil
 }
@@ -283,6 +294,58 @@ func diff(desired, current Components) (Components, Components, Components) {
 	}
 
 	return create, update, delete
+}
+
+func logRelease(rel *release.Release) error {
+	if rel == nil {
+		return nil
+	}
+
+	cfg, err := chartutil.CoalesceValues(rel.Chart, rel.Config)
+	if err != nil {
+		return err
+	}
+	cfgStr, err := cfg.YAML()
+	if err != nil {
+		return err
+	}
+
+	data := map[string]interface{}{
+		"Release":        rel,
+		"ComputedValues": cfgStr,
+		"ReleaseDate":    timeconv.Format(rel.Info.LastDeployed, time.ANSIC),
+	}
+
+	printReleaseTemplate := `REVISION: {{.Release.Version}}
+RELEASED: {{.ReleaseDate}}
+CHART: {{.Release.Chart.Metadata.Name}}-{{.Release.Chart.Metadata.Version}}
+USER-SUPPLIED VALUES:
+{{.Release.Config.Raw}}
+COMPUTED VALUES:
+{{.ComputedValues}}
+HOOKS:
+{{- range .Release.Hooks }}
+---
+# {{.Name}}
+{{.Manifest}}
+{{- end }}
+MANIFEST:
+{{.Release.Manifest}}
+`
+
+	tt, err := template.New("_").Parse(printReleaseTemplate)
+	if err != nil {
+		return err
+	}
+
+	var debugOutput bytes.Buffer
+	if err := tt.Execute(&debugOutput, data); err != nil {
+		return err
+	}
+
+	logrus.Infof("Release Details:\n%s", debugOutput.String())
+
+	return nil
 }
 
 // componentDiffText returns a diff as text. current and desired can be nil and indicate non-existence (e.g. current nil and desired non-nil means: create)
