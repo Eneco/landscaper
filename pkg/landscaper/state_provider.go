@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/ghodss/yaml"
 	validator "gopkg.in/validator.v2"
-	"gopkg.in/yaml.v2"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -37,6 +37,7 @@ type fileStateProvider struct {
 	chartLoader       ChartLoader
 	releaseNamePrefix string
 	namespace         string
+	environment       string
 }
 
 type helmStateProvider struct {
@@ -46,8 +47,8 @@ type helmStateProvider struct {
 }
 
 // NewFileStateProvider creates a StateProvider that sources Files
-func NewFileStateProvider(fileNames []string, secrets SecretsReader, chartLoader ChartLoader, releaseNamePrefix, namespace string) StateProvider {
-	return &fileStateProvider{fileNames, secrets, chartLoader, releaseNamePrefix, namespace}
+func NewFileStateProvider(fileNames []string, secrets SecretsReader, chartLoader ChartLoader, releaseNamePrefix, namespace string, environment string) StateProvider {
+	return &fileStateProvider{fileNames, secrets, chartLoader, releaseNamePrefix, namespace, environment}
 }
 
 // NewHelmStateProvider creates a StateProvider that sources Helm (actual state)
@@ -236,7 +237,7 @@ func newComponentFromYAML(content []byte) (*Component, error) {
 		return nil, err
 	}
 
-	return NewComponent(cmp.Name, cmp.Namespace, cmp.Release, cmp.Configuration, cmp.Secrets), nil
+	return NewComponent(cmp.Name, cmp.Namespace, cmp.Release, cmp.Configuration, cmp.Environments, cmp.Secrets), nil
 }
 
 // coalesceComponent takes a component, loads the chart and coalesces the configuration with the default values
@@ -251,7 +252,16 @@ func (cp *fileStateProvider) coalesceComponent(cmp *Component) error {
 		return err
 	}
 
-	raw, err := cmp.Configuration.YAML()
+	cfg := cmp.Configuration
+
+	// apply environment specific overrides and remove so they aren't used in the diff
+	envCfg := cmp.Environments[cp.environment]
+	if envCfg != nil {
+		cfg = cfg.Merge(envCfg)
+	}
+	cmp.Environments = Configurations{}
+
+	raw, err := cfg.YAML()
 	if err != nil {
 		return err
 	}
@@ -307,6 +317,7 @@ func newComponentFromHelmRelease(release *release.Release) (*Component, error) {
 			Version: m.ReleaseVersion,
 		},
 		cfg,
+		Configurations{},
 		Secrets{},
 	)
 

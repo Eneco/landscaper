@@ -9,23 +9,25 @@ import (
 
 // Component contains information about the release, configuration and secrets of a component
 type Component struct {
-	Name          string        `json:"name" validate:"nonzero,max=51"`
-	Namespace     string        `json:"namespace"`
-	Release       *Release      `json:"release" validate:"nonzero"`
-	Configuration Configuration `json:"configuration"`
-	Secrets       Secrets       `json:"secrets"`
-	SecretValues  SecretValues  `json:"-"`
+	Name          string         `json:"name" validate:"nonzero,max=51"`
+	Namespace     string         `json:"namespace"`
+	Release       *Release       `json:"release" validate:"nonzero"`
+	Configuration Configuration  `json:"configuration"`
+	Environments  Configurations `json:"environments"`
+	Secrets       Secrets        `json:"secrets"`
+	SecretValues  SecretValues   `json:"-"`
 }
 
 // Components is a collection of uniquely named Component objects
 type Components map[string]*Component
 
 // NewComponent creates a Component and adds Name to the configuration
-func NewComponent(name string, namespace string, release *Release, cfg Configuration, secrets Secrets) *Component {
+func NewComponent(name string, namespace string, release *Release, cfg Configuration, envs Configurations, secrets Secrets) *Component {
 	cmp := &Component{
 		Name:          name,
 		Release:       release,
 		Configuration: cfg,
+		Environments:  envs,
 		Secrets:       secrets,
 		SecretValues:  SecretValues{},
 		Namespace:     namespace,
@@ -33,6 +35,10 @@ func NewComponent(name string, namespace string, release *Release, cfg Configura
 
 	if cmp.Configuration == nil {
 		cmp.Configuration = Configuration{}
+	}
+
+	if cmp.Environments == nil {
+		cmp.Environments = Configurations{}
 	}
 
 	if cmp.Secrets == nil {

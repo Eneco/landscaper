@@ -31,7 +31,7 @@ var addCmd = &cobra.Command{
 
 		v := landscaper.GetVersion()
 		logrus.WithFields(logrus.Fields{"tag": v.GitTag, "commit": v.GitCommit}).Infof("This is Landscaper v%s", v.SemVer)
-		logrus.WithFields(logrus.Fields{"namespace": env.Namespace, "releasePrefix": env.ReleaseNamePrefix, "dir": env.LandscapeDir, "dryRun": env.DryRun, "wait": env.Wait, "waitTimeout": env.WaitTimeout, "helmHome": env.HelmHome, "verbose": env.Verbose}).Info("Apply landscape desired state")
+		logrus.WithFields(logrus.Fields{"namespace": env.Namespace, "releasePrefix": env.ReleaseNamePrefix, "dir": env.LandscapeDir, "dryRun": env.DryRun, "wait": env.Wait, "waitTimeout": env.WaitTimeout, "helmHome": env.HelmHome, "verbose": env.Verbose, "environment": env.Environment}).Info("Apply landscape desired state")
 
 		// deprecated: populate ComponentFiles by getting *.yaml from LandscapeDir
 		if len(args) == 0 && env.LandscapeDir != "" {
@@ -49,7 +49,7 @@ var addCmd = &cobra.Command{
 			}
 			secretsReader = azureSecretsReader
 		}
-		fileState := landscaper.NewFileStateProvider(env.ComponentFiles, secretsReader, env.ChartLoader, env.ReleaseNamePrefix, env.Namespace)
+		fileState := landscaper.NewFileStateProvider(env.ComponentFiles, secretsReader, env.ChartLoader, env.ReleaseNamePrefix, env.Namespace, env.Environment)
 		helmState := landscaper.NewHelmStateProvider(env.HelmClient(), kubeSecrets, env.ReleaseNamePrefix)
 		executor := landscaper.NewExecutor(env.HelmClient(), env.ChartLoader, kubeSecrets, env.DryRun, env.Wait, int64(env.WaitTimeout/time.Second), env.DisabledStages)
 
@@ -123,5 +123,7 @@ func init() {
 	f.DurationVar(&env.LoopInterval, "loop-interval", 5*time.Minute, "when running in a loop the interval between invocations")
 
 	f.StringVar(&env.AzureKeyVault, "azure-keyvault", "", "azure keyvault for fetching secrets. Azure credentials must be provided in the environment.")
+	f.StringVar(&env.Environment, "env", "", "environment specifier. selects value overrides by environment.")
+
 	rootCmd.AddCommand(addCmd)
 }

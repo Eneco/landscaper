@@ -44,7 +44,7 @@ ref: %s
 	// covers both the dir/*.yaml function as explicit files
 	for _, ps := range [][]string{{rigsDir}, {rigsDir + "hello-world.yaml", rigsDir + "secretive2.yaml", rigsDir + "secretive.yaml"}} {
 
-		fs := NewFileStateProvider(ps, secretsMock, chartLoadMock, "pfx-", "spa")
+		fs := NewFileStateProvider(ps, secretsMock, chartLoadMock, "pfx-", "spa", "")
 		cs, err := fs.Components()
 		require.NoError(t, err)
 		require.Len(t, cs, 3)
@@ -109,7 +109,7 @@ ref: %s
 		return c, "", nil
 	})
 
-	fs := NewFileStateProvider([]string{"../../test/landscapes/no-version/hello-world.yaml"}, secretsMock, chartLoadMock, "pfx-", "spa")
+	fs := NewFileStateProvider([]string{"../../test/landscapes/no-version/hello-world.yaml"}, secretsMock, chartLoadMock, "pfx-", "spa", "")
 	cs, err := fs.Components()
 	require.NoError(t, err)
 	c0 := cs["pfx-hello-world"]
@@ -167,4 +167,57 @@ config_c: qqq
 	require.Equal(t, "xxx", c.Configuration["config_a"]) // from chart
 	require.Equal(t, "zzz", c.Configuration["config_b"]) // from chart but overridden in values
 	require.Equal(t, "qqq", c.Configuration["config_c"]) // in values but not in chart
+}
+
+func TestMultipleEnvironments(t *testing.T) {
+	secretsMock := SecretsProviderMock{
+		read: func(componentName, namespace string, secretNames []string) (SecretValues, error) {
+			t.Logf("secretsMock read %#v %#v %#v", componentName, namespace, secretNames)
+			vs := SecretValues{}
+			for _, s := range secretNames {
+				vs[s] = []byte(componentName + namespace + strings.Replace(s, "e", "3", -1))
+			}
+			return vs, nil
+		},
+	}
+
+	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
+		t.Logf("MockChartLoader %#v", chartRef)
+		c := &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    "chart-name",
+				Version: "1.3.37",
+			},
+			Values: &chart.Config{Raw: fmt.Sprintf(`
+message: xxx
+ref: %s
+`, chartRef)}, //inject whatever chartRef is into the config for later inspection
+		}
+
+		return c, "", nil
+	})
+
+	// No environment
+	fs := NewFileStateProvider([]string{"../../test/landscapes/environments/hello-world.yaml"}, secretsMock, chartLoadMock, "pfx-", "spa", "")
+	cs, err := fs.Components()
+	require.NoError(t, err)
+	c0 := cs["pfx-hello-world"]
+	require.Equal(t, "Hello, Landscaped world!", c0.Configuration["message"])
+	require.Equal(t, nil, c0.Configuration["extra"])
+
+	// Env1
+	fs = NewFileStateProvider([]string{"../../test/landscapes/environments/hello-world.yaml"}, secretsMock, chartLoadMock, "pfx-", "spa", "env1")
+	cs, err = fs.Components()
+	require.NoError(t, err)
+	c0 = cs["pfx-hello-world"]
+	require.Equal(t, "env1 overwrite", c0.Configuration["message"])
+	require.Equal(t, "env1 extra", c0.Configuration["extra"])
+
+	// Env2
+	fs = NewFileStateProvider([]string{"../../test/landscapes/environments/hello-world.yaml"}, secretsMock, chartLoadMock, "pfx-", "spa", "env2")
+	cs, err = fs.Components()
+	require.NoError(t, err)
+	c0 = cs["pfx-hello-world"]
+	require.Equal(t, "env2 overwrite", c0.Configuration["message"])
+	require.Equal(t, nil, c0.Configuration["extra"])
 }

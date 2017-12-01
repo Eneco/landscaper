@@ -77,6 +77,7 @@ The `apply` command accepts the following arguments:
           --disable stringSlice       Stages to be disabled. Available stages are create/update/delete.
           --dry-run                   simulate the applying of the landscape. useful in merge requests
           --helm-home string          Helm home directory (default "$HOME/.helm")
+          --env string                environment specifier. selects value overrides by environment.
           --loop                      keep landscape in sync forever
           --loop-interval duration    when running in a loop the interval between invocations (default 5m0s)
           --namespace string          namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE (default "default")
@@ -92,8 +93,7 @@ Instead of using arguments, environment variables can be used. When arguments ar
 Unless otherwise specified, Helm releases are prefixed with the same namespace string to avoid collisions, since Helm release names aren't namespaced.
 As of version 1.0.3, components can specify their namespace. This will override any provided global namespace.
 
-Input desired state files are in YAML and contain the name that identifies the "component", a reference to a chart, configuration and optionally secrets.
-Currently, secrets are handled by specifying the name in the YAML, e.g. `my-secret`, and having a matching environment variable available with the secret, e.g. `export MY_SECRET=Rumpelstiltskin`
+
 
 Landscaper can also be run as a control loop that constantly watches the desired landscape and applies it to the cluster. With this you can deploy landscaper once in your cluster, pass it a reference to a landscape description and have Landscaper apply it whenever the landscape changes.
 
@@ -108,6 +108,67 @@ When using the `--azure-keyvault` argument, Azure Service Principal credentials 
 
 The key vault DNS suffix defaults to the public cloud, `vault.azure.net`, but can be overridden with `AZURE_KEYVAULT_DNS_SUFFIX`.
 
+### Desired State Files
+Input desired state files are in YAML and contain the name that identifies the "component", a reference to a chart, configuration and optionally secrets.
+
+    name: my-component
+    release:
+    	chart: "example/chart:0.1.0"
+    	version: 0.1.0
+    
+    # This will become the .Values override for the chart deployment.
+    configuration: 
+      hostname: "example"
+      url: "http://default.example.com"
+      
+    # These configurations can be selected with the '--env' flag 
+    # and will override the above values. 
+    environments: 
+      dev:
+        url: "http://dev.example.com"
+      prod:
+        url: "http://prod.example.com"
+    
+    # These secrets will be fetched, and instantiated as a Kubernetes 
+    # secret whose name will be written to .Values.secretsRef
+    secrets:     
+    - my-secret
+    - my-other-secret
+
+Installing the above component with `default` prefix and `--env dev` will result in chart value overrides
+  
+    hostname: "example"
+    url: "http://dev.example.com"
+    secretsRef: 'default-my-component'
+    
+and a Kubernetes secret named `default-my-component` with the contents:
+    
+    my-secret: <value of MY_SECRET environment variable>
+    my-other-secret: <value MY_OTHER_SECRET environment variable>
+    
+Currently, secrets are handled by specifying the name in the YAML, e.g. `my-secret`, and having a matching environment variable available with the secret, e.g. `export MY_SECRET=Rumpelstiltskin`
+    
+### Secret Usage in Helm Charts
+Secrets are made available as Kubernetes Secrets (as shown above). The helm chart needs to be setup to [use the secret in a pod](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets), where the secret name is made available by the landscaper as `.Values.secretsRef`. For example, as an environment variable:
+
+    env:
+    - name: MY_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: {{ .Values.secretsRef }}
+          key: my-secret
+          
+ Or mounted volume:
+ 
+    volumes:
+    - name: my-secret
+      secret:
+        secretName: {{ .Values.secretsRef }}
+        items:
+        - key: my-secret
+          path: secrets/my-secret
+          mode: 511
+          
 ## Example
 
 An example is provided [here](./example).

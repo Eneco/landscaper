@@ -277,6 +277,7 @@ func newTestComponent(name string) *Component {
 			"FlushSize":                  3,
 			"FilenameOffsetZeroPadWidth": 1,
 		},
+		Configurations{},
 		Secrets{"TestSecret1", "TestSecret2"},
 	)
 
