@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/eneco/landscaper/pkg/landscaper"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 

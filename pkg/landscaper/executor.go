@@ -5,8 +5,8 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/pmezard/go-difflib/difflib"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"k8s.io/helm/pkg/helm"
 )
