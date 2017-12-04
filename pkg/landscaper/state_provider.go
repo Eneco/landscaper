@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/ghodss/yaml"
+	"github.com/sirupsen/logrus"
 	validator "gopkg.in/validator.v2"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/helm"

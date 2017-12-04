@@ -1,7 +1,7 @@
 package: github.com/eneco/landscaper
 import:
-- package: github.com/Sirupsen/logrus
-  version: =0.11.5
+- package: github.com/sirupsen/logrus
+  version: ~1.0.3
 - package: github.com/pmezard/go-difflib
   subpackages:
   - difflib
