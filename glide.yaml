@@ -12,7 +12,7 @@ import:
 - package: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - package: github.com/x-cray/logrus-prefixed-formatter
-  version: =0.4.0
+  version: =0.5.2
 - package: google.golang.org/grpc
   version: 1.2.1
 - package: gopkg.in/validator.v2
@@ -24,7 +24,7 @@ import:
   - ptypes/any
   - ptypes/timestamp
 - package: k8s.io/helm
-  version: =2.6.1
+  version: =2.7.2
   subpackages:
   - pkg/chartutil
   - pkg/helm
@@ -34,11 +34,11 @@ import:
   - pkg/version
 - package: k8s.io/apimachinery
 - package: k8s.io/client-go
-  version: =3.0.0
+  version: =5.0.0
   subpackages:
   - rest
 - package: k8s.io/kubernetes
-  version: 1.7.6
+  version: 1.8.0
 - package: github.com/Azure/azure-sdk-for-go
   version: ^11.0.0-beta
 testImport:
