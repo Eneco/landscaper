@@ -32,12 +32,13 @@ type StateProvider interface {
 }
 
 type fileStateProvider struct {
-	fileNames         []string
-	secrets           SecretsReader
-	chartLoader       ChartLoader
-	releaseNamePrefix string
-	namespace         string
-	environment       string
+	fileNames                 []string
+	secrets                   SecretsReader
+	chartLoader               ChartLoader
+	releaseNamePrefix         string
+	namespace                 string
+	environment               string
+	configurationOverrideFile string
 }
 
 type helmStateProvider struct {
@@ -47,8 +48,8 @@ type helmStateProvider struct {
 }
 
 // NewFileStateProvider creates a StateProvider that sources Files
-func NewFileStateProvider(fileNames []string, secrets SecretsReader, chartLoader ChartLoader, releaseNamePrefix, namespace string, environment string) StateProvider {
-	return &fileStateProvider{fileNames, secrets, chartLoader, releaseNamePrefix, namespace, environment}
+func NewFileStateProvider(fileNames []string, secrets SecretsReader, chartLoader ChartLoader, releaseNamePrefix, namespace string, environment string, configurationOverrideFile string) StateProvider {
+	return &fileStateProvider{fileNames, secrets, chartLoader, releaseNamePrefix, namespace, environment, configurationOverrideFile}
 }
 
 // NewHelmStateProvider creates a StateProvider that sources Helm (actual state)
@@ -240,6 +241,16 @@ func newComponentFromYAML(content []byte) (*Component, error) {
 	return NewComponent(cmp.Name, cmp.Namespace, cmp.Release, cmp.Configuration, cmp.Environments, cmp.Secrets), nil
 }
 
+// newConfigurationFromYAML parses a byteslice into a Component instance
+func newConfigurationFromYAML(content []byte) (Configuration, error) {
+	cfg := &Configuration{}
+	if err := yaml.Unmarshal(content, cfg); err != nil {
+		return nil, err
+	}
+
+	return *cfg, nil
+}
+
 // coalesceComponent takes a component, loads the chart and coalesces the configuration with the default values
 func (cp *fileStateProvider) coalesceComponent(cmp *Component) error {
 	logrus.WithFields(logrus.Fields{"chart": cmp.Release.Chart}).Debug("coalesceComponent")
@@ -253,6 +264,17 @@ func (cp *fileStateProvider) coalesceComponent(cmp *Component) error {
 	}
 
 	cfg := cmp.Configuration
+
+	// apply environment specific global overrides
+	if cp.configurationOverrideFile != "" {
+		envGlobalCfg, err := readConfigurationFromYAMLFilePath(cp.configurationOverrideFile)
+		if envGlobalCfg != nil {
+			cfg = cfg.Merge(envGlobalCfg)
+		}
+		if err != nil {
+			return err
+		}
+	}
 
 	// apply environment specific overrides and remove so they aren't used in the diff
 	envCfg := cmp.Environments[cp.environment]
@@ -332,6 +354,16 @@ func readComponentFromYAMLFilePath(filePath string) (*Component, error) {
 	}
 
 	return newComponentFromYAML(cfg)
+}
+
+// readConfigurationFromYAMLFilePath reads a yaml file from disk and returns an initialized Component
+func readConfigurationFromYAMLFilePath(filePath string) (Configuration, error) {
+	cfg, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	return newConfigurationFromYAML(cfg)
 }
 
 // getReleaseConfiguration returns a release's coalesced Cnfiguration (= helm values)
