@@ -13,6 +13,7 @@ import (
 	"k8s.io/helm/pkg/kube"
 	helmversion "k8s.io/helm/pkg/version"
 	"k8s.io/kubernetes/pkg/api"
+	podutil "k8s.io/kubernetes/pkg/api/pod"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/internalversion"
 )
@@ -198,7 +199,7 @@ func getFirstRunningPod(client internalversion.PodsGetter, namespace string, sel
 		return nil, fmt.Errorf("could not find tiller")
 	}
 	for _, p := range pods.Items {
-		if api.IsPodReady(&p) {
+		if podutil.IsPodReady(&p) {
 			return &p, nil
 		}
 	}

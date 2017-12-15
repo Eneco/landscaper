@@ -201,6 +201,7 @@ Landscaper uses both Helm and Kubernetes. The following Landscaper releases are 
 
 | Landscaper | Helm  | Kubernetes |
 |------------|-------|------------|
+| 1.0.12     | 2.7.2 | 1.8        |
 | 1.0.11     | 2.6.1 | 1.7        |
 | 1.0.10     | 2.5.1 | 1.6        |
 | 1.0.9      | 2.5.1 | 1.6        |
