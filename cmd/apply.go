@@ -49,7 +49,7 @@ var addCmd = &cobra.Command{
 			}
 			secretsReader = azureSecretsReader
 		}
-		fileState := landscaper.NewFileStateProvider(env.ComponentFiles, secretsReader, env.ChartLoader, env.ReleaseNamePrefix, env.Namespace, env.Environment)
+		fileState := landscaper.NewFileStateProvider(env.ComponentFiles, secretsReader, env.ChartLoader, env.ReleaseNamePrefix, env.Namespace, env.Environment, env.ConfigurationOverrideFile)
 		helmState := landscaper.NewHelmStateProvider(env.HelmClient(), kubeSecrets, env.ReleaseNamePrefix)
 		executor := landscaper.NewExecutor(env.HelmClient(), env.ChartLoader, kubeSecrets, env.DryRun, env.Wait, int64(env.WaitTimeout/time.Second), env.DisabledStages)
 
@@ -124,6 +124,7 @@ func init() {
 
 	f.StringVar(&env.AzureKeyVault, "azure-keyvault", "", "azure keyvault for fetching secrets. Azure credentials must be provided in the environment.")
 	f.StringVar(&env.Environment, "env", "", "environment specifier. selects value overrides by environment.")
+	f.StringVar(&env.ConfigurationOverrideFile, "config-override-file", "", "global configuration override YAML file. component specific environment overrides take precedence over this.")
 
 	rootCmd.AddCommand(addCmd)
 }

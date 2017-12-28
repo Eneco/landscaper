@@ -23,25 +23,26 @@ var tillerTunnel *kube.Tunnel
 
 // Environment contains all the information about the k8s cluster and local configuration
 type Environment struct {
-	HelmHome          string        // Helm's home directory
-	DryRun            bool          // If true, don't modify anything
-	Wait              bool          // Wait until all resources become ready
-	WaitTimeout       time.Duration // Wait for helm
-	ChartLoader       ChartLoader   // ChartLoader loads charts
-	ReleaseNamePrefix string        // Prepend this string to release names
-	ComponentFiles    []string      // Landscaper component file names
-	LandscapeDir      string        // deprecated: ComponentFiles is leading; LandscapeDir merely fills it
-	Namespace         string        // Default namespace releases are put into; components can override it though
-	Verbose           bool          // Reduce log level
-	Context           string        // Kubernetes context to use
-	Loop              bool          // Keep looping
-	LoopInterval      time.Duration // Loop every duration
-	TillerNamespace   string        // where to install / use tiller
-	AzureKeyVault     string        // Azure keyvault to use for secrets if provided
-	Environment       string        // Environment selections
-	helmClient        helm.Interface
-	kubeClient        internalversion.CoreInterface
-	DisabledStages    stringSlice // stages to disable during landscaper apply
+	HelmHome                  string        // Helm's home directory
+	DryRun                    bool          // If true, don't modify anything
+	Wait                      bool          // Wait until all resources become ready
+	WaitTimeout               time.Duration // Wait for helm
+	ChartLoader               ChartLoader   // ChartLoader loads charts
+	ReleaseNamePrefix         string        // Prepend this string to release names
+	ComponentFiles            []string      // Landscaper component file names
+	LandscapeDir              string        // deprecated: ComponentFiles is leading; LandscapeDir merely fills it
+	Namespace                 string        // Default namespace releases are put into; components can override it though
+	Verbose                   bool          // Reduce log level
+	Context                   string        // Kubernetes context to use
+	Loop                      bool          // Keep looping
+	LoopInterval              time.Duration // Loop every duration
+	TillerNamespace           string        // where to install / use tiller
+	AzureKeyVault             string        // Azure keyvault to use for secrets if provided
+	Environment               string        // Environment selections
+	ConfigurationOverrideFile string        // Global configuration overrides file
+	helmClient                helm.Interface
+	kubeClient                internalversion.CoreInterface
+	DisabledStages            stringSlice // stages to disable during landscaper apply
 }
 
 type stringSlice []string

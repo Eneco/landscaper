@@ -70,23 +70,24 @@ The `apply` command accepts the following arguments:
       landscaper apply [files]... [flags]
     
     Flags:
-          --azure-keyvault string     azure keyvault for fetching secrets. Azure credentials must be provided in the environment.
-          --chart-dir string          (deprecated; use --helm-home) Helm home directory (default "$HOME/.helm")
-          --context string            the kube context to use. defaults to the current context
-          --dir string                (deprecated) path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR
-          --disable stringSlice       Stages to be disabled. Available stages are create/update/delete.
-          --dry-run                   simulate the applying of the landscape. useful in merge requests
-          --helm-home string          Helm home directory (default "$HOME/.helm")
-          --env string                environment specifier. selects value overrides by environment.
-          --loop                      keep landscape in sync forever
-          --loop-interval duration    when running in a loop the interval between invocations (default 5m0s)
-          --namespace string          namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE (default "default")
-          --no-prefix                 disable prefixing release names
-          --prefix string             prefix release names with this string instead of <namespace>; overrides LANDSCAPE_PREFIX
-          --tiller-namespace string   Tiller namespace for Helm (default "kube-system")
-      -v, --verbose                   be verbose
-          --wait                      wait for all resources to be ready
-          --wait-timeout duration     interval to wait for all resources to be ready (default 5m0s)
+          --azure-keyvault string         azure keyvault for fetching secrets. Azure credentials must be provided in the environment.
+          --chart-dir string              (deprecated; use --helm-home) Helm home directory (default "$HOME/.helm")
+          --config-override-file string   global configuration overrides. component specific environment overrides take precedence over this.
+          --context string                the kube context to use. defaults to the current context
+          --dir string                    (deprecated) path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR
+          --disable stringSlice           Stages to be disabled. Available stages are create/update/delete.
+          --dry-run                       simulate the applying of the landscape. useful in merge requests
+          --helm-home string              Helm home directory (default "$HOME/.helm")
+          --env string                    environment specifier. selects value overrides by environment.
+          --loop                          keep landscape in sync forever
+          --loop-interval duration        when running in a loop the interval between invocations (default 5m0s)
+          --namespace string              namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE (default "default")
+          --no-prefix                     disable prefixing release names
+          --prefix string                 prefix release names with this string instead of <namespace>; overrides LANDSCAPE_PREFIX
+          --tiller-namespace string       Tiller namespace for Helm (default "kube-system")
+      -v, --verbose                       be verbose
+          --wait                          wait for all resources to be ready
+          --wait-timeout duration         interval to wait for all resources to be ready (default 5m0s)
 
 Instead of using arguments, environment variables can be used. When arguments are present, they override environment variables.
 `--namespace` is used to isolate landscapes through Kubernetes namespaces.
@@ -147,6 +148,35 @@ and a Kubernetes secret named `default-my-component` with the contents:
     my-other-secret: <value MY_OTHER_SECRET environment variable>
     
 Currently, secrets are handled by specifying the name in the YAML, e.g. `my-secret`, and having a matching environment variable available with the secret, e.g. `export MY_SECRET=Rumpelstiltskin`
+    
+### Global configuration override file
+
+You can specify a global configuration override file with the `--config-override-file` argument. This will override chart and component defaults, but not environment specific configuration.
+
+    # my-component.yaml
+    name: my-component
+    release:
+      chart: "example/chart:0.1.0"
+      version: 0.1.0
+    
+    # This will become the .Values override for the chart deployment.
+    configuration:
+      hostname: "example"
+      url: "http://default.example.com"
+    environments:
+      env1:
+        hostname: "env1"
+    
+
+    
+    # global.yaml
+    hostname: "global"
+    url: "http://global.example.com"
+
+Installing the above component with `--config-override-file global.yaml` and `--env env1` will result in chart value overrides
+    
+    hostname: "env1"
+    url: "http://global.example.com"
     
 ### Secret Usage in Helm Charts
 Secrets are made available as Kubernetes Secrets (as shown above). The helm chart needs to be setup to [use the secret in a pod](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets), where the secret name is made available by the landscaper as `.Values.secretsRef`. For example, as an environment variable:
