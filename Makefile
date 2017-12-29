@@ -18,7 +18,7 @@ LD_RELEASE_FLAGS += -X github.com/eneco/landscaper/pkg/landscaper.SemVer=${VERSI
 default: build
 
 bootstrap:
-	glide install -v
+	dep ensure
 	./scripts/setup-apimachinery.sh
 
 clean:
