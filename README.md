@@ -42,7 +42,7 @@ On macOS using Homebrew, a `brew install landscaper` should do.
 
 ### From source
 
-You must have a working Go environment with [glide](https://github.com/Masterminds/glide) and `Make` installed.
+You must have a working Go environment with [`dep`](https://github.com/golang/dep) and `GNU Make` installed.
 
 From a terminal:
 ```shell
