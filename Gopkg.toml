@@ -23,22 +23,26 @@
 
 [[constraint]]
   name = "github.com/Azure/azure-sdk-for-go"
+  version = "11.3.0-beta"
 
 [[constraint]]
   name = "github.com/Azure/go-autorest"
+  version = "9.5.2"
 
 [[constraint]]
   name = "github.com/ghodss/yaml"
+  version = "1.0.0"
 
 [[constraint]]
   name = "github.com/pmezard/go-difflib"
+  version = "1.0.0"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
   version = "~1.0.3"
 
-[[constraint]]
-  name = "github.com/spf13/cobra"
+#[[constraint]]
+#  name = "github.com/spf13/cobra"
 
 [[constraint]]
   name = "github.com/stretchr/testify"
@@ -52,11 +56,12 @@
   name = "google.golang.org/grpc"
   version = "1.2.1"
 
-[[constraint]]
-  name = "gopkg.in/validator.v2"
+#[[constraint]]
+#  name = "gopkg.in/validator.v2"
 
 [[constraint]]
   name = "k8s.io/apimachinery"
+  version = "kubernetes-1.8.0"
 
 [[constraint]]
   name = "k8s.io/client-go"
