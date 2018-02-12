@@ -30,7 +30,7 @@ var addCmd = &cobra.Command{
 		env.ChartLoader = landscaper.NewLocalCharts(env.HelmHome)
 
 		v := landscaper.GetVersion()
-		logrus.WithFields(logrus.Fields{"tag": v.GitTag, "commit": v.GitCommit}).Infof("This is Landscaper v%s", v.SemVer)
+		logrus.WithFields(logrus.Fields{"tag": v.GitTag, "commit": v.GitCommit}).Infof("This is Landscaper %s", v.SemVer)
 		logrus.WithFields(logrus.Fields{"namespace": env.Namespace, "releasePrefix": env.ReleaseNamePrefix, "dir": env.LandscapeDir, "dryRun": env.DryRun, "wait": env.Wait, "waitTimeout": env.WaitTimeout, "helmHome": env.HelmHome, "verbose": env.Verbose, "environment": env.Environment}).Info("Apply landscape desired state")
 
 		// deprecated: populate ComponentFiles by getting *.yaml from LandscapeDir
