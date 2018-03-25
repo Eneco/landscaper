@@ -198,7 +198,9 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 	}
 
 	if !e.dryRun {
-		err = e.kubeSecrets.Delete(cmp.Name, cmp.Namespace)
+		if e.stageEnabled("deleteSecrets") || len(cmp.Secrets) > 0 {
+			err = e.kubeSecrets.Delete(cmp.Name, cmp.Namespace)
+		}
 
 		if len(cmp.Secrets) > 0 {
 			err = e.kubeSecrets.Write(cmp.Name, cmp.Namespace, cmp.SecretValues)

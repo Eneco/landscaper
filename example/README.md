@@ -88,6 +88,12 @@ Upon success, `kubectl get secret --namespace example` should contain a Secret o
 
     Tue Dec 20 08:34:10 UTC 2016 | my name is rumpelstiltskin and I am 42 years old
 
+### Updating secrets
+
+By default landscaper always delete the old secrets during the update of a component. 
+
+A workaround to avoid deleting the old secrets with the same name as of the component you can use the flag `--disable deleteSecrets` during the landscaper apply.
+That would only work if the new landscaper object have no secrets. 
 ## Using Loop mode with Git repository sync
 
 Loop mode is especially useful when watching a remote Git repository, so that whenever a PR got merged Landscaper will automatically apply the changes. We can use the Git repo sync image to constantly check out the latest commit of a branch and share this path with Landscaper running as a separate container in the same pod.
