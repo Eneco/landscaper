@@ -54,7 +54,7 @@ func NewAzureSecretsReader(keyVault string) (SecretsReader, error) {
 }
 
 // Reads the secret from the Azure key vault
-func (asp *azureSecretsReader) Read(componentName, namespace string, secretNames map[string]string) (SecretValues, error) {
+func (asp *azureSecretsReader) Read(componentName, namespace string, secretNames SecretNames) (SecretValues, error) {
 	logrus.WithFields(logrus.Fields{"component": componentName, "namespace": namespace}).Debug("Reading secrets for component")
 
 	secrets := SecretValues{}

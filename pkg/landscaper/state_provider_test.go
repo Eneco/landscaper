@@ -14,7 +14,7 @@ import (
 
 func TestFileStateProviderComponents(t *testing.T) {
 	secretsMock := SecretsProviderMock{
-		read: func(componentName, namespace string, secretNames map[string]string) (SecretValues, error) {
+		read: func(componentName, namespace string, secretNames SecretNames) (SecretValues, error) {
 			t.Logf("secretsMock read %#v %#v %#v", componentName, namespace, secretNames)
 			vs := SecretValues{}
 			for k, s := range secretNames {
@@ -72,7 +72,7 @@ ref: %s
 		require.Equal(t, "local/hello-secret:1.3.37", c1.Configuration["ref"]) //unspecified in file, obtained from chart
 		require.Equal(t, "local/hello-secret:0.1.0", c2.Configuration["ref"])
 
-		require.Len(t, c1.Secrets, 0) // Secret names are removed, only the values map is kept
+		require.Len(t, c1.SecretNames, 2)
 
 		require.Len(t, c1.SecretValues, 2)
 		require.Equal(t, []byte("pfx-secretivenewnamh3llo-nam3"), c1.SecretValues["hello-name"])
@@ -82,7 +82,7 @@ ref: %s
 
 func TestOptionalVersion(t *testing.T) {
 	secretsMock := SecretsProviderMock{
-		read: func(componentName, namespace string, secretNames map[string]string) (SecretValues, error) {
+		read: func(componentName, namespace string, secretNames SecretNames) (SecretValues, error) {
 			t.Logf("secretsMock read %#v %#v %#v", componentName, namespace, secretNames)
 			vs := SecretValues{}
 			for k, s := range secretNames {
@@ -149,7 +149,7 @@ config_c: qqq
 		},
 	}
 	secretsMock := SecretsProviderMock{
-		read: func(componentName, namespace string, secretNames map[string]string) (SecretValues, error) {
+		read: func(componentName, namespace string, secretNames SecretNames) (SecretValues, error) {
 			t.Logf("secretsMock read %#v %#v %#v", componentName, namespace, secretNames)
 			return nil, nil
 		},
@@ -170,7 +170,7 @@ config_c: qqq
 
 func TestMultipleEnvironments(t *testing.T) {
 	secretsMock := SecretsProviderMock{
-		read: func(componentName, namespace string, secretNames map[string]string) (SecretValues, error) {
+		read: func(componentName, namespace string, secretNames SecretNames) (SecretValues, error) {
 			t.Logf("secretsMock read %#v %#v %#v", componentName, namespace, secretNames)
 			vs := SecretValues{}
 			for k, s := range secretNames {
@@ -239,7 +239,7 @@ ref: %s
 
 func TestSecretLoaders(t *testing.T) {
 	secretsMock := SecretsProviderMock{
-		read: func(componentName, namespace string, secretNames map[string]string) (SecretValues, error) {
+		read: func(componentName, namespace string, secretNames SecretNames) (SecretValues, error) {
 			t.Logf("secretsMock read %#v %#v %#v", componentName, namespace, secretNames)
 			vs := SecretValues{}
 			for k, s := range secretNames {

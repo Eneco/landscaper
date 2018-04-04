@@ -8,7 +8,7 @@ import (
 )
 
 func makeTestComp() *Component {
-	return NewComponent("name", "someNameSpace", &Release{"cha", "1.1.1"}, map[string]interface{}{"config": "awesome"}, Configurations{}, Secrets{"DIGG": "09F911029D74E35BD84156C5635688C0"})
+	return NewComponent("name", "someNameSpace", &Release{"cha", "1.1.1"}, map[string]interface{}{"config": "awesome"}, Configurations{}, SecretNames{"DIGG": "09F911029D74E35BD84156C5635688C0"})
 }
 
 func TestComponentNew(t *testing.T) {
@@ -18,7 +18,7 @@ func TestComponentNew(t *testing.T) {
 		&Release{"cha", "1.1.1"},
 		map[string]interface{}{"config": "awesome"},
 		Configurations{},
-		Secrets{"DIGG": "09F911029D74E35BD84156C5635688C0"},
+		SecretNames{"DIGG": "09F911029D74E35BD84156C5635688C0"},
 	)
 
 	cExp := &Component{
@@ -27,7 +27,7 @@ func TestComponentNew(t *testing.T) {
 		Release:       &Release{"cha", "1.1.1"},
 		Configuration: map[string]interface{}{"config": "awesome"},
 		Environments:  Configurations{},
-		Secrets:       Secrets{"DIGG": "09F911029D74E35BD84156C5635688C0"},
+		SecretNames:   SecretNames{"DIGG": "09F911029D74E35BD84156C5635688C0"},
 		SecretValues:  SecretValues{},
 	}
 	cExp.Configuration[metadataKey] = map[string]interface{}{
@@ -60,8 +60,8 @@ func TestComponentValidate(t *testing.T) {
 }
 
 func TestComponentEquals(t *testing.T) {
-	c0 := NewComponent("name", "default", &Release{"cha", "1.1.1"}, map[string]interface{}{"config": "awesome"}, Configurations{}, Secrets{"DIGG": "09F911029D74E35BD84156C5635688C0"})
-	c1 := NewComponent("name", "default", &Release{"cha", "1.1.1"}, map[string]interface{}{"config": "awesome"}, Configurations{}, Secrets{"DIGG": "09F911029D74E35BD84156C5635688C0"})
+	c0 := NewComponent("name", "default", &Release{"cha", "1.1.1"}, map[string]interface{}{"config": "awesome"}, Configurations{}, SecretNames{"DIGG": "09F911029D74E35BD84156C5635688C0"})
+	c1 := NewComponent("name", "default", &Release{"cha", "1.1.1"}, map[string]interface{}{"config": "awesome"}, Configurations{}, SecretNames{"DIGG": "09F911029D74E35BD84156C5635688C0"})
 	require.True(t, c0.Equals(c1))
 	c1.Name = "other"
 	require.False(t, c0.Equals(c1))

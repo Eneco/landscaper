@@ -89,7 +89,7 @@ func (cp *helmStateProvider) Components() (Components, error) {
 		}
 
 		cmp.SecretValues = secretValues
-		cmp.Secrets = Secrets{}
+		cmp.SecretNames = SecretNames{}
 		cmp.SecretsRaw = nil
 
 		components[cmp.Name] = cmp
@@ -139,14 +139,13 @@ func (cp *fileStateProvider) get(files []string) (Components, error) {
 			return nil, err
 		}
 
-		if len(cmp.Secrets) > 0 {
-			secr, err := cp.secrets.Read(cmp.Name, cmp.Namespace, cmp.Secrets)
+		if len(cmp.SecretNames) > 0 {
+			secr, err := cp.secrets.Read(cmp.Name, cmp.Namespace, cmp.SecretNames)
 			if err != nil {
 				return nil, err
 			}
 			cmp.SecretValues = secr
 		}
-		cmp.Secrets = Secrets{} // clean the secret map so it is not used in the compare
 
 		if err := cmp.Validate(); err != nil {
 			return nil, fmt.Errorf("failed to validate `%s`: %s", filename, err)
@@ -175,7 +174,7 @@ func (cp *fileStateProvider) get(files []string) (Components, error) {
 func (cp *fileStateProvider) normalizeFromFile(c *Component) error {
 	c.Configuration["Name"] = c.Name
 	c.Name = cp.releaseNamePrefix + strings.ToLower(c.Name)
-	if len(c.Secrets) > 0 {
+	if len(c.SecretNames) > 0 {
 		c.Configuration["secretsRef"] = c.Name
 	}
 
@@ -233,22 +232,22 @@ func newComponentFromYAML(content []byte) (*Component, error) {
 		return nil, err
 	}
 
-	cmp.Secrets = Secrets{}
+	cmp.SecretNames = SecretNames{}
 	if cmp.SecretsRaw != nil {
 		switch s := cmp.SecretsRaw.(type) {
 		case []interface{}:
 			for _, k := range s {
-				cmp.Secrets[k.(string)] = k.(string)
+				cmp.SecretNames[k.(string)] = k.(string)
 			}
 		case map[string]interface{}:
 			for k, v := range s {
-				cmp.Secrets[k] = v.(string)
+				cmp.SecretNames[k] = v.(string)
 			}
 		}
 		cmp.SecretsRaw = nil
 	}
 
-	return NewComponent(cmp.Name, cmp.Namespace, cmp.Release, cmp.Configuration, cmp.Environments, cmp.Secrets), nil
+	return NewComponent(cmp.Name, cmp.Namespace, cmp.Release, cmp.Configuration, cmp.Environments, cmp.SecretNames), nil
 }
 
 // newConfigurationFromYAML parses a byteslice into a Component instance
@@ -350,7 +349,7 @@ func newComponentFromHelmRelease(release *release.Release) (*Component, error) {
 		},
 		cfg,
 		Configurations{},
-		Secrets{},
+		SecretNames{},
 	)
 
 	return cmp, nil
