@@ -12,17 +12,18 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 )
 
-type AzureSecretsReader struct{
+type azureSecretsReader struct {
 	kvClient keyvault.ManagementClient
-	kvName string
-	kvURL string
+	kvName   string
+	kvURL    string
 }
 
+// NewAzureSecretsReader creates a SecretsReader that fetches secrets from an Azure KeyVault
 func NewAzureSecretsReader(keyVault string) (SecretsReader, error) {
 	envVars := map[string]string{
-		"AZURE_CLIENT_ID":       os.Getenv("AZURE_CLIENT_ID"),
-		"AZURE_CLIENT_SECRET":   os.Getenv("AZURE_CLIENT_SECRET"),
-		"AZURE_TENANT_ID":       os.Getenv("AZURE_TENANT_ID"),
+		"AZURE_CLIENT_ID":     os.Getenv("AZURE_CLIENT_ID"),
+		"AZURE_CLIENT_SECRET": os.Getenv("AZURE_CLIENT_SECRET"),
+		"AZURE_TENANT_ID":     os.Getenv("AZURE_TENANT_ID"),
 	}
 
 	for varName, value := range envVars {
@@ -36,7 +37,7 @@ func NewAzureSecretsReader(keyVault string) (SecretsReader, error) {
 	if kvDNSSuffix == "" {
 		kvDNSSuffix = azure.PublicCloud.KeyVaultDNSSuffix
 	}
-	
+
 	resource := fmt.Sprintf("https://%s", kvDNSSuffix)
 	spt, err := helpers.NewServicePrincipalTokenFromCredentials(envVars, resource)
 	if err != nil {
@@ -49,32 +50,32 @@ func NewAzureSecretsReader(keyVault string) (SecretsReader, error) {
 
 	baseURL := fmt.Sprintf("https://%s.%s/", keyVault, kvDNSSuffix)
 
-	return &AzureSecretsReader{kvClient: kv, kvName: keyVault, kvURL: baseURL}, nil
+	return &azureSecretsReader{kvClient: kv, kvName: keyVault, kvURL: baseURL}, nil
 }
 
 // Reads the secret from the Azure key vault
-func (asp *AzureSecretsReader) Read(componentName, namespace string, secretNames []string) (SecretValues, error) {
+func (asp *azureSecretsReader) Read(componentName, namespace string, secretNames map[string]string) (SecretValues, error) {
 	logrus.WithFields(logrus.Fields{"component": componentName, "namespace": namespace}).Debug("Reading secrets for component")
-	
+
 	secrets := SecretValues{}
 
-	for _, secret := range secretNames {
+	for key, secret := range secretNames {
 		value, err := asp.kvClient.GetSecret(asp.kvURL, secret, "")
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
-				"component": componentName, 
+				"component": componentName,
 				"namespace": namespace,
-				"keyvault": asp.kvURL, 
-				"secret": secret, 
-				"error": err,
-			}).Error("Failed to get secret from keyvault",)
+				"keyvault":  asp.kvURL,
+				"secret":    secret,
+				"error":     err,
+			}).Error("Failed to get secret from keyvault")
 			return secrets, fmt.Errorf("failed to get secret `%s` from keyvault `%s`", secret, asp.kvURL)
 		}
-		secrets[secret] = []byte(*value.Value)
+		secrets[key] = []byte(*value.Value)
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"component": componentName, 
+		"component": componentName,
 		"namespace": namespace,
 	}).Debug("Successfully read secrets for component")
 

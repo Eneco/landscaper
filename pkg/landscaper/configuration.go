@@ -9,6 +9,7 @@ import (
 // Configuration contains all the values that should be applied to the component's helm package release
 type Configuration map[string]interface{}
 
+// Configurations are a list of environment specific configuration overrides
 type Configurations map[string]Configuration
 
 // YAML encodes the Values into a YAML string.
@@ -43,11 +44,12 @@ func (cfg Configuration) SetMetadata(m *Metadata) {
 	}
 }
 
-func (dest Configuration) Merge(src Configuration) Configuration {
-	return mergeValues(dest, src)
+// Merge two configurations
+func (cfg Configuration) Merge(src Configuration) Configuration {
+	return mergeValues(cfg, src)
 }
 
-func mergeValues(dest, src Configuration) (Configuration) {
+func mergeValues(dest, src Configuration) Configuration {
 	for k, v := range src {
 
 		// If the key doesn't exist already, then just set the key to that value
@@ -79,4 +81,3 @@ func mergeValues(dest, src Configuration) (Configuration) {
 	}
 	return dest
 }
-
