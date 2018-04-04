@@ -67,7 +67,7 @@ func (m MockChartLoader) Load(chartRef string) (*chart.Chart, string, error) { r
 
 type SecretsProviderMock struct {
 	write  func(releaseName, namespace string, values SecretValues) error
-	read   func(releaseName, namespace string, secretNames []string) (SecretValues, error)
+	read   func(releaseName, namespace string, secretNames map[string]string) (SecretValues, error)
 	delete func(releaseName, namespace string) error
 }
 
@@ -75,7 +75,7 @@ func (m SecretsProviderMock) Write(releaseName, namespace string, values SecretV
 	return m.write(releaseName, namespace, values)
 }
 
-func (m SecretsProviderMock) Read(releaseName, namespace string, secretNames []string) (SecretValues, error) {
+func (m SecretsProviderMock) Read(releaseName, namespace string, secretNames map[string]string) (SecretValues, error) {
 	return m.read(releaseName, namespace, secretNames)
 }
 

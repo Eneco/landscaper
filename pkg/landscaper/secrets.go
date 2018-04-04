@@ -13,8 +13,9 @@ import (
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/internalversion"
 )
 
-// Secrets is currently a slice of secret names that should be applied to a component
-type Secrets []string
+// Secrets is a map containing the name of the secrets and a reference to get their value from the
+// secrets provider.
+type Secrets map[string]string
 
 // SecretValues is a map containing the actual values of the secrets. Note that this should not be written
 // to kubernetes or anywhere else persistent!
@@ -22,7 +23,7 @@ type SecretValues map[string][]byte
 
 // SecretsReader allows reading secrets
 type SecretsReader interface {
-	Read(componentName, namespace string, secretNames []string) (SecretValues, error)
+	Read(componentName, namespace string, secretNames map[string]string) (SecretValues, error)
 }
 
 // SecretsWriteDeleter allows writing and deleting secrets
@@ -49,12 +50,12 @@ func NewKubeSecretsReadWriteDeleter(kubeClient internalversion.CoreInterface) Se
 }
 
 // NewEnvironmentSecretsReader creates a SecretsReader for secrets provided via environment variables
-func NewEnvironmentSecretsReader() (SecretsReader) {
+func NewEnvironmentSecretsReader() SecretsReader {
 	return &environmentSecrets{}
 }
 
 // Read reads all secrets in the k8s secret object. It ignores secretNames.
-func (sp *kubeSecretsProvider) Read(componentName, namespace string, secretNames []string) (SecretValues, error) {
+func (sp *kubeSecretsProvider) Read(componentName, namespace string, secretNames map[string]string) (SecretValues, error) {
 	logrus.WithFields(logrus.Fields{"component": componentName, "namespace": namespace}).Debug("Reading secrets for component")
 
 	secrets := SecretValues{}
@@ -156,10 +157,10 @@ func (sp *kubeSecretsProvider) ensureNamespace(namespace string) error {
 }
 
 // Read reads the given secretNames from the environment, by uppercasing the name and converting - into _. componentName and namespace are ignored
-func (env *environmentSecrets) Read(componentName, namespace string, secretNames []string) (SecretValues, error) {
+func (env *environmentSecrets) Read(componentName, namespace string, secretNames map[string]string) (SecretValues, error) {
 	secs := SecretValues{}
-	for _, key := range secretNames {
-		envName := strings.Replace(strings.ToUpper(key), "-", "_", -1)
+	for key, value := range secretNames {
+		envName := strings.Replace(strings.ToUpper(value), "-", "_", -1)
 
 		secretValue := os.Getenv(envName)
 		if len(secretValue) == 0 {

@@ -14,11 +14,11 @@ import (
 
 func TestFileStateProviderComponents(t *testing.T) {
 	secretsMock := SecretsProviderMock{
-		read: func(componentName, namespace string, secretNames []string) (SecretValues, error) {
+		read: func(componentName, namespace string, secretNames map[string]string) (SecretValues, error) {
 			t.Logf("secretsMock read %#v %#v %#v", componentName, namespace, secretNames)
 			vs := SecretValues{}
-			for _, s := range secretNames {
-				vs[s] = []byte(componentName + namespace + strings.Replace(s, "e", "3", -1))
+			for k, s := range secretNames {
+				vs[k] = []byte(componentName + namespace + strings.Replace(s, "e", "3", -1))
 			}
 			return vs, nil
 		},
@@ -72,22 +72,21 @@ ref: %s
 		require.Equal(t, "local/hello-secret:1.3.37", c1.Configuration["ref"]) //unspecified in file, obtained from chart
 		require.Equal(t, "local/hello-secret:0.1.0", c2.Configuration["ref"])
 
-		require.Len(t, c1.Secrets, 2)
-		require.Contains(t, c1.Secrets, "hello-name")
-		require.Contains(t, c1.Secrets, "hello-age")
+		require.Len(t, c1.Secrets, 0) // Secret names are removed, only the values map is kept
 
 		require.Len(t, c1.SecretValues, 2)
 		require.Equal(t, []byte("pfx-secretivenewnamh3llo-nam3"), c1.SecretValues["hello-name"])
+		require.Equal(t, []byte("pfx-secretivenewnamh3llo-ag3"), c1.SecretValues["hello-age"])
 	}
 }
 
 func TestOptionalVersion(t *testing.T) {
 	secretsMock := SecretsProviderMock{
-		read: func(componentName, namespace string, secretNames []string) (SecretValues, error) {
+		read: func(componentName, namespace string, secretNames map[string]string) (SecretValues, error) {
 			t.Logf("secretsMock read %#v %#v %#v", componentName, namespace, secretNames)
 			vs := SecretValues{}
-			for _, s := range secretNames {
-				vs[s] = []byte(componentName + namespace + strings.Replace(s, "e", "3", -1))
+			for k, s := range secretNames {
+				vs[k] = []byte(componentName + namespace + strings.Replace(s, "e", "3", -1))
 			}
 			return vs, nil
 		},
@@ -150,7 +149,7 @@ config_c: qqq
 		},
 	}
 	secretsMock := SecretsProviderMock{
-		read: func(componentName, namespace string, secretNames []string) (SecretValues, error) {
+		read: func(componentName, namespace string, secretNames map[string]string) (SecretValues, error) {
 			t.Logf("secretsMock read %#v %#v %#v", componentName, namespace, secretNames)
 			return nil, nil
 		},
@@ -171,11 +170,11 @@ config_c: qqq
 
 func TestMultipleEnvironments(t *testing.T) {
 	secretsMock := SecretsProviderMock{
-		read: func(componentName, namespace string, secretNames []string) (SecretValues, error) {
+		read: func(componentName, namespace string, secretNames map[string]string) (SecretValues, error) {
 			t.Logf("secretsMock read %#v %#v %#v", componentName, namespace, secretNames)
 			vs := SecretValues{}
-			for _, s := range secretNames {
-				vs[s] = []byte(componentName + namespace + strings.Replace(s, "e", "3", -1))
+			for k, s := range secretNames {
+				vs[k] = []byte(componentName + namespace + strings.Replace(s, "e", "3", -1))
 			}
 			return vs, nil
 		},
@@ -236,4 +235,59 @@ ref: %s
 	c0 = cs["pfx-hello-world"]
 	require.Equal(t, "env2 overwrite", c0.Configuration["message"])
 	require.Equal(t, "global extra", c0.Configuration["extra"])
+}
+
+func TestSecretLoaders(t *testing.T) {
+	secretsMock := SecretsProviderMock{
+		read: func(componentName, namespace string, secretNames map[string]string) (SecretValues, error) {
+			t.Logf("secretsMock read %#v %#v %#v", componentName, namespace, secretNames)
+			vs := SecretValues{}
+			for k, s := range secretNames {
+				vs[k] = []byte(componentName + namespace + strings.Replace(s, "e", "3", -1))
+			}
+			return vs, nil
+		},
+	}
+
+	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
+		t.Logf("MockChartLoader %#v", chartRef)
+		c := &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    "chart-name",
+				Version: "1.3.37",
+			},
+			Values: &chart.Config{Raw: fmt.Sprintf(`
+message: xxx
+ref: %s
+`, chartRef)}, //inject whatever chartRef is into the config for later inspection
+		}
+
+		return c, "", nil
+	})
+
+	// List secrets
+	fs := NewFileStateProvider([]string{"../../test/landscapes/secrets/secret-list.yaml"}, secretsMock, chartLoadMock, "pfx-", "spa", "", "")
+	cs, err := fs.Components()
+	require.NoError(t, err)
+	c := cs["pfx-secret-list"]
+	require.Equal(t, "These secrets are searched by name!", c.Configuration["message"])
+	require.Equal(t, []byte("pfx-secret-listspalist-s3cr3t-on3"), c.SecretValues["list-secret-one"])
+	require.Equal(t, []byte("pfx-secret-listspalist-s3cr3t-two"), c.SecretValues["list-secret-two"])
+
+	// Map secrets
+	fs = NewFileStateProvider([]string{"../../test/landscapes/secrets/secret-map.yaml"}, secretsMock, chartLoadMock, "pfx-", "spa", "", "")
+	cs, err = fs.Components()
+	require.NoError(t, err)
+	c = cs["pfx-secret-map"]
+	require.Equal(t, "These secrets are searched by value!", c.Configuration["message"])
+	require.Equal(t, []byte("pfx-secret-mapspalook-h3r3-on3"), c.SecretValues["map-secret-one"])
+	require.Equal(t, []byte("pfx-secret-mapspalook-h3r3-two"), c.SecretValues["map-secret-two"])
+
+	// No secrets
+	fs = NewFileStateProvider([]string{"../../test/landscapes/secrets/secret-none.yaml"}, secretsMock, chartLoadMock, "pfx-", "spa", "", "")
+	cs, err = fs.Components()
+	require.NoError(t, err)
+	c = cs["pfx-secret-none"]
+	require.Equal(t, "There are no secrets!", c.Configuration["message"])
+	require.Len(t, c.SecretValues, 0)
 }

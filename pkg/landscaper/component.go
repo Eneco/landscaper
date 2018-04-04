@@ -14,7 +14,8 @@ type Component struct {
 	Release       *Release       `json:"release" validate:"nonzero"`
 	Configuration Configuration  `json:"configuration"`
 	Environments  Configurations `json:"environments"`
-	Secrets       Secrets        `json:"secrets"`
+	SecretsRaw    interface{}    `json:"secrets"`
+	Secrets       Secrets        `json:"-"`
 	SecretValues  SecretValues   `json:"-"`
 }
 

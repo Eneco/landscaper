@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -91,11 +90,7 @@ func (cp *helmStateProvider) Components() (Components, error) {
 
 		cmp.SecretValues = secretValues
 		cmp.Secrets = Secrets{}
-
-		for key := range secretValues {
-			cmp.Secrets = append(cmp.Secrets, key)
-		}
-		sort.Strings(cmp.Secrets) // enforce a consistent ordering for proper diffing / deepEqualing
+		cmp.SecretsRaw = nil
 
 		components[cmp.Name] = cmp
 	}
@@ -145,13 +140,13 @@ func (cp *fileStateProvider) get(files []string) (Components, error) {
 		}
 
 		if len(cmp.Secrets) > 0 {
-			sort.Strings(cmp.Secrets) // enforce a consistent ordering for proper diffing / deepEqualing
-			secr, err := cp.secrets.Read(cmp.Name, cmp.Namespace, []string(cmp.Secrets))
+			secr, err := cp.secrets.Read(cmp.Name, cmp.Namespace, cmp.Secrets)
 			if err != nil {
 				return nil, err
 			}
 			cmp.SecretValues = secr
 		}
+		cmp.Secrets = Secrets{} // clean the secret map so it is not used in the compare
 
 		if err := cmp.Validate(); err != nil {
 			return nil, fmt.Errorf("failed to validate `%s`: %s", filename, err)
@@ -236,6 +231,21 @@ func newComponentFromYAML(content []byte) (*Component, error) {
 
 	if err := validator.Validate(cmp.Release); err != nil {
 		return nil, err
+	}
+
+	cmp.Secrets = Secrets{}
+	if cmp.SecretsRaw != nil {
+		switch s := cmp.SecretsRaw.(type) {
+		case []interface{}:
+			for _, k := range s {
+				cmp.Secrets[k.(string)] = k.(string)
+			}
+		case map[string]interface{}:
+			for k, v := range s {
+				cmp.Secrets[k] = v.(string)
+			}
+		}
+		cmp.SecretsRaw = nil
 	}
 
 	return NewComponent(cmp.Name, cmp.Namespace, cmp.Release, cmp.Configuration, cmp.Environments, cmp.Secrets), nil
