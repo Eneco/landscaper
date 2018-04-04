@@ -163,7 +163,7 @@ is realised as:
     my-other-secret: <value MY_OTHER_SECRET environment variable>
 ```
 
-If a map is provided the key is the used in the Kubernetes secret key, and the value is used to fetch the secret value.
+If a map is provided the key is the used as the Kubernetes secret key, and the value is used to fetch the secret value.
 
 ```
 ...
