@@ -14,7 +14,8 @@ type Component struct {
 	Release       *Release       `json:"release" validate:"nonzero"`
 	Configuration Configuration  `json:"configuration"`
 	Environments  Configurations `json:"environments"`
-	Secrets       Secrets        `json:"secrets"`
+	SecretsRaw    interface{}    `json:"secrets"`
+	SecretNames   SecretNames    `json:"-"`
 	SecretValues  SecretValues   `json:"-"`
 }
 
@@ -22,13 +23,13 @@ type Component struct {
 type Components map[string]*Component
 
 // NewComponent creates a Component and adds Name to the configuration
-func NewComponent(name string, namespace string, release *Release, cfg Configuration, envs Configurations, secrets Secrets) *Component {
+func NewComponent(name string, namespace string, release *Release, cfg Configuration, envs Configurations, secretNames SecretNames) *Component {
 	cmp := &Component{
 		Name:          name,
 		Release:       release,
 		Configuration: cfg,
 		Environments:  envs,
-		Secrets:       secrets,
+		SecretNames:   secretNames,
 		SecretValues:  SecretValues{},
 		Namespace:     namespace,
 	}
@@ -41,8 +42,8 @@ func NewComponent(name string, namespace string, release *Release, cfg Configura
 		cmp.Environments = Configurations{}
 	}
 
-	if cmp.Secrets == nil {
-		cmp.Secrets = Secrets{}
+	if cmp.SecretNames == nil {
+		cmp.SecretNames = SecretNames{}
 	}
 
 	m := &Metadata{}
@@ -62,7 +63,13 @@ func (c *Component) Validate() error {
 
 // Equals checks if this component's values are equal to another
 func (c *Component) Equals(other *Component) bool {
-	return reflect.DeepEqual(c, other)
+	otherCopy := new(Component)
+	*otherCopy = *other
+
+	// Don't compare the SecretNames because we don't rebuild them from the cluster.
+	otherCopy.SecretNames = c.SecretNames
+
+	return reflect.DeepEqual(c, otherCopy)
 }
 
 // validateComponents validates the individual components as well as duplicate names in the total collection

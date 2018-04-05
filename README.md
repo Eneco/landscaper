@@ -143,11 +143,43 @@ Installing the above component with `default` prefix and `--env dev` will result
     secretsRef: 'default-my-component'
     
 and a Kubernetes secret named `default-my-component` with the contents:
+
     
+#### Secrets
+
+Secrets can be provided as a list or as a map. If a list is provided then the same string is used for the key in the Kubernetes secret and to find the secret value.
+
+```
+...
+secrets:
+	- my-secret
+	- my-other-secret
+```
+
+is realised as:
+
+```
     my-secret: <value of MY_SECRET environment variable>
     my-other-secret: <value MY_OTHER_SECRET environment variable>
+```
+
+If a map is provided the key is the used as the Kubernetes secret key, and the value is used to fetch the secret value.
+
+```
+...
+secrets:
+	secret1: my-secret
+	secret2: my-other-secret
+```
+
+is realised as:
+
+```
+    secret1: <value of MY_SECRET environment variable>
+    secret2: <value MY_OTHER_SECRET environment variable>
+```
     
-Currently, secrets are handled by specifying the name in the YAML, e.g. `my-secret`, and having a matching environment variable available with the secret, e.g. `export MY_SECRET=Rumpelstiltskin`
+By default the secrets are read from the environment with the string converted to `UPPER_SNAKE_CASE` e.g. `export MY_SECRET=Rumpelstiltskin`
     
 ### Global configuration override file
 
@@ -167,7 +199,7 @@ You can specify a global configuration override file with the `--config-override
       env1:
         hostname: "env1"
     
-
+ 
     
     # global.yaml
     hostname: "global"
@@ -231,6 +263,8 @@ Landscaper uses both Helm and Kubernetes. The following Landscaper releases are 
 
 | Landscaper | Helm  | Kubernetes |
 |------------|-------|------------|
+| 1.0.14     | 2.7.2 | 1.8        |
+| 1.0.13     | 2.7.2 | 1.8        |
 | 1.0.12     | 2.7.2 | 1.8        |
 | 1.0.11     | 2.6.1 | 1.7        |
 | 1.0.10     | 2.5.1 | 1.6        |

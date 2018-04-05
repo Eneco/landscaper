@@ -155,7 +155,7 @@ func (e *executor) CreateComponent(cmp *Component) error {
 		"dryrun":    e.dryRun,
 	}).Debug("Create component")
 
-	if len(cmp.Secrets) > 0 && !e.dryRun {
+	if len(cmp.SecretValues) > 0 && !e.dryRun {
 		err = e.kubeSecrets.Write(cmp.Name, cmp.Namespace, cmp.SecretValues)
 		if err != nil {
 			return err
@@ -198,11 +198,11 @@ func (e *executor) UpdateComponent(cmp *Component) error {
 	}
 
 	if !e.dryRun {
-		if e.stageEnabled("deleteSecrets") || len(cmp.Secrets) > 0 {
+		if e.stageEnabled("deleteSecrets") || len(cmp.SecretValues) > 0 {
 			err = e.kubeSecrets.Delete(cmp.Name, cmp.Namespace)
 		}
 
-		if len(cmp.Secrets) > 0 {
+		if len(cmp.SecretValues) > 0 {
 			err = e.kubeSecrets.Write(cmp.Name, cmp.Namespace, cmp.SecretValues)
 			if err != nil {
 				return err
@@ -241,7 +241,7 @@ func (e *executor) DeleteComponent(cmp *Component) error {
 		"dryrun":  e.dryRun,
 	}).Debug("Delete component")
 
-	if len(cmp.Secrets) > 0 && !e.dryRun {
+	if len(cmp.SecretValues) > 0 && !e.dryRun {
 		err := e.kubeSecrets.Delete(cmp.Name, cmp.Namespace)
 		if err != nil {
 			return err

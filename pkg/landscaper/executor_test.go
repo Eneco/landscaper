@@ -8,6 +8,7 @@ import (
 	"k8s.io/helm/pkg/proto/hapi/services"
 
 	"errors"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -278,7 +279,7 @@ func newTestComponent(name string) *Component {
 			"FilenameOffsetZeroPadWidth": 1,
 		},
 		Configurations{},
-		Secrets{"TestSecret1", "TestSecret2"},
+		SecretNames{"TestSecret1": "TestSecret1", "TestSecret2": "TestSecret2"},
 	)
 
 	cmp.SecretValues = SecretValues{
