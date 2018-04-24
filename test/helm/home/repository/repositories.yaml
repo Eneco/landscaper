@@ -1,0 +1,4 @@
+apiVersion: v1
+repositories:
+  - name: landscapeTest
+    url: "http://example.com"

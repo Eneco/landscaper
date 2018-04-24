@@ -61,10 +61,14 @@ func locateChartPath(homePath, chartRef string) (string, error) {
 	}
 	repoName = info[0]
 
+	helmHome := helmpath.Home(homePath)
+
 	dl := downloader.ChartDownloader{
-		HelmHome: helmpath.Home(homePath),
+		HelmHome: helmHome,
 		Out:      os.Stdout,
-		Getters:  getter.All(environment.EnvSettings{}),
+		Getters: getter.All(environment.EnvSettings{
+			Home: helmHome,
+		}),
 	}
 
 	// ResolveChartVersion provides us through the repo index an url from which we can obtain the filename chart.tgz
