@@ -46,6 +46,6 @@ publish_docker: docker
 	docker push eneco/landscaper:$(GIT_TAG)
 
 publish_github:
-	go get github.com/goreleaser/goreleaser
+	curl -sL http://git.io/goreleaser | bash
 	./scripts/goreleaser.yaml.sh "$(LD_RELEASE_FLAGS)" >/tmp/gorel.yaml
 	goreleaser --config /tmp/gorel.yaml
