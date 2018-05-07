@@ -536,6 +536,12 @@
   version = "v0.9.0"
 
 [[projects]]
+  branch = "v1"
+  name = "gopkg.in/jarcoal/httpmock.v1"
+  packages = ["."]
+  revision = "eb84b840d3d6889d2458ceed28e3c6f0d109f6c8"
+
+[[projects]]
   branch = "v2"
   name = "gopkg.in/validator.v2"
   packages = ["."]
