@@ -15,9 +15,13 @@ before_install:
 script:
   - make test
 
+# this is hacky, fragile and annoying; a failing deploy (e.g. make publish_github) can go unnoticed since travis ignores exit codes in "after_success"
 after_success:
   - if [ -n "$TRAVIS_TAG" ]; then
+    echo "TRAVIS_TAG is '$TRAVIS_TAG' for commit '$TRAVIS_COMMIT'; let's deploy";
     docker login -u="$DOCKER_USER" -p="$DOCKER_PASS";
     make publish_docker;
     make publish_github;
+    else
+    echo "TRAVIS_TAG is empty for commit '$TRAVIS_COMMIT'; no deploy";
     fi
