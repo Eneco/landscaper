@@ -4,7 +4,7 @@ services:
  - docker
 
 go:
-  - '1.8.x'
+  - '1.10'
 
 go_import_path: github.com/eneco/landscaper
 
