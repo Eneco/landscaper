@@ -291,3 +291,78 @@ ref: %s
 	require.Equal(t, "There are no secrets!", c.Configuration["message"])
 	require.Len(t, c.SecretValues, 0)
 }
+
+func TestHelmStateProviderSecretReading(t *testing.T) {
+	helmMock := &HelmclientMock{
+		listReleases: func(opts ...helm.ReleaseListOption) (*services.ListReleasesResponse, error) {
+			t.Logf("listReleases %#v", opts)
+			rels := &services.ListReleasesResponse{
+				Releases: []*release.Release{
+					{
+						Name:      "my-release-no-secrets",
+						Namespace: "my-namespace",
+						Chart: &chart.Chart{
+							Metadata: &chart.Metadata{
+								Name:    "chart-name",
+								Version: "1.3.37",
+							},
+							Values: &chart.Config{Raw: `
+config_a: xxx
+config_b: yyy
+`},
+						},
+						Config: &chart.Config{Raw: fmt.Sprintf(
+							`%s:
+  %s: 1.2.3
+  %s: repo1
+config_b: zzz
+config_c: qqq
+`, metadataKey, metaReleaseVersion, metaChartRepo)},
+					},
+					{
+						Name:      "my-release-with-secrets",
+						Namespace: "my-namespace",
+						Chart: &chart.Chart{
+							Metadata: &chart.Metadata{
+								Name:    "chart-name",
+								Version: "1.3.37",
+							},
+							Values: &chart.Config{Raw: `
+config_a: xxx
+config_b: yyy
+`},
+						},
+						Config: &chart.Config{Raw: fmt.Sprintf(
+							`%s:
+  %s: 1.2.3
+  %s: repo1
+config_b: zzz
+config_c: qqq
+secretsRef: my-release-with-secrets
+`, metadataKey, metaReleaseVersion, metaChartRepo)},
+					},
+				},
+			}
+			return rels, nil
+		},
+	}
+	secretsMock := SecretsProviderMock{
+		read: func(componentName, namespace string, secretNames SecretNames) (SecretValues, error) {
+			t.Logf("secretsMock read %#v %#v %#v", componentName, namespace, secretNames)
+			return SecretValues{componentName: []byte(componentName)}, nil
+		},
+	}
+
+	hs := NewHelmStateProvider(helmMock, secretsMock, "my-prefix")
+	cmps, err := hs.Components()
+	require.NoError(t, err)
+	require.Len(t, cmps, 2)
+	require.Contains(t, cmps, "my-release-no-secrets")
+	require.Contains(t, cmps, "my-release-with-secrets")
+
+	c := cmps["my-release-no-secrets"]
+	require.Equal(t, SecretValues{}, c.SecretValues)
+
+	c = cmps["my-release-with-secrets"]
+	require.Equal(t, SecretValues{"my-release-with-secrets": []byte("my-release-with-secrets")}, c.SecretValues)
+}
