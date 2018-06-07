@@ -12,8 +12,8 @@ import (
 	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/kube"
 	helmversion "k8s.io/helm/pkg/version"
-	"k8s.io/kubernetes/pkg/api"
 	podutil "k8s.io/kubernetes/pkg/api/pod"
+	"k8s.io/kubernetes/pkg/apis/core"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/internalversion"
 )
