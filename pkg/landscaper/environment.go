@@ -190,7 +190,7 @@ func getTillerPodName(client internalversion.PodsGetter, namespace string) (stri
 	return pod.ObjectMeta.GetName(), nil
 }
 
-func getFirstRunningPod(client internalversion.PodsGetter, namespace string, selector labels.Selector) (*api.Pod, error) {
+func getFirstRunningPod(client internalversion.PodsGetter, namespace string, selector labels.Selector) (*core.Pod, error) {
 	options := metav1.ListOptions{LabelSelector: selector.String()}
 	pods, err := client.Pods(namespace).List(options)
 	if err != nil {

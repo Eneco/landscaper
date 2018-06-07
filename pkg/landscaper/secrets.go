@@ -97,7 +97,7 @@ func (sp *kubeSecretsProvider) Write(componentName, namespace string, secrets Se
 		return err
 	}
 
-	_, err = sp.kubeClient.Secrets(namespace).Create(&api.Secret{
+	_, err = sp.kubeClient.Secrets(namespace).Create(&core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: componentName,
 		},
@@ -142,7 +142,7 @@ func (sp *kubeSecretsProvider) Delete(componentName, namespace string) error {
 // ensureNamespace trigger namespace creation and filter errors, only already-exists type of error won't be returned.
 func (sp *kubeSecretsProvider) ensureNamespace(namespace string) error {
 	_, err := sp.kubeClient.Namespaces().Create(
-		&api.Namespace{
+		&core.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: namespace,
 			},
