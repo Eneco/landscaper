@@ -71,6 +71,8 @@ func (e *Environment) HelmClient() helm.Interface {
 			return nil
 		}
 
+		logrus.WithField("host", tillerHost).Debug("Tiller host address")
+
 		e.helmClient = helm.NewClient(helm.Host(tillerHost))
 
 		tillerVersion, err := e.helmClient.GetVersion()

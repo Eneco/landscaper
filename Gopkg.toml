@@ -20,6 +20,18 @@
 #  name = "github.com/x/y"
 #  version = "2.4.0"
 
+[[constraint]]
+  name = "k8s.io/helm"
+  version = "=2.8.2"
+
+# Fix google.org/protobuf
+# https://github.com/google/protobuf/issues/4582
+# Override Helm version to avoid compilation errors
+[[override]]
+  name = "github.com/golang/protobuf"
+  version = "=1.1.0"
+
+
 
 [[constraint]]
   name = "github.com/Azure/azure-sdk-for-go"
@@ -51,46 +63,3 @@
 [[constraint]]
   name = "github.com/x-cray/logrus-prefixed-formatter"
   version = "=0.5.2"
-
-# Enforce the same version as Helm
-[[override]]
-  name = "google.golang.org/grpc"
-  version = "=1.7.2"
-
-# Override Helm version to avoid compilation errors
-[[override]]
-  name = "github.com/golang/protobuf"
-  version = "=1.1.0"
-
-# Same as Helm
-[[override]]
-  name = "k8s.io/kube-openapi"
-  revision = "39a7bf85c140f972372c2a0d1ee40adbf0c8bfe1"
-
-[[override]]
-  name = "k8s.io/kubernetes"
-  version = "=1.9.2"
-
-[[override]]
-  name = "k8s.io/client-go"
-  version = "kubernetes-1.9.2"
-
-[[override]]
-  name = "k8s.io/api"
-  version = "kubernetes-1.9.2"
-
-[[override]]
-  name = "k8s.io/apimachinery"
-  version = "kubernetes-1.9.2"
-
-[[override]]
-  name = "k8s.io/apiserver"
-  version = "kubernetes-1.9.2"
-
-[[override]]
-  name = "github.com/russross/blackfriday"
-  version = "=1.5.1"
-
-[[constraint]]
-  name = "k8s.io/helm"
-  version = "=2.8.2"
