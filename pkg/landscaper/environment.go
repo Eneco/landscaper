@@ -73,7 +73,14 @@ func (e *Environment) HelmClient() helm.Interface {
 
 		logrus.WithField("host", tillerHost).Debug("Tiller host address")
 
-		e.helmClient = helm.NewClient(helm.Host(tillerHost))
+		e.helmClient = helm.NewClient(helm.Host(tillerHost), helm.ConnectTimeout(5))
+		logrus.WithField("client", e.helmClient).Debug("Helm client")
+
+		err = e.helmClient.PingTiller()
+
+		if err != nil {
+			logrus.WithField("error", err).Fatalf("Can't ping Tiller")
+		}
 
 		tillerVersion, err := e.helmClient.GetVersion()
 		if err != nil {
