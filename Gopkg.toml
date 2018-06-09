@@ -26,18 +26,10 @@
 
 # Fix google.org/protobuf
 # https://github.com/google/protobuf/issues/4582
-# Use the same same version as Helm
-[[override]]
-  name = "google.golang.org/grpc"
-  revision = "5ffe3083946d5603a0578721101dc8165b1d5b5f"
-
+# Override Helm version with the closest release version
 [[override]]
   name = "github.com/golang/protobuf"
-  revision = "1643683e1b54a9e88ad26d98f81400c8c9d9f4f9"
-
-[[override]]
-  name = "google.golang.org/genproto"
-  revision = "09f6ed296fc66555a25fe4ce95173148778dfa85"
+  version = "=1.1.0"
 
 [[constraint]]
   name = "github.com/Azure/azure-sdk-for-go"
