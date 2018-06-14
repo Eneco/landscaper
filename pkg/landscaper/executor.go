@@ -91,7 +91,7 @@ func (e *executor) Apply(desired, current Components) error {
 	if e.stageEnabled("delete") {
 		for _, cmp := range delete {
 			if err := e.DeleteComponent(cmp); err != nil {
-				logrus.WithFields(logrus.Fields{"error": err}).Error("DeleteComponent failed")
+				logrus.WithFields(logrus.Fields{"error": err, "component": cmp}).Error("DeleteComponent failed")
 				return err
 			}
 		}
@@ -100,7 +100,7 @@ func (e *executor) Apply(desired, current Components) error {
 	if e.stageEnabled("update") {
 		for _, cmp := range update {
 			if err := e.UpdateComponent(cmp); err != nil {
-				logrus.WithFields(logrus.Fields{"error": err}).Error("UpdateComponent failed")
+				logrus.WithFields(logrus.Fields{"error": err, "component": cmp}).Error("UpdateComponent failed")
 				return err
 			}
 		}
@@ -109,7 +109,7 @@ func (e *executor) Apply(desired, current Components) error {
 	if e.stageEnabled("create") {
 		for _, cmp := range create {
 			if err := e.CreateComponent(cmp); err != nil {
-				logrus.WithFields(logrus.Fields{"error": err}).Error("CreateComponent failed")
+				logrus.WithFields(logrus.Fields{"error": err, "component": cmp}).Error("CreateComponent failed")
 				return err
 			}
 		}
