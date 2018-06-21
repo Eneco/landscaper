@@ -12,8 +12,8 @@ import (
 	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/kube"
 	helmversion "k8s.io/helm/pkg/version"
-	"k8s.io/kubernetes/pkg/api"
 	podutil "k8s.io/kubernetes/pkg/api/pod"
+	"k8s.io/kubernetes/pkg/apis/core"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/typed/core/internalversion"
 )
@@ -71,7 +71,16 @@ func (e *Environment) HelmClient() helm.Interface {
 			return nil
 		}
 
-		e.helmClient = helm.NewClient(helm.Host(tillerHost))
+		logrus.WithField("host", tillerHost).Debug("Tiller host address")
+
+		e.helmClient = helm.NewClient(helm.Host(tillerHost), helm.ConnectTimeout(5))
+		logrus.WithField("client", e.helmClient).Debug("Helm client")
+
+		err = e.helmClient.PingTiller()
+
+		if err != nil {
+			logrus.WithField("error", err).Fatalf("Can't ping Tiller")
+		}
 
 		tillerVersion, err := e.helmClient.GetVersion()
 		if err != nil {
@@ -190,7 +199,7 @@ func getTillerPodName(client internalversion.PodsGetter, namespace string) (stri
 	return pod.ObjectMeta.GetName(), nil
 }
 
-func getFirstRunningPod(client internalversion.PodsGetter, namespace string, selector labels.Selector) (*api.Pod, error) {
+func getFirstRunningPod(client internalversion.PodsGetter, namespace string, selector labels.Selector) (*core.Pod, error) {
 	options := metav1.ListOptions{LabelSelector: selector.String()}
 	pods, err := client.Pods(namespace).List(options)
 	if err != nil {

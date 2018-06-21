@@ -13,15 +13,11 @@ type HelmclientMock struct {
 	listReleases   func(opts ...helm.ReleaseListOption) (*services.ListReleasesResponse, error)
 }
 
-func (m *HelmclientMock) DeleteRelease(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
-	return m.deleteRelease(rlsName, opts...)
+func (m *HelmclientMock) ListReleases(opts ...helm.ReleaseListOption) (*services.ListReleasesResponse, error) {
+	return m.listReleases(opts...)
 }
 
-func (m *HelmclientMock) GetVersion(opts ...helm.VersionOption) (*services.GetVersionResponse, error) {
-	return nil, nil
-}
-
-func (m *HelmclientMock) InstallRelease(chStr string, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error) {
+func (m *HelmclientMock) InstallRelease(chStr, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error) {
 	return m.installRelease(chStr, namespace, opts...)
 }
 
@@ -29,23 +25,11 @@ func (m *HelmclientMock) InstallReleaseFromChart(chart *chart.Chart, namespace s
 	return nil, nil
 }
 
-func (m *HelmclientMock) ListReleases(opts ...helm.ReleaseListOption) (*services.ListReleasesResponse, error) {
-	return m.listReleases(opts...)
-}
-
-func (m *HelmclientMock) ReleaseContent(rlsName string, opts ...helm.ContentOption) (*services.GetReleaseContentResponse, error) {
-	return nil, nil
-}
-
-func (m *HelmclientMock) ReleaseHistory(rlsName string, opts ...helm.HistoryOption) (*services.GetHistoryResponse, error) {
-	return nil, nil
+func (m *HelmclientMock) DeleteRelease(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
+	return m.deleteRelease(rlsName, opts...)
 }
 
 func (m *HelmclientMock) ReleaseStatus(rlsName string, opts ...helm.StatusOption) (*services.GetReleaseStatusResponse, error) {
-	return nil, nil
-}
-
-func (m *HelmclientMock) RollbackRelease(rlsName string, opts ...helm.RollbackOption) (*services.RollbackReleaseResponse, error) {
 	return nil, nil
 }
 
@@ -57,8 +41,28 @@ func (m *HelmclientMock) UpdateReleaseFromChart(rlsName string, chart *chart.Cha
 	return nil, nil
 }
 
+func (m *HelmclientMock) RollbackRelease(rlsName string, opts ...helm.RollbackOption) (*services.RollbackReleaseResponse, error) {
+	return nil, nil
+}
+
+func (m *HelmclientMock) ReleaseContent(rlsName string, opts ...helm.ContentOption) (*services.GetReleaseContentResponse, error) {
+	return nil, nil
+}
+
+func (m *HelmclientMock) ReleaseHistory(rlsName string, opts ...helm.HistoryOption) (*services.GetHistoryResponse, error) {
+	return nil, nil
+}
+
+func (m *HelmclientMock) GetVersion(opts ...helm.VersionOption) (*services.GetVersionResponse, error) {
+	return nil, nil
+}
+
 func (m *HelmclientMock) RunReleaseTest(rlsName string, opts ...helm.ReleaseTestOption) (<-chan *services.TestReleaseResponse, <-chan error) {
 	return nil, nil
+}
+
+func (m *HelmclientMock) PingTiller() error {
+	return nil
 }
 
 type MockChartLoader func(chartRef string) (*chart.Chart, string, error)
