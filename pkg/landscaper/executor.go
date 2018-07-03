@@ -84,12 +84,9 @@ func (e *executor) Apply(desired, current Components) error {
 
 	logrus.WithFields(logrus.Fields{"create": len(create), "update": len(update), "delete": len(delete)}).Info("Apply desired state")
 
-	if err := logDifferences(current, create, update, delete, e.stageEnabled("update"), e.stageEnabled("delete"), logrus.Infof); err != nil {
-		return err
-	}
-
 	if e.stageEnabled("delete") {
 		for _, cmp := range delete {
+			logrus.Infof("Delete: %s", cmp.Name)
 			if err := e.DeleteComponent(cmp); err != nil {
 				logrus.WithFields(logrus.Fields{"error": err, "component": cmp}).Error("DeleteComponent failed")
 				return err
@@ -99,6 +96,9 @@ func (e *executor) Apply(desired, current Components) error {
 
 	if e.stageEnabled("update") {
 		for _, cmp := range update {
+			if err := logDifferences(logrus.Infof, "Update: "+cmp.Name, current[cmp.Name], cmp); err != nil {
+				return err
+			}
 			if err := e.UpdateComponent(cmp); err != nil {
 				logrus.WithFields(logrus.Fields{"error": err, "component": cmp}).Error("UpdateComponent failed")
 				return err
@@ -108,6 +108,10 @@ func (e *executor) Apply(desired, current Components) error {
 
 	if e.stageEnabled("create") {
 		for _, cmp := range create {
+			if err := logDifferences(logrus.Infof, "Create: "+cmp.Name, nil, cmp); err != nil {
+				return err
+			}
+
 			if err := e.CreateComponent(cmp); err != nil {
 				logrus.WithFields(logrus.Fields{"error": err, "component": cmp}).Error("CreateComponent failed")
 				return err
@@ -317,46 +321,18 @@ func componentDiffText(current, desired *Component) (string, error) {
 	})
 }
 
-// logDifferences logs the Create, Update and Delete w.r.t. current to logf
-func logDifferences(current, creates, updates, deletes Components, updateStageEnabled bool, deleteStageEnabled bool, logf func(format string, args ...interface{})) error {
-	log := func(action string, current, desired *Component) error {
-		diff, err := componentDiffText(current, desired)
-		if err != nil {
-			return err
-		}
-		logf("%s", action)
-		if diff != "" {
-			logf("Diff:\n%s", diff)
-		}
-		if current != nil && desired != nil && !reflect.DeepEqual(current.SecretValues, desired.SecretValues) {
-			logrus.Info("Diff: secrets have changed, not shown here")
-		}
-		return nil
+func logDifferences(logf func(format string, args ...interface{}), action string, current, desired *Component) error {
+	diff, err := componentDiffText(current, desired)
+	if err != nil {
+		return err
 	}
-
-	// Log diffs only if delete is applied
-	if deleteStageEnabled {
-		for _, d := range deletes {
-			logf("Delete: %s", d.Name)
-		}
+	logf("%s", action)
+	if diff != "" {
+		logf("Diff:\n%s", diff)
 	}
-
-	for _, d := range creates {
-		if err := log("Create: "+d.Name, nil, d); err != nil {
-			return err
-		}
+	if current != nil && desired != nil && !reflect.DeepEqual(current.SecretValues, desired.SecretValues) {
+		logrus.Info("Diff: secrets have changed, not shown here")
 	}
-
-	// Log diffs only if upadete is applied
-	if updateStageEnabled {
-		for _, d := range updates {
-			c := current[d.Name]
-			if err := log("Update: "+d.Name, c, d); err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
 }
 
