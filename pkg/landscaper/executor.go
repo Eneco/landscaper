@@ -84,8 +84,9 @@ func (e *executor) Apply(desired, current Components) error {
 
 	logrus.WithFields(logrus.Fields{"create": len(create), "update": len(update), "delete": len(delete)}).Info("Apply desired state")
 
-	if e.stageEnabled("delete") {
-		for _, cmp := range delete {
+	for _, cmp := range delete {
+		_, cmpForcedUpdate := needForcedUpdate[cmp.Name]
+		if e.stageEnabled("delete") || (e.stageEnabled("update") && cmpForcedUpdate) {
 			logrus.Infof("Delete: %s", cmp.Name)
 			if err := e.DeleteComponent(cmp); err != nil {
 				logrus.WithFields(logrus.Fields{"error": err, "component": cmp}).Error("DeleteComponent failed")
@@ -106,8 +107,9 @@ func (e *executor) Apply(desired, current Components) error {
 		}
 	}
 
-	if e.stageEnabled("create") {
-		for _, cmp := range create {
+	for _, cmp := range create {
+		_, cmpForcedUpdate := needForcedUpdate[cmp.Name]
+		if e.stageEnabled("create") || (e.stageEnabled("update") && cmpForcedUpdate) {
 			if err := logDifferences(logrus.Infof, "Create: "+cmp.Name, nil, cmp); err != nil {
 				return err
 			}
