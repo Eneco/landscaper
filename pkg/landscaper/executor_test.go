@@ -92,6 +92,60 @@ func TestExecutorApply(t *testing.T) {
 
 }
 
+func TestExecutorApplyWithForcedUpdatesAndDeleteCreateDisable(t *testing.T) {
+	chartPath := "/opt/store/whatever/path/"
+
+	nu := newTestComponent("new-one")
+	nu.Namespace = "recognizable-new-one"
+	rem := newTestComponent("busted-one")
+	up := newTestComponent("updated-one")
+	updiff := newTestComponent("updated-one")
+	updiff.Configuration["FlushSize"] = 4
+	updiff.SecretNames = SecretNames{"newSecret": "somethingNew"}
+
+	updiff.SecretValues = SecretValues{
+		"newSecret": []byte("somethingNew"),
+	}
+
+	des := Components{nu.Name: nu, updiff.Name: updiff}
+	cur := Components{rem.Name: rem, up.Name: up}
+
+	helmMock := &HelmclientMock{
+		installRelease: func(chStr string, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error) {
+			t.Logf("installRelease %#v %#v %#v", chStr, namespace, opts)
+			require.Equal(t, namespace, "recognizable-new-one") // the name is hidden in the opts we cannot inspect
+			return nil, nil
+		},
+		deleteRelease: func(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
+			t.Logf("deleteRelease %#v", rlsName)
+			require.Equal(t, rlsName, "busted-one")
+			return nil, nil
+		},
+		updateRelease: func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
+			t.Logf("updateRelease %#v %#v %#v", rlsName, chStr, opts)
+			require.Equal(t, rlsName, "updated-one")
+			return nil, nil
+		}}
+	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
+		t.Logf("MockChartLoader %#v", chartRef)
+		return nil, chartPath, nil
+	})
+	secretsMock := SecretsProviderMock{
+		write: func(componentName, namespace string, values SecretValues) error {
+			return nil
+		},
+		delete: func(componentName, namespace string) error {
+			return nil
+		},
+	}
+
+	createDeleteDisabled := []string{"create", "delete"}
+
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, createDeleteDisabled).Apply(des, cur)
+	require.NoError(t, err)
+
+}
+
 func TestExecutorCreate(t *testing.T) {
 	chartPath := "/opt/store/whatever/path/"
 	nameSpace := "spacename"
