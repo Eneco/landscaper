@@ -22,7 +22,46 @@
 
 [[constraint]]
   name = "k8s.io/helm"
-  version = "=2.8.2"
+  version = "2.10.0"
+
+# Dependencies from Helm 2.10.0 glide.lock file
+# https://github.com/helm/helm/blob/v2.10.0/glide.lock
+[[override]]
+  name = "k8s.io/client-go"
+  revision = "23781f4d6632d88e869066eaebb743857aa1ef9b"
+
+[[override]]
+  name = "k8s.io/kubernetes"
+  revision = "32ac1c9073b132b8ba18aa830f46b77dcceb0723"
+
+[[override]]
+  name = "k8s.io/api"
+  revision = "8b7507fac302640dd5f1efbf9643199952cc58db"
+
+[[override]]
+  name = "k8s.io/apiextensions-apiserver"
+  revision = "898b0eda132e1aeac43a459785144ee4bf9b0a2e"
+
+[[override]]
+  name = "k8s.io/apiserver"
+  revision = "f7914ed3085badf66a1b6f3a5218ada28f7bd084"
+
+[[override]]
+  name = "k8s.io/apimachinery"
+  revision = "f6313580a4d36c7c74a3d845dda6e116642c4f90"
+
+[[override]]
+  name = "k8s.io/kube-openapi"
+  revision = "39cb288412c48cb533ba4be5d6c28620b9a0c1b4"
+
+[[override]]
+  name = "k8s.io/utils"
+  revision = "aedf551cdb8b0119df3a19c65fde413a13b34997"
+
+# unknown field 'CaseSensitive' in struct literal of type jsoniter.Config
+[[override]]
+  name = "github.com/json-iterator/go"
+  revision = "f2b4162afba35581b6d4a50d3b8f34e33c144682"
 
 # Fix google.org/protobuf
 # https://github.com/google/protobuf/issues/4582
