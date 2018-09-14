@@ -163,7 +163,7 @@ func teardown() {
 // getKubeClient is a convenience method for creating kubernetes config and client
 // for a given kubeconfig context
 func getKubeClient(context string) (*restclient.Config, *internalclientset.Clientset, error) {
-	config, err := kube.GetConfig(context).ClientConfig()
+	config, err := kube.GetConfig(context, "").ClientConfig()
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not get kubernetes config for context '%s': %s", context, err)
 	}
