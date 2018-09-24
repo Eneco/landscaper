@@ -1,27 +1,33 @@
 package landscaper
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
+
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/jarcoal/httpmock.v1"
-	"io/ioutil"
+	"k8s.io/helm/pkg/repo/repotest"
 )
 
 func TestLoadLocalCharts(t *testing.T) {
 
-	localCharts := NewLocalCharts("../../test/helm/home")
+	tmp := filepath.Join(os.TempDir(), "landscaper", "landscapeTest")
+	defer os.RemoveAll(tmp)
+
+	localCharts := NewLocalCharts("testdata/helmhome")
 
 	_, _, err := localCharts.Load("hello")
 	assert.NotNil(t, err)
 
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
-	resp, _ := ioutil.ReadFile("../../test/helm/home/repository/cache/archive/hello-cron-0.1.0.tgz")
-	httpmock.RegisterResponder("GET", "http://example.com/hello-cron-0.1.0.tgz",
-		httpmock.NewBytesResponder(200, resp))
+	srv := repotest.NewServer(tmp)
+	defer srv.Stop()
+
+	if _, err := srv.CopyCharts("testdata/*.tgz*"); err != nil {
+		t.Error(err)
+		return
+	}
 
 	chart, _, err := localCharts.Load("landscapeTest/hello-cron")
 	assert.Nil(t, err)
 	assert.Equal(t, "hello-cron", chart.Metadata.Name)
 }
-
