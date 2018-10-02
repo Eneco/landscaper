@@ -22,7 +22,7 @@
 
 [[constraint]]
   name = "k8s.io/helm"
-  version = "2.10.0"
+  version = "2.11.0"
 
 # Fix google.org/protobuf
 # https://github.com/google/protobuf/issues/4582
@@ -51,8 +51,13 @@
   name = "github.com/sirupsen/logrus"
   version = "~1.0.3"
 
-#[[constraint]]
-#  name = "github.com/spf13/cobra"
+[[constraint]]
+  name = "github.com/spf13/cobra"
+  version = "0.0.3"
+
+[[override]]
+  name = "github.com/spf13/pflag"
+  version = "1.0.2"
 
 [[constraint]]
   name = "github.com/stretchr/testify"
@@ -64,29 +69,29 @@
 
 [[override]]
   name = "k8s.io/client-go"
-  version = "kubernetes-1.10.3"
+  version = "kubernetes-1.11.1"
 [[override]]
   name = "k8s.io/kubernetes"
-  revision = "32ac1c9073b132b8ba18aa830f46b77dcceb0723"
+  version = "v1.11.1"
 [[override]]
   name = "k8s.io/api"
-  version = "kubernetes-1.10.3"
+  version = "kubernetes-1.11.1"
 [[override]]
   name = "k8s.io/apiextensions-apiserver"
-  version = "kubernetes-1.10.3"
+  version = "kubernetes-1.11.1"
 [[override]]
   name = "k8s.io/apiserver"
-  version = "kubernetes-1.10.3"
+  version = "kubernetes-1.11.1"
 [[override]]
   name = "k8s.io/apimachinery"
-  version = "kubernetes-1.10.3"
+  version = "kubernetes-1.11.1"
 [[override]]
   name = "k8s.io/kube-openapi"
-  revision = "39cb288412c48cb533ba4be5d6c28620b9a0c1b4"
+  revision = "9be88ef10da45f8260fac1eafa747a2898949f51"
 [[override]]
   name = "k8s.io/utils"
-  revision = "aedf551cdb8b0119df3a19c65fde413a13b34997"
+  revision = "011bbbe3b2878d9b1d484312f186826acd7e78cc"
 # unknown field 'CaseSensitive' in struct literal of type jsoniter.Config
 [[override]]
   name = "github.com/json-iterator/go"
-  revision = "f2b4162afba35581b6d4a50d3b8f34e33c144682"
+  version = "1.1.5"
