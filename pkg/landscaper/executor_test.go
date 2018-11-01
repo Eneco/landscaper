@@ -87,24 +87,29 @@ func TestExecutorApply(t *testing.T) {
 		},
 	}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages).Apply(des, cur)
+	result, err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages).Apply(des, cur)
 	require.NoError(t, err)
-
+	require.Equal(t, len(result["create"]), 1)
+	require.Equal(t, len(result["update"]), 1)
+	require.Equal(t, len(result["delete"]), 1)
+	require.Equal(t, result["create"][0], nu.Name)
+	require.Equal(t, result["update"][0], updiff.Name)
+	require.Equal(t, result["delete"][0], rem.Name)
 }
 
-func TestExecutorApplyWithForcedUpdatesAndDeleteCreateDisable(t *testing.T) {
+func TestExecutorApplyWithForcedUpdatesAndDeleteCreateDisableWhenExistingSecretValueChanges(t *testing.T) {
 	chartPath := "/opt/store/whatever/path/"
 
 	nu := newTestComponent("new-one")
-	nu.Namespace = "recognizable-new-one"
 	rem := newTestComponent("busted-one")
 	up := newTestComponent("updated-one")
+	up.Namespace = "recognizable-new-one"
 	updiff := newTestComponent("updated-one")
-	updiff.Configuration["FlushSize"] = 4
-	updiff.SecretNames = SecretNames{"newSecret": "somethingNew"}
+	updiff.Namespace = up.Namespace
 
 	updiff.SecretValues = SecretValues{
-		"newSecret": []byte("somethingNew"),
+		"TestSecret1": []byte("secret value 1"),
+		"TestSecret2": []byte("new secret value 2"),
 	}
 
 	des := Components{nu.Name: nu, updiff.Name: updiff}
@@ -118,12 +123,12 @@ func TestExecutorApplyWithForcedUpdatesAndDeleteCreateDisable(t *testing.T) {
 		},
 		deleteRelease: func(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
 			t.Logf("deleteRelease %#v", rlsName)
-			require.Equal(t, rlsName, "busted-one")
+			require.Equal(t, rlsName, "updated-one")
 			return nil, nil
 		},
 		updateRelease: func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
 			t.Logf("updateRelease %#v %#v %#v", rlsName, chStr, opts)
-			require.Equal(t, rlsName, "updated-one")
+			require.Equal(t, rlsName, "this-should-never-been-called")
 			return nil, nil
 		}}
 	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
@@ -141,9 +146,13 @@ func TestExecutorApplyWithForcedUpdatesAndDeleteCreateDisable(t *testing.T) {
 
 	createDeleteDisabled := []string{"create", "delete"}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, createDeleteDisabled).Apply(des, cur)
+	result, err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, createDeleteDisabled).Apply(des, cur)
 	require.NoError(t, err)
-
+	require.Equal(t, len(result["create"]), 1)
+	require.Equal(t, len(result["update"]), 0)
+	require.Equal(t, len(result["delete"]), 1)
+	require.Equal(t, result["create"][0], updiff.Name)
+	require.Equal(t, result["delete"][0], updiff.Name)
 }
 
 func TestExecutorCreate(t *testing.T) {
@@ -311,8 +320,11 @@ func TestExecutorApplyWithDisabledStages(t *testing.T) {
 		},
 	}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, []string{"delete", "create", "update"}).Apply(des, cur)
+	result, err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, []string{"delete", "create", "update"}).Apply(des, cur)
 	require.NoError(t, err)
+	require.Equal(t, len(result["create"]), 0)
+	require.Equal(t, len(result["update"]), 0)
+	require.Equal(t, len(result["delete"]), 0)
 }
 
 func newTestComponent(name string) *Component {
