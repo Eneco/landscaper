@@ -87,8 +87,6 @@ func (e *executor) Apply(desired, current Components) (map[string][]string, erro
 		create, update, delete = integrateForcedUpdates(current, create, update, delete, needForcedUpdate)
 	}
 
-	logrus.WithFields(logrus.Fields{"create": len(create), "update": len(update), "delete": len(delete)}).Info("Apply desired state")
-
 	for _, cmp := range delete {
 		cmpForcedUpdate := needForcedUpdate[cmp.Name]
 		if e.stageEnabled("delete") || (e.stageEnabled("update") && cmpForcedUpdate) {
