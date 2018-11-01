@@ -66,8 +66,9 @@ var addCmd = &cobra.Command{
 				return err
 			}
 
-			if err = executor.Apply(desired, current); err != nil {
-				logrus.WithFields(logrus.Fields{"error": err}).Error("Applying desired state failed")
+			result, err := executor.Apply(desired, current)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{"error": err, "result": result}).Error("Applying desired state failed")
 				return err
 			}
 
