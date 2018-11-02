@@ -321,7 +321,7 @@ func (cp *helmStateProvider) listHelmReleases() ([]*release.Release, error) {
 		return nil, err
 	}
 
-	return res.Releases, nil
+	return res.GetReleases(), nil
 }
 
 // newComponentFromHelmRelease creates a Component from a Release
