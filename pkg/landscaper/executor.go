@@ -13,7 +13,7 @@ import (
 
 // Executor is responsible for applying a desired landscape to the actual landscape
 type Executor interface {
-	Apply(Components, Components) error
+	Apply(Components, Components) (map[string][]string, error)
 
 	CreateComponent(*Component) error
 	UpdateComponent(*Component) error
@@ -68,13 +68,18 @@ func (e *executor) gatherForcedUpdates(current, update Components) (map[string]b
 }
 
 // Apply transforms the current state into the desired state
-func (e *executor) Apply(desired, current Components) error {
+func (e *executor) Apply(desired, current Components) (map[string][]string, error) {
+	result := make(map[string][]string)
+	result["create"] = []string{}
+	result["update"] = []string{}
+	result["delete"] = []string{}
+
 	create, update, delete := diff(desired, current)
 
 	// some to-be-updated components need a delete + create instead
 	needForcedUpdate, err := e.gatherForcedUpdates(current, update)
 	if err != nil {
-		return err
+		return result, err
 	}
 
 	// delete+create pairs will never work in dry run since the dry-run "deleted" component will exist in create
@@ -82,47 +87,48 @@ func (e *executor) Apply(desired, current Components) error {
 		create, update, delete = integrateForcedUpdates(current, create, update, delete, needForcedUpdate)
 	}
 
-	logrus.WithFields(logrus.Fields{"create": len(create), "update": len(update), "delete": len(delete)}).Info("Apply desired state")
-
 	for _, cmp := range delete {
-		_, cmpForcedUpdate := needForcedUpdate[cmp.Name]
+		cmpForcedUpdate := needForcedUpdate[cmp.Name]
 		if e.stageEnabled("delete") || (e.stageEnabled("update") && cmpForcedUpdate) {
 			logrus.Infof("Delete: %s", cmp.Name)
 			if err := e.DeleteComponent(cmp); err != nil {
 				logrus.WithFields(logrus.Fields{"error": err, "component": cmp}).Error("DeleteComponent failed")
-				return err
+				return result, err
 			}
+			result["delete"] = append(result["delete"], cmp.Name)
 		}
 	}
 
 	if e.stageEnabled("update") {
 		for _, cmp := range update {
 			if err := logDifferences(logrus.Infof, "Update: "+cmp.Name, current[cmp.Name], cmp); err != nil {
-				return err
+				return result, err
 			}
 			if err := e.UpdateComponent(cmp); err != nil {
 				logrus.WithFields(logrus.Fields{"error": err, "component": cmp}).Error("UpdateComponent failed")
-				return err
+				return result, err
 			}
+			result["update"] = append(result["update"], cmp.Name)
 		}
 	}
 
 	for _, cmp := range create {
-		_, cmpForcedUpdate := needForcedUpdate[cmp.Name]
+		cmpForcedUpdate := needForcedUpdate[cmp.Name]
 		if e.stageEnabled("create") || (e.stageEnabled("update") && cmpForcedUpdate) {
 			if err := logDifferences(logrus.Infof, "Create: "+cmp.Name, nil, cmp); err != nil {
-				return err
+				return result, err
 			}
 
 			if err := e.CreateComponent(cmp); err != nil {
 				logrus.WithFields(logrus.Fields{"error": err, "component": cmp}).Error("CreateComponent failed")
-				return err
+				return result, err
 			}
+			result["create"] = append(result["create"], cmp.Name)
 		}
 	}
 
-	logrus.WithFields(logrus.Fields{"created": len(create), "updated": len(update), "deleted": len(delete)}).Info("Applied desired state successfully")
-	return nil
+	logrus.WithFields(logrus.Fields{"created": len(result["create"]), "updated": len(result["update"]), "deleted": len(result["delete"])}).Info("Applied desired state successfully")
+	return result, nil
 }
 
 func (e *executor) stageEnabled(stage string) bool {
