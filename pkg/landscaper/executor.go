@@ -52,18 +52,20 @@ func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, kubeSecrets
 func (e *executor) gatherForcedUpdates(current, update Components) (map[string]bool, error) {
 	needForcedUpdate := map[string]bool{}
 
-	for _, cmp := range update {
-		// releases that differ only in secret values are forced so that pods will restart with the new values
-		for _, curCmp := range current {
-			if curCmp.Name == cmp.Name && isOnlySecretValueDiff(*curCmp, *cmp) {
-				logrus.Infof("%s differs in secrets values only; don't update but delete + create instead", cmp.Name)
-				needForcedUpdate[cmp.Name] = true
+	if e.disabledForcedUpdates == false {
+		for _, cmp := range update {
+			// releases that differ only in secret values are forced so that pods will restart with the new values
+			for _, curCmp := range current {
+				if curCmp.Name == cmp.Name && isOnlySecretValueDiff(*curCmp, *cmp) && e.disabledSecretsForcedUpdates == false {
+					logrus.Infof("%s differs in secrets values only; don't update but delete + create instead", cmp.Name)
+					needForcedUpdate[cmp.Name] = true
+				}
 			}
-		}
-		if curCmp := current[cmp.Name]; curCmp != nil {
-			if curCmp.Namespace != cmp.Namespace {
-				logrus.Infof("%s differs in namespace; don't update but delete + create instead", cmp.Name)
-				needForcedUpdate[cmp.Name] = true
+			if curCmp := current[cmp.Name]; curCmp != nil {
+				if curCmp.Namespace != cmp.Namespace {
+					logrus.Infof("%s differs in namespace; don't update but delete + create instead", cmp.Name)
+					needForcedUpdate[cmp.Name] = true
+				}
 			}
 		}
 	}
