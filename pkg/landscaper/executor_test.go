@@ -155,6 +155,59 @@ func TestExecutorApplyWithForcedUpdatesAndDeleteCreateDisableWhenExistingSecretV
 	require.Equal(t, result["delete"][0], updiff.Name)
 }
 
+func TestExecutorApplyOptOutForcedUpdatesForSecretChanges(t *testing.T) {
+	chartPath := "/opt/store/whatever/path/"
+
+	up := newTestComponent("updated-one")
+	up.Namespace = "recognizable-new-one"
+	updiff := newTestComponent("updated-one")
+	updiff.Namespace = up.Namespace
+
+	updiff.SecretValues = SecretValues{
+		"TestSecret1": []byte("secret value 1"),
+		"TestSecret2": []byte("new secret value 2"),
+	}
+
+	des := Components{updiff.Name: updiff}
+	cur := Components{up.Name: up}
+
+	helmMock := &HelmclientMock{
+		installRelease: func(chStr string, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error) {
+			t.Logf("installRelease %#v %#v %#v", chStr, namespace, opts)
+			require.Equal(t, namespace, "recognizable-new-one") // the name is hidden in the opts we cannot inspect
+			return nil, nil
+		},
+		deleteRelease: func(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
+			t.Logf("deleteRelease %#v", rlsName)
+			require.Equal(t, rlsName, "this-should-never-been-called")
+			return nil, nil
+		},
+		updateRelease: func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
+			t.Logf("updateRelease %#v %#v %#v", rlsName, chStr, opts)
+			require.Equal(t, rlsName, "updated-one")
+			return nil, nil
+		}}
+	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
+		t.Logf("MockChartLoader %#v", chartRef)
+		return nil, chartPath, nil
+	})
+	secretsMock := SecretsProviderMock{
+		write: func(componentName, namespace string, values SecretValues) error {
+			return nil
+		},
+		delete: func(componentName, namespace string) error {
+			return nil
+		},
+	}
+
+	result, err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, []string{}).Apply(des, cur)
+	require.NoError(t, err)
+	require.Equal(t, len(result["create"]), 0)
+	require.Equal(t, len(result["update"]), 1)
+	require.Equal(t, len(result["delete"]), 0)
+	require.Equal(t, result["update"][0], updiff.Name)
+}
+
 func TestExecutorCreate(t *testing.T) {
 	chartPath := "/opt/store/whatever/path/"
 	nameSpace := "spacename"
