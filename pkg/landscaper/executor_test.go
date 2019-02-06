@@ -208,6 +208,66 @@ func TestExecutorApplyOptOutForcedUpdatesForSecretChanges(t *testing.T) {
 	require.Equal(t, result["update"][0], updiff.Name)
 }
 
+func TestExecutorApplyOptOutForcedUpdatesCompletely(t *testing.T) {
+	chartPath := "/opt/store/whatever/path/"
+
+	up := newTestComponent("updated-one")
+	up.Namespace = "recognizable-new-one"
+	updiff := newTestComponent("updated-one")
+	updiff.Namespace = up.Namespace
+	updiff.SecretValues = SecretValues{
+		"TestSecret1": []byte("secret value 1"),
+		"TestSecret2": []byte("new secret value 2"),
+	}
+
+	uptwo := newTestComponent("updated-two")
+	uptwo.Namespace = "recognizable-new-one"
+	uptwodiff := newTestComponent("updated-two")
+	uptwodiff.Namespace = "recognizable-new-two"
+
+	des := Components{updiff.Name: updiff, uptwodiff.Name: uptwodiff}
+	cur := Components{up.Name: up, uptwo.Name: uptwo}
+
+	helmMock := &HelmclientMock{
+		installRelease: func(chStr string, namespace string, opts ...helm.InstallOption) (*services.InstallReleaseResponse, error) {
+			t.Logf("installRelease %#v %#v %#v", chStr, namespace, opts)
+			require.Equal(t, namespace, "install-should-never-been-called")
+			return nil, nil
+		},
+		deleteRelease: func(rlsName string, opts ...helm.DeleteOption) (*services.UninstallReleaseResponse, error) {
+			t.Logf("deleteRelease %#v", rlsName)
+			require.Equal(t, rlsName, "delete-should-never-been-called")
+			return nil, nil
+		},
+		updateRelease: func(rlsName string, chStr string, opts ...helm.UpdateOption) (*services.UpdateReleaseResponse, error) {
+			t.Logf("updateRelease %#v %#v %#v", rlsName, chStr, opts)
+			if rlsName != "updated-one" && rlsName != "updated-two" {
+				require.FailNow(t, "Wrong release name", "Release name: %#v", rlsName)
+			}
+			return nil, nil
+		}}
+	chartLoadMock := MockChartLoader(func(chartRef string) (*chart.Chart, string, error) {
+		t.Logf("MockChartLoader %#v", chartRef)
+		return nil, chartPath, nil
+	})
+	secretsMock := SecretsProviderMock{
+		write: func(componentName, namespace string, values SecretValues) error {
+			return nil
+		},
+		delete: func(componentName, namespace string) error {
+			return nil
+		},
+	}
+
+	result, err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages, true, false).Apply(des, cur)
+	require.NoError(t, err)
+	require.Equal(t, len(result["create"]), 0)
+	require.Equal(t, len(result["update"]), 2)
+	require.Equal(t, len(result["delete"]), 0)
+	require.Equal(t, result["update"][0], updiff.Name)
+	require.Equal(t, result["update"][1], uptwodiff.Name)
+}
+
 func TestExecutorCreate(t *testing.T) {
 	chartPath := "/opt/store/whatever/path/"
 	nameSpace := "spacename"

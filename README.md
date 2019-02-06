@@ -76,7 +76,7 @@ The `apply` command accepts the following arguments:
           --context string                   the kube context to use. defaults to the current context
           --dir string                       (deprecated) path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR
           --disable stringSlice              Stages to be disabled. Available stages are create/update/delete.
-          --disable-forced-updates           Disables forced updates completelly
+          --disable-forced-updates           Disables forced updates completely
           --disable-secrets-forced-updates   Disables forced updates for secret changes only
           --dry-run                          simulate the applying of the landscape. useful in merge requests
           --helm-home string                 Helm home directory (default "$HOME/.helm")
