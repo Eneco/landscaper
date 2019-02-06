@@ -21,25 +21,29 @@ type Executor interface {
 }
 
 type executor struct {
-	helmClient     helm.Interface
-	chartLoader    ChartLoader
-	kubeSecrets    SecretsWriteDeleter
-	dryRun         bool
-	wait           bool
-	waitTimeout    int64
-	disabledStages []string
+	helmClient                   helm.Interface
+	chartLoader                  ChartLoader
+	kubeSecrets                  SecretsWriteDeleter
+	dryRun                       bool
+	wait                         bool
+	waitTimeout                  int64
+	disabledStages               []string
+	disabledForcedUpdates        bool
+	disabledSecretsForcedUpdates bool
 }
 
 // NewExecutor is a factory method to create a new Executor
-func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, kubeSecrets SecretsWriteDeleter, dryRun bool, wait bool, waitTimeout int64, disabledStages []string) Executor {
+func NewExecutor(helmClient helm.Interface, chartLoader ChartLoader, kubeSecrets SecretsWriteDeleter, dryRun bool, wait bool, waitTimeout int64, disabledStages []string, disabledForcedUpdates bool, disabledSecretsForcedUpdates bool) Executor {
 	return &executor{
-		helmClient:     helmClient,
-		chartLoader:    chartLoader,
-		kubeSecrets:    kubeSecrets,
-		dryRun:         dryRun,
-		wait:           wait,
-		waitTimeout:    waitTimeout,
-		disabledStages: disabledStages,
+		helmClient:                   helmClient,
+		chartLoader:                  chartLoader,
+		kubeSecrets:                  kubeSecrets,
+		dryRun:                       dryRun,
+		wait:                         wait,
+		waitTimeout:                  waitTimeout,
+		disabledStages:               disabledStages,
+		disabledForcedUpdates:        disabledForcedUpdates,
+		disabledSecretsForcedUpdates: disabledSecretsForcedUpdates,
 	}
 }
 

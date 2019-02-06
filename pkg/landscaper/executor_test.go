@@ -87,7 +87,7 @@ func TestExecutorApply(t *testing.T) {
 		},
 	}
 
-	result, err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages).Apply(des, cur)
+	result, err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages, false, false).Apply(des, cur)
 	require.NoError(t, err)
 	require.Equal(t, len(result["create"]), 1)
 	require.Equal(t, len(result["update"]), 1)
@@ -146,7 +146,7 @@ func TestExecutorApplyWithForcedUpdatesAndDeleteCreateDisableWhenExistingSecretV
 
 	createDeleteDisabled := []string{"create", "delete"}
 
-	result, err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, createDeleteDisabled).Apply(des, cur)
+	result, err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, createDeleteDisabled, false, false).Apply(des, cur)
 	require.NoError(t, err)
 	require.Equal(t, len(result["create"]), 1)
 	require.Equal(t, len(result["update"]), 0)
@@ -200,7 +200,7 @@ func TestExecutorApplyOptOutForcedUpdatesForSecretChanges(t *testing.T) {
 		},
 	}
 
-	result, err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, []string{}).Apply(des, cur)
+	result, err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages, false, true).Apply(des, cur)
 	require.NoError(t, err)
 	require.Equal(t, len(result["create"]), 0)
 	require.Equal(t, len(result["update"]), 1)
@@ -233,7 +233,7 @@ func TestExecutorCreate(t *testing.T) {
 		return nil
 	}}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages).CreateComponent(comp)
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages, false, false).CreateComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -267,7 +267,7 @@ func TestExecutorUpdate(t *testing.T) {
 		},
 	}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages).UpdateComponent(comp)
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages, false, false).UpdateComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -293,7 +293,7 @@ func TestExecutorDelete(t *testing.T) {
 		return nil
 	}}
 
-	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages).DeleteComponent(comp)
+	err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, disabledStages, false, false).DeleteComponent(comp)
 	require.NoError(t, err)
 }
 
@@ -373,7 +373,7 @@ func TestExecutorApplyWithDisabledStages(t *testing.T) {
 		},
 	}
 
-	result, err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, []string{"delete", "create", "update"}).Apply(des, cur)
+	result, err := NewExecutor(helmMock, chartLoadMock, secretsMock, false, false, waitTimeout, []string{"delete", "create", "update"}, false, false).Apply(des, cur)
 	require.NoError(t, err)
 	require.Equal(t, len(result["create"]), 0)
 	require.Equal(t, len(result["update"]), 0)
