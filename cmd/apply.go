@@ -119,7 +119,7 @@ func init() {
 	f.StringVar(&env.HelmHome, "helm-home", helmHome, "Helm home directory")
 	f.StringVar(&env.TillerNamespace, "tiller-namespace", tillerNamespace, "Tiller namespace for Helm")
 	f.Var(&env.DisabledStages, "disable", "Stages to be disabled. Available stages are create/update/delete.")
-	f.BoolVar(&env.DisabledForcedUpdates, "disable-forced-updates", false, "Disables forced updates completally")
+	f.BoolVar(&env.DisabledForcedUpdates, "disable-forced-updates", false, "Disables forced updates completelly")
 	f.BoolVar(&env.DisabledSecretsForcedUpdates, "disable-secrets-forced-updates", false, "Disables forced updates for secret changes only")
 
 	f.BoolVar(&env.Loop, "loop", false, "keep landscape in sync forever")

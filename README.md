@@ -70,24 +70,26 @@ The `apply` command accepts the following arguments:
       landscaper apply [files]... [flags]
     
     Flags:
-          --azure-keyvault string         azure keyvault for fetching secrets. Azure credentials must be provided in the environment.
-          --chart-dir string              (deprecated; use --helm-home) Helm home directory (default "$HOME/.helm")
-          --config-override-file string   global configuration overrides. component specific environment overrides take precedence over this.
-          --context string                the kube context to use. defaults to the current context
-          --dir string                    (deprecated) path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR
-          --disable stringSlice           Stages to be disabled. Available stages are create/update/delete.
-          --dry-run                       simulate the applying of the landscape. useful in merge requests
-          --helm-home string              Helm home directory (default "$HOME/.helm")
-          --env string                    environment specifier. selects value overrides by environment.
-          --loop                          keep landscape in sync forever
-          --loop-interval duration        when running in a loop the interval between invocations (default 5m0s)
-          --namespace string              namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE (default "default")
-          --no-prefix                     disable prefixing release names
-          --prefix string                 prefix release names with this string instead of <namespace>; overrides LANDSCAPE_PREFIX
-          --tiller-namespace string       Tiller namespace for Helm (default "kube-system")
-      -v, --verbose                       be verbose
-          --wait                          wait for all resources to be ready
-          --wait-timeout duration         interval to wait for all resources to be ready (default 5m0s)
+          --azure-keyvault string            azure keyvault for fetching secrets. Azure credentials must be provided in the environment.
+          --chart-dir string                 (deprecated; use --helm-home) Helm home directory (default "$HOME/.helm")
+          --config-override-file string      global configuration overrides. component specific environment overrides take precedence over this.
+          --context string                   the kube context to use. defaults to the current context
+          --dir string                       (deprecated) path to a folder that contains all the landscape desired state files; overrides LANDSCAPE_DIR
+          --disable stringSlice              Stages to be disabled. Available stages are create/update/delete.
+          --disable-forced-updates           Disables forced updates completelly
+          --disable-secrets-forced-updates   Disables forced updates for secret changes only
+          --dry-run                          simulate the applying of the landscape. useful in merge requests
+          --helm-home string                 Helm home directory (default "$HOME/.helm")
+          --env string                       environment specifier. selects value overrides by environment.
+          --loop                             keep landscape in sync forever
+          --loop-interval duration           when running in a loop the interval between invocations (default 5m0s)
+          --namespace string                 namespace to apply the landscape to; overrides LANDSCAPE_NAMESPACE (default "default")
+          --no-prefix                        disable prefixing release names
+          --prefix string                    prefix release names with this string instead of <namespace>; overrides LANDSCAPE_PREFIX
+          --tiller-namespace string          Tiller namespace for Helm (default "kube-system")
+      -v, --verbose                          be verbose
+          --wait                             wait for all resources to be ready
+          --wait-timeout duration            interval to wait for all resources to be ready (default 5m0s)
 
 Instead of using arguments, environment variables can be used. When arguments are present, they override environment variables.
 `--namespace` is used to isolate landscapes through Kubernetes namespaces.
@@ -263,6 +265,7 @@ Landscaper uses both Helm and Kubernetes. The following Landscaper releases are 
 
 | Landscaper | Helm  | Kubernetes |
 |------------|-------|------------|
+| 1.0.22     | 2.11.0| 1.11.1     |
 | 1.0.21     | 2.11.0| 1.11.1     |
 | 1.0.20     | 2.11.0| 1.11.1     |
 | 1.0.19     | 2.10.0| 1.10.3     |
