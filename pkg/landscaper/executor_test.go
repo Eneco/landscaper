@@ -264,8 +264,8 @@ func TestExecutorApplyOptOutForcedUpdatesCompletely(t *testing.T) {
 	require.Equal(t, len(result["create"]), 0)
 	require.Equal(t, len(result["update"]), 2)
 	require.Equal(t, len(result["delete"]), 0)
-	require.Equal(t, result["update"][0], updiff.Name)
-	require.Equal(t, result["update"][1], uptwodiff.Name)
+	require.Contains(t, result["update"], updiff.Name)
+	require.Contains(t, result["update"], uptwodiff.Name)
 }
 
 func TestExecutorCreate(t *testing.T) {
