@@ -19,7 +19,6 @@ default: build
 
 bootstrap:
 	dep ensure -v -vendor-only
-	./scripts/setup-apimachinery.sh
 
 clean:
 	rm -rf $(BUILD_DIR)
