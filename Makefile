@@ -18,11 +18,14 @@ LD_RELEASE_FLAGS += -X github.com/eneco/landscaper/pkg/landscaper.SemVer=${VERSI
 default: build
 
 bootstrap:
-	dep ensure
+	dep ensure -v -vendor-only
 	./scripts/setup-apimachinery.sh
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+clean-vendor:
+	rm -rf ./vendor > /dev/null
 
 test:
 	go test -cover $(FOLDERS)
