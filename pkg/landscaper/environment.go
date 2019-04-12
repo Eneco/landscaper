@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // gcp authentication support
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/helm/pkg/helm"
 	"k8s.io/helm/pkg/kube"
