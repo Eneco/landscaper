@@ -1,24 +1,31 @@
+required = [
+    "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+]
 
-# Gopkg.toml example
-#
-# Refer to https://github.com/golang/dep/blob/master/docs/Gopkg.toml.md
-# for detailed Gopkg.toml documentation.
-#
-# required = ["github.com/user/thing/cmd/thing"]
-# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
-#
-# [[constraint]]
-#   name = "github.com/user/project"
-#   version = "1.0.0"
-#
-# [[constraint]]
-#   name = "github.com/user/project2"
-#   branch = "dev"
-#   source = "github.com/myfork/project2"
-#
-# [[override]]
-#  name = "github.com/x/y"
-#  version = "2.4.0"
+[prune]
+  go-tests = true
+  non-go = true
+  unused-packages = true
+
+  [[prune.project]]
+    name = "k8s.io/kubernetes"
+    non-go = false
+    unused-packages = false
+
+  [[prune.project]]
+    name = "k8s.io/client-go"
+    non-go = false
+    unused-packages = false
+
+  [[prune.project]]
+    name = "k8s.io/apimachinery"
+    non-go = false
+    unused-packages = false
+
+  [[prune.project]]
+    name = "k8s.io/api"
+    non-go = false
+    unused-packages = false
 
 [[constraint]]
   name = "k8s.io/helm"
@@ -70,27 +77,35 @@
 [[override]]
   name = "k8s.io/client-go"
   version = "kubernetes-1.11.1"
+
 [[override]]
   name = "k8s.io/kubernetes"
   version = "v1.11.1"
+
 [[override]]
   name = "k8s.io/api"
   version = "kubernetes-1.11.1"
+
 [[override]]
   name = "k8s.io/apiextensions-apiserver"
   version = "kubernetes-1.11.1"
+
 [[override]]
   name = "k8s.io/apiserver"
   version = "kubernetes-1.11.1"
+
 [[override]]
   name = "k8s.io/apimachinery"
   version = "kubernetes-1.11.1"
+
 [[override]]
   name = "k8s.io/kube-openapi"
   revision = "9be88ef10da45f8260fac1eafa747a2898949f51"
+
 [[override]]
   name = "k8s.io/utils"
   revision = "011bbbe3b2878d9b1d484312f186826acd7e78cc"
+
 # unknown field 'CaseSensitive' in struct literal of type jsoniter.Config
 [[override]]
   name = "github.com/json-iterator/go"
