@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 var (

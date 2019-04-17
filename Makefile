@@ -22,6 +22,7 @@ bootstrap:
 
 clean:
 	rm -rf $(BUILD_DIR)
+	rm -rf vendor
 
 clean-vendor:
 	rm -rf ./vendor > /dev/null
