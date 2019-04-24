@@ -29,7 +29,7 @@ required = [
 
 [[constraint]]
   name = "k8s.io/helm"
-  version = "2.11.0"
+  version = "2.13.1"
 
 # Fix google.org/protobuf
 # https://github.com/google/protobuf/issues/4582
@@ -42,17 +42,20 @@ required = [
   name = "github.com/Azure/azure-sdk-for-go"
   version = "11.3.0-beta"
 
+# matching client go dependency
 [[constraint]]
   name = "github.com/Azure/go-autorest"
-  version = "9.5.2"
+  revision = "bca49d5b51a50dc5bb17bbf6204c711c6dbded06"
 
+# matching client go dependency
 [[constraint]]
   name = "github.com/ghodss/yaml"
-  version = "1.0.0"
+  revision = "73d445a93680fa1a78ae23a5839bad48f32ba1ee"
 
-[[constraint]]
+# matching client go dependency
+[[constraint]] 
   name = "github.com/pmezard/go-difflib"
-  version = "1.0.0"
+  revision = "d8ed2627bdf02c080bf22230dbb337003b7aba2d"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
@@ -74,6 +77,7 @@ required = [
   name = "github.com/x-cray/logrus-prefixed-formatter"
   version = "=0.5.2"
 
+# https://github.com/kubernetes/client-go#compatibility-matrix
 [[override]]
   name = "k8s.io/client-go"
   version = "kubernetes-1.11.1"
@@ -110,3 +114,6 @@ required = [
 [[override]]
   name = "github.com/json-iterator/go"
   version = "1.1.5"
+[[override]]
+  name = "k8s.io/cli-runtime"
+  version = "kubernetes-1.13.1"
