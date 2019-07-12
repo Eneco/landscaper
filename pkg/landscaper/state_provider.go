@@ -83,9 +83,13 @@ func (cp *helmStateProvider) Components() (Components, error) {
 			continue
 		}
 
-		secretValues, err := cp.secrets.Read(cmp.Name, release.Namespace, nil)
-		if err != nil {
-			return components, err
+		// ignore the secrets in the cluster if the secretsRef is not set, this means they are not managed by the landscaper
+		secretValues := SecretValues{}
+		if _, ok := cmp.Configuration["secretsRef"]; ok {
+			secretValues, err = cp.secrets.Read(cmp.Name, release.Namespace, nil)
+			if err != nil {
+				return components, err
+			}
 		}
 
 		cmp.SecretValues = secretValues
