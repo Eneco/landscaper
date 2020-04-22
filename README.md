@@ -1,3 +1,7 @@
+# Landscaper is no more
+
+Thanks for your interest in Landscaper. It was conceived in a turbulent time where k8s was relatively new, and Helm was brand new. Multiple people had the same ideas and vision as we (our team at Eneco Energy Trade) had, which now even has a name: GitOps. This project was cool as long as it lasted, but it never gained much traction. Other projects similar to Landscaper emerged, and have become more popular. Better go there, since there is no active community supporting this project. The most popular alternative to Landscaper seems to be https://github.com/roboll/helmfile. 
+
 # Landscaper
 
 [![Build Status](https://travis-ci.org/Eneco/landscaper.svg?branch=master)](https://travis-ci.org/Eneco/landscaper)
